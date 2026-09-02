@@ -1,0 +1,53 @@
+{% extends 'mailing/layouts/wide_layout.html' %}
+
+{% block content %}
+    {% include 'mailing/components/logo.html' %}
+    <p class="text-center font-weight-bold" style="text-align: center; font-weight: 900;">
+        NUEVA SOLICITUD DE COMPRA
+    </p>
+    <br>
+    {% if products %}
+        <strong>Datos del cliente</strong>
+        <table style="width: 100%; border: 1px solid #ddd;" width="100%">
+            <tr>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Nombre</strong>: {{ client_name }}</td>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Correo electrónico</strong>: {{ client_email }}
+                </td>
+            </tr>
+            <tr>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Contacto</strong>: {{ contact_name }}</td>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Teléfono</strong>: {{ phone_number }}</td>
+            </tr>
+            <tr>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Vendedor</strong>: {{ seller_name }}</td>
+                <td style="border-color: #ddd; padding: 5px;"><strong>Teléfono</strong>: {{ seller_phone_number }}</td>
+            </tr>
+        </table>
+        <br>
+        <strong>Productos solicitados</strong>
+        <table style="width: 100%; border: 1px solid #ddd;" width="100%">
+            <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Importe</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for product in products %}
+                <tr>
+                    <td style="border-color: #ddd; padding: 5px;">{{ product.product.code_sku }}</td>
+                    <td style="border-color: #ddd; padding: 5px;">{{ product.product.name }}</td>
+                    <td style="border-color: #ddd; padding: 5px;text-align: center;">{{ product.quantity }}</td>
+                    <td style="border-color: #ddd; padding: 5px;text-align: center;">{{ product.amount }}</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td colspan=3 style="text-align: right; font-weight: 600;"><strong>Importe total:</strong></td>
+                <td style="text-align: center; font-weight: 600;"><strong>{{ total_amount }}</strong></td>
+            </tr>
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

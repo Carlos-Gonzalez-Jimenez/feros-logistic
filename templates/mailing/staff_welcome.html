@@ -1,0 +1,25 @@
+{% extends 'mailing/layouts/layout.html' %}
+
+{% block content %}
+    {% include 'mailing/components/logo.html' %}
+
+    <p class="text-center font-weight-bold" style="text-align: center; font-weight: 900;">
+        BIENVENIDO
+    </p>
+    Hola estimado <strong>{{ user_name }}</strong>,<br>
+
+    Ud. ha sido registrado en la plataforma online <strong>{{ business_name }}</strong>!. Estamos encantados de tenerle
+    con nosotros.<br>
+
+    Su cuenta ya está activa y puede comenzar de inmediato a trabajar con el sistema.<br> Su contraseña es la siguiente
+    <strong>{{ password }}</strong> y deberá ser cambiada al acceder a la plataforma por primera vez, por motivos de
+    seguridad.<br>
+
+    Si tiene alguna duda o necesita ayuda, estamos aquí para asistirle.<br>
+
+    ¡Bienvenido de nuevo!<br>
+
+    <p class="text-center" style="text-align: center;">
+        {% include 'mailing/components/button.html' with label="Iniciar Sesión" href=frontend_url %}
+    </p>
+{% endblock %}

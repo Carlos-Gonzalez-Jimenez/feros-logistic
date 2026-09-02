@@ -1,0 +1,18 @@
+{% extends 'mailing/layouts/layout.html' %}
+
+{% block content %}
+    {% include 'mailing/components/logo.html' %}
+    
+    <p class="text-center font-weight-bold" style="text-align: center; font-weight: 900;">
+        RECUPERAR CONTRASEÑA
+    </p>
+    Recibimos una solicitud para recuperar su contraseña en la plataforma online {{ business_name }}.<br><br>
+
+    Haga clic en el siguiente enlace para continuar con el proceso.<br>
+
+
+    <p class="text-center" style="text-align: center;">
+        {% include 'mailing/components/button.html' with label="Ir a la plataforma" href=frontend_url %}
+    </p>
+
+{% endblock %}

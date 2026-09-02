@@ -1,0 +1,27 @@
+{% extends 'mailing/layouts/layout.html' %}
+
+{% block content %}
+    {% include 'mailing/components/logo.html' %}
+    
+    <p class="text-center font-weight-bold" style="text-align: center; font-weight: 900;">
+        BIENVENIDO
+    </p>
+
+    Hola estimado <strong>{{ user_name }}</strong>,<br><br>
+
+    🎉 ¡Bienvenido a la plataforma online <strong>{{ business_name }}</strong>!<br><br>
+
+    Su registro ha sido exitoso y ahora solo falta un paso para comenzar: <strong>activar su cuenta</strong>.<br><br>
+
+    Por favor, haga clic en el botón a continuación para confirmar su dirección de correo electrónico y activar su
+    acceso:<br><br>
+
+    <p class="text-center" style="text-align: center;">
+        {% include 'mailing/components/button.html' with label="Activar cuenta" href=confirm_url %}
+    </p>
+
+    Una vez activada, podrá ingresar y explorar todos los servicios y productos que tenemos para usted.<br><br>
+
+    Gracias por confiar en nosotros,<br>
+    El equipo de <strong>{{ business_name }}</strong><br>
+{% endblock %}

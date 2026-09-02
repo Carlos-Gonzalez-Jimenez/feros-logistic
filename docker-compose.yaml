@@ -1,0 +1,62 @@
+version: '3.3'
+
+services:
+  database:
+    container_name: logistic-database
+    image: mysql:8.0
+    restart: always
+    volumes:
+      - feros_database:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: logistic_db
+      MYSQL_USER: logistic
+      MYSQL_PASSWORD: L0g1st1c
+      MYSQL_ROOT_PASSWORD: L0g1st1c*
+    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+    #    ports:
+    #      - "33060:3306"
+    networks:
+      - feros-net
+  api:
+    container_name: logistic-backend
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: logistic-backend:latest
+    environment:
+      #CONFIGURAR DJANGO
+      DEBUG: 'True'
+
+      #CONFIGURACION DE LA  BASE DE DATOS
+      DATABASE_HOST: logistic-database
+      DATABASE_PORT: 3306
+      DATABASE_NAME: logistic_db
+      DATABASE_USER: logistic
+      DATABASE_PASSWORD: L0g1st1c*
+
+      EMAIL_HOST: smtp.hostinger.com
+      EMAIL_HOST_USER: asistente@feros-grupo.com
+      EMAIL_HOST_PASSWORD: 4dfm-kqdn-1r5i-t9qd
+      EMAIL_PORT: 465
+      EMAIL_USE_SSL: True
+
+    volumes:
+      - logistic_media:/code/media
+    depends_on:
+      database:
+        condition: service_started
+    networks:
+      - feros-net
+      - nginx
+
+volumes:
+  feros_database:
+  feros_media:
+
+networks:
+  feros-net:
+    driver: bridge
+  nginx:
+    name: nginx-proxy-manager-net
+    external: true
