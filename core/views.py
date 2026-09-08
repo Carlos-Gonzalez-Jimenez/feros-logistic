@@ -815,74 +815,6 @@ class BrandViewSet(ProtectedResourceViewSet):
             return queryset
         return queryset.filter(active=True)
 
-    # def list(self, request, *args, **kwargs):
-    #     page = request.query_params.get("page")
-    #     page_size = request.query_params.get("page_size")
-    #     search_term = request.query_params.get("search", "")
-
-    #     if search_term and search_term.strip():
-    #         return super().list(request, *args, **kwargs)
-
-    #     cache_kwargs = {"page": page, "page_size": page_size, "search": search_term}
-
-    #     cached_data = NomenclatorCacheManager.get_cached_data(
-    #         "brand", "list", request.user, **cache_kwargs
-    #     )
-
-    #     if cached_data is not None:
-    #         return Response(cached_data)
-
-    #     response = super().list(request, *args, **kwargs)
-
-    #     if response.status_code == 200:
-    #         NomenclatorCacheManager.set_cached_data(
-    #             response.data,
-    #             "brand",
-    #             "list",
-    #             request.user,
-    #             timeout=60 * 60 * 12,
-    #             **cache_kwargs,
-    #         )
-
-    #     return response
-
-    # def retrieve(self, request, *args, **kwargs):
-    #     cached_data = NomenclatorCacheManager.get_cached_data(
-    #         "brand", "retrieve", request.user, kwargs.get("pk")
-    #     )
-
-    #     if cached_data is not None:
-    #         return Response(cached_data)
-
-    #     response = super().retrieve(request, *args, **kwargs)
-
-    #     if response.status_code == 200:
-    #         NomenclatorCacheManager.set_cached_data(
-    #             response.data,
-    #             "brand",
-    #             "retrieve",
-    #             request.user,
-    #             pk=kwargs.get("pk"),
-    #             timeout=60 * 60 * 24,
-    #         )
-
-    #     return response
-
-    # def perform_create(self, serializer):
-    #     NomenclatorCacheManager.invalidate_model_cache("brand")
-    #     response = super().perform_create(serializer)
-    #     return response
-
-    # def perform_update(self, serializer):
-    #     NomenclatorCacheManager.invalidate_model_cache("brand")
-    #     response = super().perform_update(serializer)
-    #     return response
-
-    # def perform_destroy(self, instance):
-    #     NomenclatorCacheManager.invalidate_model_cache("brand")
-    #     response = super().perform_destroy(instance)
-    #     return response
-
 
 class CategoryViewSet(ProtectedResourceViewSet):
     """
@@ -3084,3 +3016,18 @@ class ConfigAPIView(RetrieveUpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+class PurchaseOrderViewSet(ProtectedResourceViewSet):
+    """
+    Purchase Order model\n
+    GET: Shows all purchase orders created.\n
+    POST: Adds a new purchase order.\n
+    GET{id}: Retrieves a specific purchase order determined by id.\n
+    PUT{id}: Modifies all fields of a specific purchase order determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific purchase order determined by id.\n
+    DELETE{id}: Deletes a specific purchase order determined by id.\n
+    """
+
+    queryset = models.PurchaseOrder.objects.all()
+    serializer_class = serializers.PurchaseOrderSerializer
+    search_fields = ["po_number"]

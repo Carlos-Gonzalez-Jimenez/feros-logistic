@@ -28,6 +28,7 @@ from core.models import (
     ProductBatch,
     VehicleType,
     Vehicle,
+    PurchaseOrder,
 )
 
 admin.site.register(Currency)
@@ -58,3 +59,4 @@ admin.site.register(BatchItem)
 admin.site.register(ProductBatch)
 admin.site.register(VehicleType)
 admin.site.register(Vehicle)
+admin.site.register(PurchaseOrder)

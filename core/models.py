@@ -606,11 +606,21 @@ class Batch(models.Model):
 
 
 class BatchItem(models.Model):
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    quantity_sold = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    amount_sold = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    cost_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    quantity_sold = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    amount_sold = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    cost_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    sale_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     sold = models.BooleanField(default=False)
     batch = models.ForeignKey(
         Batch,
@@ -635,7 +645,9 @@ class BatchItem(models.Model):
 
 
 class ProductBatch(models.Model):
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     order_product = models.ForeignKey(
         OrderProducts,
         related_name="batch_item",
@@ -849,7 +861,9 @@ class Cart(models.Model):
         models (_type_): _description_
     """
 
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     client = models.ForeignKey(User, related_name="cart", on_delete=models.PROTECT)
     product = models.ForeignKey(Product, related_name="cart", on_delete=models.PROTECT)
 
@@ -962,7 +976,9 @@ class Config(models.Model):
         return "Configuration"
 
     class Meta(PermissionsMeta.Meta):
-        permissions = [("manage_config", _("Can manage configuration")), ]
+        permissions = [
+            ("manage_config", _("Can manage configuration")),
+        ]
         verbose_name = "Configuration"
         verbose_name_plural = "Configurations"
         ordering = ["-id"]
@@ -997,9 +1013,15 @@ class Vehicle(models.Model):
     """
 
     plate = models.CharField(max_length=10)
-    avg_fuel_consumption = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    driver = models.ForeignKey(User, related_name="vehicles", on_delete=models.PROTECT, null=True)
-    vehicle_type = models.ForeignKey(VehicleType, related_name="vehicles", on_delete=models.PROTECT)
+    avg_fuel_consumption = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    driver = models.ForeignKey(
+        User, related_name="vehicles", on_delete=models.PROTECT, null=True
+    )
+    vehicle_type = models.ForeignKey(
+        VehicleType, related_name="vehicles", on_delete=models.PROTECT
+    )
     device_id = models.CharField(max_length=255, blank=True, null=True)
     use_mobile_gps = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
@@ -1018,8 +1040,12 @@ class Vehicle(models.Model):
 
 
 class VehicleLocation(models.Model):
-    vehicle = models.ForeignKey(Vehicle, related_name="locations", on_delete=models.CASCADE)
-    driver = models.ForeignKey(User, related_name="locations", on_delete=models.CASCADE, null=True, blank=True)
+    vehicle = models.ForeignKey(
+        Vehicle, related_name="locations", on_delete=models.CASCADE
+    )
+    driver = models.ForeignKey(
+        User, related_name="locations", on_delete=models.CASCADE, null=True, blank=True
+    )
     lat = models.DecimalField(max_digits=10, decimal_places=7)
     lon = models.DecimalField(max_digits=10, decimal_places=7)
     alt = models.DecimalField(max_digits=10, decimal_places=2)
@@ -1035,3 +1061,32 @@ class VehicleLocation(models.Model):
         verbose_name = "Vehicle Location"
         verbose_name_plural = "Vehicle Locations"
         ordering = ["-created_at"]
+
+
+class PurchaseOrder(models.Model):
+    po_number = models.CharField(max_length=100)
+    po_date = models.DateField()
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    product = models.ForeignKey(
+        Product, related_name="purchase_orders", on_delete=models.CASCADE
+    )
+    provider = models.ForeignKey(
+        Provider, related_name="purchase_orders", on_delete=models.CASCADE
+    )
+    measurement_unit = models.ForeignKey(
+        Measurement_Unit, related_name="purchase_orders", on_delete=models.CASCADE
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.po_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Purchase Order"
+        verbose_name_plural = "Purchase Orders"
+        ordering = ["-po_date"]
+        indexes = [
+            models.Index(fields=["po_number"]),
+        ]

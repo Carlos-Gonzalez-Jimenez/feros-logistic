@@ -34,7 +34,7 @@ from core.models import (
     Config,
 )
 from delivery.models import ShippingZone, ShippingMethod, ShippingRate
-from f_backend.settings import APPLICATION_DATA_PATH
+from logistic_backend.settings import APPLICATION_DATA_PATH
 from payments.models import PaymentMethod, Wallet
 from user.models import User
 

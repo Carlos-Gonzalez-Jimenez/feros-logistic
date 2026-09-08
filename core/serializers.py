@@ -42,6 +42,7 @@ class BatchItemSerializer(serializers.ModelSerializer):
     Args:
         serializers (_type_): _description_
     """
+
     batch_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Batch.objects.all(),
         required=True,
@@ -1096,7 +1097,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                    validated_data.get("unit_price") - instance.unit_price
+                validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1520,8 +1521,8 @@ class CartSerializer(serializers.ModelSerializer):
 
     def get_price(self, obj) -> Decimal:
         if (
-                obj.product.has_wholesale_price
-                and obj.quantity >= obj.product.wholesale_minimum
+            obj.product.has_wholesale_price
+            and obj.quantity >= obj.product.wholesale_minimum
         ):
             return obj.product.sell_wholesale_price(obj.client.fee)
         return obj.product.sell_price(obj.client.fee)
@@ -1530,15 +1531,15 @@ class CartSerializer(serializers.ModelSerializer):
         return obj.quantity * (
             obj.product.sell_wholesale_price(obj.client.fee)
             if obj.product.has_wholesale_price
-               and obj.quantity >= obj.product.wholesale_minimum
+            and obj.quantity >= obj.product.wholesale_minimum
             else obj.product.sell_price(obj.client.fee)
         )
 
     def get_save_amount(self, obj) -> Decimal:
         save_amount = Decimal("0.00")
         if (
-                obj.product.has_wholesale_price
-                and obj.quantity >= obj.product.wholesale_minimum
+            obj.product.has_wholesale_price
+            and obj.quantity >= obj.product.wholesale_minimum
         ):
             save_amount = obj.quantity * obj.product.sell_price(
                 obj.client.fee
@@ -1621,8 +1622,8 @@ class CreateOrderSerializer(serializers.Serializer):
 
         if delivery_address and shipping_rate:
             if (
-                    delivery_address.municipality
-                    not in shipping_rate.shipping_zone.municipalities.all()
+                delivery_address.municipality
+                not in shipping_rate.shipping_zone.municipalities.all()
             ):
                 errors["shipping_rate_id"] = [
                     _(
@@ -1738,21 +1739,43 @@ class OrderProductSaleProfit(serializers.Serializer):
     order_id = serializers.IntegerField()
     client_name = serializers.CharField()
     creation_date = serializers.DateTimeField()
-    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    sell_price = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    sale_amount = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    absolute_margin = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    margin_percentual = serializers.DecimalField(max_digits=10, decimal_places=4, default=Decimal("0.00"))
-    profit_per_unit = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    sell_price = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    sale_amount = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    total_cost = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    absolute_margin = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    margin_percentual = serializers.DecimalField(
+        max_digits=10, decimal_places=4, default=Decimal("0.00")
+    )
+    profit_per_unit = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
 
 
 class OrderProductProfit(serializers.Serializer):
     product = ProductReadMinimalSerializer()
-    quantity = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    sale_amount = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    absolute_margin = serializers.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    sale_amount = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    total_cost = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    absolute_margin = serializers.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
 
     avg_sell_price = serializers.SerializerMethodField()
     avg_profit_per_unit = serializers.SerializerMethodField()
@@ -1762,13 +1785,15 @@ class OrderProductProfit(serializers.Serializer):
     sales = OrderProductSaleProfit(many=True)
 
     def get_avg_profit_per_unit(self, obj) -> Decimal:
-        return Decimal(sum([sale["profit_per_unit"] for sale in obj["sales"]]) / len(obj["sales"]))
+        return Decimal(
+            sum([sale["profit_per_unit"] for sale in obj["sales"]]) / len(obj["sales"])
+        )
 
     def get_avg_sell_price(self, obj) -> Decimal:
         return obj["sell_price"] / len(obj["sales"])
 
     def get_margin_percentual(self, obj) -> Decimal:
-        return obj["absolute_margin"] / obj['sale_amount']
+        return obj["absolute_margin"] / obj["sale_amount"]
 
 
 class MergeOrderSerializer(serializers.Serializer):
@@ -1794,3 +1819,45 @@ class OdooWebhookSerializer(serializers.Serializer):
     state = serializers.CharField()
     pickup_date = serializers.DateField()
     # PROXIMAMENTE MÁS CAMPOS
+
+
+class PurchaseOrderSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    product = ProductReadSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=models.Product.objects.all(),
+        source="product",
+    )
+    provider = ProviderSerializer(read_only=True)
+    provider_id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=models.Provider.objects.all(),
+        source="provider",
+    )
+    measurement_unit = MeasurementUnitSerializer(read_only=True)
+    measurement_unit_id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=models.Measurement_Unit.objects.all(),
+        source="measurement_unit",
+    )
+
+    class Meta:
+        model = models.PurchaseOrder
+        fields = [
+            "po_number",
+            "po_date",
+            "quantity",
+            "product",
+            "product_id",
+            "provider",
+            "provider_id",
+            "measurement_unit",
+            "measurement_unit_id",
+            "created_at",
+        ]
