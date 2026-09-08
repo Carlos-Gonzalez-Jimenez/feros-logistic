@@ -73,10 +73,7 @@ from .permissions import (
     ClientPermission,
     StaffPermission,
 )
-from .services import (
-    NotificationService,
-    get_state_handler
-)
+from .services import NotificationService, get_state_handler
 
 
 class ProtectedResourceViewSet(viewsets.ModelViewSet):
@@ -122,7 +119,9 @@ class BatchViewSet(viewsets.ModelViewSet):
     def batch_items_all(self, request, pk=None):
         items = models.BatchItem.objects.filter(batch_id=pk)
         return Response(
-            serializers.BatchItemSerializer(items, many=True, context=self.get_serializer_context()).data,
+            serializers.BatchItemSerializer(
+                items, many=True, context=self.get_serializer_context()
+            ).data,
             status=status.HTTP_200_OK,
         )
 
@@ -229,11 +228,11 @@ class BatchViewSet(viewsets.ModelViewSet):
 
             if total_quantity > 0:
                 weighted_cost = (
-                                        (current_quantity * current_cost) + (new_quantity * new_cost)
-                                ) / total_quantity
+                    (current_quantity * current_cost) + (new_quantity * new_cost)
+                ) / total_quantity
                 weighted_price = (
-                                         (current_quantity * current_price) + (new_quantity * new_price)
-                                 ) / total_quantity
+                    (current_quantity * current_price) + (new_quantity * new_price)
+                ) / total_quantity
             else:
                 weighted_cost = new_cost
                 weighted_price = new_price
@@ -243,7 +242,9 @@ class BatchViewSet(viewsets.ModelViewSet):
             product.unit_price = weighted_price
             products_to_update.append(product)
 
-        models.Product.objects.bulk_update(products_to_update, ["quantity", "cost_price", "unit_price"])
+        models.Product.objects.bulk_update(
+            products_to_update, ["quantity", "cost_price", "unit_price"]
+        )
 
     @action(
         methods=["post"],
@@ -255,7 +256,9 @@ class BatchViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             items = models.BatchItem.objects.filter(batch_id=pk)
             self._update_inventory(items)
-            models.Batch.objects.filter(pk=pk, processed=False).update(processed=True, processed_at=now())
+            models.Batch.objects.filter(pk=pk, processed=False).update(
+                processed=True, processed_at=now()
+            )
         return Response(status=status.HTTP_200_OK)
 
 
@@ -278,13 +281,17 @@ class BatchItemViewSet(viewsets.ModelViewSet):
         batch_items = models.BatchItem.objects.filter(batch_id=batch_id)
 
         return Response(
-            serializers.BatchItemSerializer(batch_items, many=True, context=self.get_serializer_context()).data,
-            status=status.HTTP_200_OK
+            serializers.BatchItemSerializer(
+                batch_items, many=True, context=self.get_serializer_context()
+            ).data,
+            status=status.HTTP_200_OK,
         )
 
     def create(self, request):
         with transaction.atomic():
-            serializer = self.serializer_class(data=request.data, context=self.get_serializer_context())
+            serializer = self.serializer_class(
+                data=request.data, context=self.get_serializer_context()
+            )
             serializer.is_valid(raise_exception=True)
             item = serializer.save()
             self._merge_duplicate_batchitems(item)
@@ -295,7 +302,9 @@ class BatchItemViewSet(viewsets.ModelViewSet):
             partial = kwargs.pop("partial", False)
             instance = self.get_object()
 
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer = self.get_serializer(
+                instance, data=request.data, partial=partial
+            )
             serializer.is_valid(raise_exception=True)
             item = serializer.save()
             self._merge_duplicate_batchitems(instance)
@@ -312,7 +321,9 @@ class BatchItemViewSet(viewsets.ModelViewSet):
         product_id = batch_item.product_id
         if product_id:
             rows = (
-                models.BatchItem.objects.filter(batch_id=batch_item.batch_id, product_id=product_id)
+                models.BatchItem.objects.filter(
+                    batch_id=batch_item.batch_id, product_id=product_id
+                )
                 .exclude(pk=batch_item.pk)
                 .update(quantity=F("quantity") + batch_item.quantity)
             )
@@ -1098,16 +1109,20 @@ class VehicleViewSet(ProtectedResourceViewSet):
         permission_classes=[CustomPermissionFactory(["core.manage_vehicles"])],
     )
     def tracking(self, request):
-        vehicles = models.Vehicle.objects.filter(active=True, locations__isnull=False).distinct()
+        vehicles = models.Vehicle.objects.filter(
+            active=True, locations__isnull=False
+        ).distinct()
         locations = []
         for vehicle in vehicles:
             try:
-                location = vehicle.locations.latest('created_at')
+                location = vehicle.locations.latest("created_at")
                 if location:
                     locations.append(location)
             except models.VehicleLocation.DoesNotExist:
                 pass
-        return Response(serializers.VehicleLocationSerializer(instance=locations, many=True).data)
+        return Response(
+            serializers.VehicleLocationSerializer(instance=locations, many=True).data
+        )
 
 
 class SpecificationDetailsViewSet(ProtectedResourceViewSet):
@@ -1140,7 +1155,7 @@ def check_category_existence(product_category: str):
     category_name = None
     if first_point_position != -1:
         parent_category_name = product_category[0:first_point_position]
-        category_name = product_category[first_point_position + 1:]
+        category_name = product_category[first_point_position + 1 :]
     else:
         category_name = product_category
     parent_category = None
@@ -1525,7 +1540,7 @@ def cart_total_amount(cart_products: list, fee: Fee) -> float:
         * (
             cart_product.product.sell_wholesale_price(fee)
             if cart_product.product.has_wholesale_price
-               and cart_product.quantity >= cart_product.product.wholesale_minimum
+            and cart_product.quantity >= cart_product.product.wholesale_minimum
             else cart_product.product.sell_price(fee)
         )
         for cart_product in cart_products
@@ -1592,7 +1607,9 @@ class CartViewSet(viewsets.ModelViewSet):
 
     def create(self, request):
         with transaction.atomic():
-            serializer = self.serializer_class(data=request.data, context=self.get_serializer_context())
+            serializer = self.serializer_class(
+                data=request.data, context=self.get_serializer_context()
+            )
             serializer.is_valid(raise_exception=True)
 
             product = serializer.save()
@@ -1646,7 +1663,12 @@ class CartViewSet(viewsets.ModelViewSet):
                 try:
                     user = self.request.user
 
-                    builder = CreateOrderBuilder(models.Cart, serializer.validated_data, client=self.request.user, seller=None)
+                    builder = CreateOrderBuilder(
+                        models.Cart,
+                        serializer.validated_data,
+                        client=self.request.user,
+                        seller=None,
+                    )
                     builder.create_order()
                     builder.append_order_products()
                     builder.apply_discount()
@@ -1656,7 +1678,9 @@ class CartViewSet(viewsets.ModelViewSet):
                     builder.clear_cart()
 
                     builder.update_order_amounts()
-                    builder.add_initial_state('Estado inicial [Solicitud de compra creada]')
+                    builder.add_initial_state(
+                        "Estado inicial [Solicitud de compra creada]"
+                    )
                     response, _ = builder.create_payment()
 
                     order = builder.order
@@ -1748,8 +1772,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get'],
-        url_path=r'pending',
+        methods=["get"],
+        url_path=r"pending",
         permission_classes=[CustomPermissionFactory(["core.manage_order"])],
         filterset_class=filters.PendingOrderFilter,
     )
@@ -1757,13 +1781,14 @@ class OrderViewSet(viewsets.ModelViewSet):
         queryset = (
             models.Order.objects.annotate(
                 status=Subquery(
-                    models.OrderTracking.objects.filter(order=OuterRef('pk')).order_by('-id').values(
-                        'status__code_name')[:1]
+                    models.OrderTracking.objects.filter(order=OuterRef("pk"))
+                    .order_by("-id")
+                    .values("status__code_name")[:1]
                 )
             )
             .filter(expiration_date__gte=now())
-            .exclude(status__in=['completed', 'cancelled', 'returned'])
-            .order_by('expiration_date')
+            .exclude(status__in=["completed", "cancelled", "returned"])
+            .order_by("expiration_date")
         )
         queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
@@ -2094,8 +2119,8 @@ class OrderViewSet(viewsets.ModelViewSet):
                             payment.payment_method.code_name
                         )
                         if (
-                                payment_service.check_payment_status(payment, user)
-                                != "completed"
+                            payment_service.check_payment_status(payment, user)
+                            != "completed"
                         ):
                             raise PaymentNotCompletedException()
 
@@ -2108,12 +2133,18 @@ class OrderViewSet(viewsets.ModelViewSet):
                             ["IN_APP", "WHATSAPP"],
                         )
 
-                        next_status = models.OrderStatus.objects.get(code_name="completed")
-                        handler = get_state_handler(next_status, order.current_status.status)
+                        next_status = models.OrderStatus.objects.get(
+                            code_name="completed"
+                        )
+                        handler = get_state_handler(
+                            next_status, order.current_status.status
+                        )
                         handler.handle_transition(order, None)
 
             return Response(
-                serializers.OrderSerializer(order, context=self.get_serializer_context()).data,
+                serializers.OrderSerializer(
+                    order, context=self.get_serializer_context()
+                ).data,
                 status=status.HTTP_200_OK,
             )
         except models.OrderStatus.DoesNotExist:
@@ -2153,7 +2184,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                     )
 
                     return Response(
-                        serializers.OrderSerializer(order, context=self.get_serializer_context()).data,
+                        serializers.OrderSerializer(
+                            order, context=self.get_serializer_context()
+                        ).data,
                         status=status.HTTP_200_OK,
                     )
                 except Payment.DoesNotExist:
@@ -2165,10 +2198,14 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         try:
             with transaction.atomic():
-                order_payment = Payment.objects.select_related("payment_method", "order__client").get(order_id=order.id)
+                order_payment = Payment.objects.select_related(
+                    "payment_method", "order__client"
+                ).get(order_id=order.id)
 
                 if order_payment.status == "pending":
-                    payment_service = PaymentFactory.create_payment_service(order_payment.payment_method.code_name)
+                    payment_service = PaymentFactory.create_payment_service(
+                        order_payment.payment_method.code_name
+                    )
                     payment_service.complete_payment(order_payment)
 
                     NotificationService.send_notification(
@@ -2179,7 +2216,9 @@ class OrderViewSet(viewsets.ModelViewSet):
                         ["IN_APP", "WHATSAPP"],
                     )
                 return Response(
-                    serializers.OrderSerializer(order, context=self.get_serializer_context()).data,
+                    serializers.OrderSerializer(
+                        order, context=self.get_serializer_context()
+                    ).data,
                     status=status.HTTP_200_OK,
                 )
 
@@ -2193,8 +2232,12 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = self.get_object()
         try:
             with transaction.atomic():
-                order_payment = Payment.objects.select_related("payment_method", "order__client").get(order_id=order.id)
-                payment_service = PaymentFactory.create_payment_service(order_payment.payment_method.code_name)
+                order_payment = Payment.objects.select_related(
+                    "payment_method", "order__client"
+                ).get(order_id=order.id)
+                payment_service = PaymentFactory.create_payment_service(
+                    order_payment.payment_method.code_name
+                )
                 payment_service.cancel_payment(order_payment)
                 current_status = order.current_status.status
                 cancelled_status = models.OrderStatus.objects.get(code_name="cancelled")
@@ -2266,8 +2309,12 @@ class OrderViewSet(viewsets.ModelViewSet):
                     )
 
                 cancelled_status = models.OrderStatus.objects.get(code_name="cancelled")
-                handler = get_state_handler(cancelled_status, order.current_status.status)
-                handler.handle_transition(order, "Pedido cancelado al realizarse un reembolso")
+                handler = get_state_handler(
+                    cancelled_status, order.current_status.status
+                )
+                handler.handle_transition(
+                    order, "Pedido cancelado al realizarse un reembolso"
+                )
 
                 order_products = models.OrderProducts.objects.select_related(
                     "product"
@@ -2315,7 +2362,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             handler = get_state_handler(next_status, order.current_status.status)
             handler.handle_transition(order, observations)
             return Response(
-                serializers.OrderSerializer(order, context=self.get_serializer_context()).data,
+                serializers.OrderSerializer(
+                    order, context=self.get_serializer_context()
+                ).data,
                 status=status.HTTP_200_OK,
             )
 
@@ -2483,8 +2532,8 @@ class OrderProductsViewSet(ProtectedResourceViewSet):
                             product.active = False
                         product.save()
                         if (
-                                product.has_wholesale_price
-                                and new_quantity >= product.wholesale_minimum
+                            product.has_wholesale_price
+                            and new_quantity >= product.wholesale_minimum
                         ):
                             instance.price = product.wholesale_price
                         serializer = self.get_serializer(
@@ -2540,10 +2589,16 @@ class OrderProfitReportViewSet(GenericAPIView):
         if start_date > end_date:
             raise StartDateCanNotBeAfterEnddateException
 
-        filters = {"order__creation_date__range": [start_date, end_date + datetime.timedelta(days=1)]}
+        filters = {
+            "order__creation_date__range": [
+                start_date,
+                end_date + datetime.timedelta(days=1),
+            ]
+        }
         latest_status = Subquery(
-            models.OrderTracking.objects.filter(order=OuterRef('order_id')).order_by('-id') \
-                .values('status__code_name')[:1]
+            models.OrderTracking.objects.filter(order=OuterRef("order_id"))
+            .order_by("-id")
+            .values("status__code_name")[:1]
         )
 
         order_products = (
@@ -2564,10 +2619,12 @@ class OrderProfitReportViewSet(GenericAPIView):
                     output_field=DecimalField(max_digits=15, decimal_places=4),
                 ),
                 margin_percentual=ExpressionWrapper(
-                    (F("quantity") * F("price") - F("quantity") * F("cost")) / (F("quantity") * F("price")),
+                    (F("quantity") * F("price") - F("quantity") * F("cost"))
+                    / (F("quantity") * F("price")),
                     output_field=DecimalField(max_digits=10, decimal_places=4),
                 ),
-            ).exclude(status__in=['cancelled', 'returned'])
+            )
+            .exclude(status__in=["cancelled", "returned"])
             .order_by("-order__creation_date", "-order__id")
         )
 
@@ -2629,7 +2686,9 @@ class OrderProfitReportViewSet(GenericAPIView):
 
         return Response(
             {
-                "products": serializers.OrderProductProfit(result.values(), many=True).data,
+                "products": serializers.OrderProductProfit(
+                    result.values(), many=True
+                ).data,
                 # "total_profit": total_profit,
                 "total_amount": total_amount,
                 "total_cost": total_cost,
@@ -3017,6 +3076,52 @@ class ConfigAPIView(RetrieveUpdateAPIView):
     def patch(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+
+class PortViewSet(ProtectedResourceViewSet):
+    """
+    Port model\n
+    GET: Shows all ports created.\n
+    POST: Adds a new port.\n
+    GET{id}: Retrieves a specific port determined by id.\n
+    PUT{id}: Modifies all fields of a specific port determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific port determined by id.\n
+    DELETE{id}: Deletes a specific port determined by id.\n
+    """
+
+    queryset = models.Port.objects.all()
+    serializer_class = serializers.PortSerializer
+    search_fields = ["name", "abbreviation"]
+
+class IncotermsViewSet(ProtectedResourceViewSet):
+    """
+    Incoterms model\n
+    GET: Shows all incoterms created.\n
+    POST: Adds a new incoterms.\n
+    GET{id}: Retrieves a specific incoterms determined by id.\n
+    PUT{id}: Modifies all fields of a specific incoterms determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific incoterms determined by id.\n
+    DELETE{id}: Deletes a specific incoterms determined by id.\n
+    """
+
+    queryset = models.Incoterms.objects.all()
+    serializer_class = serializers.IncotermsSerializer
+    search_fields = ["name", "abbreviation"]
+    
+class ProcessingPlantViewSet(ProtectedResourceViewSet):
+    """
+    Processing Plant model\n
+    GET: Shows all processing plants created.\n
+    POST: Adds a new processing plant.\n
+    GET{id}: Retrieves a specific processing plant determined by id.\n
+    PUT{id}: Modifies all fields of a specific processing plant determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific processing plant determined by id.\n
+    DELETE{id}: Deletes a specific processing plant determined by id.\n
+    """
+
+    queryset = models.ProcessingPlant.objects.all()
+    serializer_class = serializers.ProcessingPlantSerializer
+    search_fields = ["name"]
+    
 class PurchaseOrderViewSet(ProtectedResourceViewSet):
     """
     Purchase Order model\n

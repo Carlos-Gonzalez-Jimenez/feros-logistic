@@ -1063,6 +1063,59 @@ class VehicleLocation(models.Model):
         ordering = ["-created_at"]
 
 
+class Port(models.Model):
+    name = models.CharField(max_length=100)
+    abbreviation = models.CharField(max_length=20)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Port"
+        verbose_name_plural = "Ports"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["abbreviation"]),
+        ]
+
+
+class Incoterms(models.Model):
+    name = models.CharField(max_length=100)
+    abbreviation = models.CharField(max_length=20)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Incoterms"
+        verbose_name_plural = "Incoterms"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["abbreviation"]),
+        ]
+
+
+class ProcessingPlant(models.Model):
+    name = models.CharField(max_length=100)
+    phytosanitary_permit = models.BooleanField(default=False)
+    phytosanitary_permit_expires = models.DateField(blank=True, null=True)
+    veterinary_permit = models.BooleanField(default=False)
+    veterinary_permit_expires = models.DateField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Processing Plant"
+        verbose_name_plural = "Processing Plants"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
+
+
 class PurchaseOrder(models.Model):
     po_number = models.CharField(max_length=100)
     po_date = models.DateField()
@@ -1089,4 +1142,43 @@ class PurchaseOrder(models.Model):
         ordering = ["-po_date"]
         indexes = [
             models.Index(fields=["po_number"]),
+        ]
+
+
+class SaleOrder(models.Model):
+    so_number = models.CharField(max_length=100)
+    so_date = models.DateField()
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, related_name="sale_orders", on_delete=models.CASCADE
+    )
+    processing_plant = models.ForeignKey(
+        ProcessingPlant, related_name="sale_orders", on_delete=models.CASCADE
+    )
+    incoterms = models.ForeignKey(
+        Incoterms, related_name="sale_orders", on_delete=models.CASCADE
+    )
+    shipment_port = models.ForeignKey(
+        Port, related_name="shipment_sale_orders", on_delete=models.CASCADE
+    )
+    arrival_port = models.ForeignKey(
+        Port, related_name="arrival_sale_orders", on_delete=models.CASCADE
+    )
+    observations = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.so_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Sale Order"
+        verbose_name_plural = "Sale Orders"
+        ordering = ["-so_date"]
+        indexes = [
+            models.Index(fields=["so_number"]),
         ]

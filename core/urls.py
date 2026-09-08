@@ -45,6 +45,11 @@ router.register(
     r"order-products", views.OrderProductsViewSet, basename="order-products"
 )
 router.register(r"addresses", views.ContactAddressViewSet, basename="addresses")
+router.register(r"ports", views.PortViewSet, basename="ports")
+router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
+router.register(
+    r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants"
+)
 router.register(
     r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders"
 )

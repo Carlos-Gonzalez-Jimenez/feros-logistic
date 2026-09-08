@@ -1821,6 +1821,39 @@ class OdooWebhookSerializer(serializers.Serializer):
     # PROXIMAMENTE MÁS CAMPOS
 
 
+class PortSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.Port
+        fields = "__all__"
+
+class IncotermsSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.Incoterms
+        fields = "__all__"
+        
+class ProcessingPlantSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.ProcessingPlant
+        fields = "__all__"
+
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     """_summary_
 

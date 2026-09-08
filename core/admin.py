@@ -29,6 +29,10 @@ from core.models import (
     VehicleType,
     Vehicle,
     PurchaseOrder,
+    SaleOrder,
+    Port,
+    ProcessingPlant,
+    Incoterms,
 )
 
 admin.site.register(Currency)
@@ -60,3 +64,7 @@ admin.site.register(ProductBatch)
 admin.site.register(VehicleType)
 admin.site.register(Vehicle)
 admin.site.register(PurchaseOrder)
+admin.site.register(SaleOrder)
+admin.site.register(Port)
+admin.site.register(ProcessingPlant)
+admin.site.register(Incoterms)
