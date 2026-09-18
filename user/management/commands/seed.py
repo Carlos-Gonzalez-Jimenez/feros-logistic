@@ -1,5 +1,4 @@
 import os
-
 import pandas as pd
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -25,17 +24,11 @@ from core.models import (
     Brand,
     Provider,
     Country,
-    Category,
-    OrderStatus,
-    Province,
-    Municipality,
     NotificationType,
     Specifications,
     Config,
 )
-from delivery.models import ShippingZone, ShippingMethod, ShippingRate
 from logistic_backend.settings import APPLICATION_DATA_PATH
-from payments.models import PaymentMethod, Wallet
 from user.models import User
 
 # python manage.py seed

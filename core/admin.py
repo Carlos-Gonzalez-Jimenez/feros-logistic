@@ -2,7 +2,6 @@ from django.contrib import admin
 from core.models import (
     Currency,
     Product,
-    CompositeProduct,
     Category,
     Measurement_Unit,
     Provider,
@@ -12,22 +11,8 @@ from core.models import (
     NotificationUser,
     Specifications,
     SpecificationDetails,
-    Order,
-    OrderStatus,
     Brand,
-    Review,
-    Province,
-    Municipality,
-    ContactAddress,
-    OrderProducts,
-    OrderTracking,
-    Cart,
     Config,
-    Batch,
-    BatchItem,
-    ProductBatch,
-    VehicleType,
-    Vehicle,
     PurchaseOrder,
     SaleOrder,
     Port,
@@ -37,7 +22,6 @@ from core.models import (
 
 admin.site.register(Currency)
 admin.site.register(Product)
-admin.site.register(CompositeProduct)
 admin.site.register(Category)
 admin.site.register(Measurement_Unit)
 admin.site.register(Provider)
@@ -47,22 +31,8 @@ admin.site.register(NotificationType)
 admin.site.register(NotificationUser)
 admin.site.register(Specifications)
 admin.site.register(SpecificationDetails)
-admin.site.register(Order)
-admin.site.register(OrderStatus)
 admin.site.register(Brand)
-admin.site.register(Review)
-admin.site.register(Province)
-admin.site.register(Municipality)
-admin.site.register(ContactAddress)
-admin.site.register(OrderProducts)
-admin.site.register(OrderTracking)
-admin.site.register(Cart)
 admin.site.register(Config)
-admin.site.register(Batch)
-admin.site.register(BatchItem)
-admin.site.register(ProductBatch)
-admin.site.register(VehicleType)
-admin.site.register(Vehicle)
 admin.site.register(PurchaseOrder)
 admin.site.register(SaleOrder)
 admin.site.register(Port)

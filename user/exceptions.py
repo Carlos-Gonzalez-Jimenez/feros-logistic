@@ -27,18 +27,6 @@ class UserNotStaffException(APIException):
     default_code = "user_not_staff"
 
 
-class UserNotDelivererException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _("User not deliverer")
-    default_code = "user_not_deliverer"
-
-
-class UserNotClientException(APIException):
-    status_code = status.HTTP_400_BAD_REQUEST
-    default_detail = _("User not client")
-    default_code = "user_not_client"
-
-
 class VerificationCodeNotSentException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = _("Error sending verification code")

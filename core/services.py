@@ -13,24 +13,11 @@ from core.exceptions import (
     ConfigurationDoesNotExistException,
 )
 from core.models import (
-    OrderTracking,
     Notification,
     NotificationUser,
     NotificationType,
     Product,
-    OrderProducts,
     Config,
-    Order,
-    OrderStatus,
-)
-from core.odoo import sync_order_with_odoo_task
-from delivery.exceptions import (
-    OrderShippingDoesNotExistException,
-    OrderHasNotShipingRateException,
-)
-from delivery.models import OrderShipping
-from payments.exceptions import (
-    PaymentNotCompletedException,
 )
 
 
@@ -196,25 +183,29 @@ class WAHAService:
 
 
 def create_notification_task(
-        user_ids: list, title: str, final_message: str, notification_type: NotificationType
+    user_ids: list, title: str, final_message: str, notification_type: NotificationType
 ) -> bool:
     """Crea notificación en BD"""
 
-    notification = Notification.objects.create(title=title, message=final_message, notification_type=notification_type)
+    notification = Notification.objects.create(
+        title=title, message=final_message, notification_type=notification_type
+    )
 
     notification_users = []
     for user_id in user_ids:
-        notification_users.append(NotificationUser(notification=notification, user_id=user_id))
+        notification_users.append(
+            NotificationUser(notification=notification, user_id=user_id)
+        )
 
     NotificationUser.objects.bulk_create(notification_users)
     return True
 
 
 def create_whatsapp_task(
-        whatsapp_chat_id: str,
-        final_message: str,
-        notification_type: NotificationType,
-        typing_duration: float,
+    whatsapp_chat_id: str,
+    final_message: str,
+    notification_type: NotificationType,
+    typing_duration: float,
 ) -> bool:
     """Envía notificación por WhatsApp"""
     typing_timer = max(10, ceil(typing_duration))
@@ -240,7 +231,7 @@ class BaseNotificationChannel(ABC):
 
     @abstractmethod
     def send(
-            self, users, title: str, message: str, notification_type_name: str
+        self, users, title: str, message: str, notification_type_name: str
     ) -> bool:
         """
         Envía notificación a través del canal seleccionado a todos los destinatarios
@@ -283,7 +274,7 @@ class InAppNotificationChannel(BaseNotificationChannel):
     """
 
     def send(
-            self, users: list, title: str, message: str, notification_type_name: str
+        self, users: list, title: str, message: str, notification_type_name: str
     ) -> bool:
         """
         Envia notificación
@@ -306,7 +297,9 @@ class InAppNotificationChannel(BaseNotificationChannel):
         except NotificationType.DoesNotExist:
             return False
         user_ids = [user.id for user in users]
-        async_task(create_notification_task, user_ids, title, message, notification_type)
+        async_task(
+            create_notification_task, user_ids, title, message, notification_type
+        )
         return True
 
     def can_send(self, user):
@@ -323,7 +316,7 @@ class WhatsAppNotificationChannel(BaseNotificationChannel):
     """
 
     def send(
-            self, users: list, title: str, message: str, notification_type_name: str
+        self, users: list, title: str, message: str, notification_type_name: str
     ) -> bool:
         """
         Envia notificación
@@ -416,12 +409,12 @@ class NotificationMediator:
         }
 
     def send_notification(
-            self,
-            title: str,
-            message: str,
-            users: list,
-            notification_type_name: str,
-            channels=None,
+        self,
+        title: str,
+        message: str,
+        users: list,
+        notification_type_name: str,
+        channels=None,
     ) -> bool:
         """
         Enviar notificaciones
@@ -454,11 +447,11 @@ class NotificationService:
 
     @staticmethod
     def send_notification(
-            title: str,
-            message: str,
-            users,
-            notification_type_name: str,
-            channels=None,
+        title: str,
+        message: str,
+        users,
+        notification_type_name: str,
+        channels=None,
     ) -> bool:
         """
         Método estático para crear y enviar notificaciones
@@ -547,7 +540,9 @@ class NormalStateHandler(OrderStateHandler):
         try:
             self._create_tracking(order, self.next_status, observations)
             self._send_notification(order, self.next_status)
-            order_shipping = OrderShipping.objects.select_related("shipping_rate").get(order=order)
+            order_shipping = OrderShipping.objects.select_related("shipping_rate").get(
+                order=order
+            )
 
             if not order_shipping.shipping_rate:
                 raise OrderHasNotShipingRateException()
@@ -560,7 +555,7 @@ class NormalStateHandler(OrderStateHandler):
             OrderShipping.objects.filter(id=order_shipping.id).update(
                 shipped_at=current_time,
                 estimated_delivery_at=current_time
-                                      + datetime.timedelta(minutes=estimated_delivery_time),
+                + datetime.timedelta(minutes=estimated_delivery_time),
             )
         except OrderShipping.DoesNotExist as exception:
             raise OrderShippingDoesNotExistException() from exception
@@ -579,22 +574,23 @@ class NormalStateHandler(OrderStateHandler):
             self.next_status = OrderStatus.objects.get(code_name="completed")
             self._handle_completed_status(order, None)
 
-    def _handle_completed_status(self, order: Order, observations: str = None):
-        if order.pending_amount != 0:
-            raise PaymentNotCompletedException()
+    def _handle_completed_status(self, order, observations: str = None):
+        pass
+        # if order.pending_amount != 0:
+        #     raise PaymentNotCompletedException()
 
-        try:
-            shipping = order.shipping
-        except Exception as e:
-            shipping = None
-        if not shipping or (shipping and shipping.delivered_at):
-            self._create_tracking(
-                order,
-                self.next_status,
-                f"Cambio automático de estado [{self.next_status.name}]",
-            )
-            self._send_notification(order, self.next_status)
-            tasks.decrease_stock(order)
+        # try:
+        #     shipping = order.shipping
+        # except Exception as e:
+        #     shipping = None
+        # if not shipping or (shipping and shipping.delivered_at):
+        #     self._create_tracking(
+        #         order,
+        #         self.next_status,
+        #         f"Cambio automático de estado [{self.next_status.name}]",
+        #     )
+        #     self._send_notification(order, self.next_status)
+        #     tasks.decrease_stock(order)
 
     def can_transition_from(self, current_status):
         return abs(self.next_status.order - current_status.order) == 1
@@ -630,9 +626,7 @@ class SpecialTransitionHandler(OrderStateHandler):
         cs = current_status.code_name
         ns = self.next_status.code_name
 
-        return any([
-            (cs == 'pick_up' and ns == 'delivered')
-        ])
+        return any([cs == "pick_up" and ns == "delivered"])
 
     def handle_transition(self, order, observations):
         self._create_tracking(order, self.next_status, observations)
@@ -658,7 +652,9 @@ class FinalStateHandler(NormalStateHandler):
         self._create_tracking(order, self.next_status, observations)
         self._send_notification(order, self.next_status)
 
-        order_products = OrderProducts.objects.select_related("product").filter(order_id=order.id)
+        order_products = OrderProducts.objects.select_related("product").filter(
+            order_id=order.id
+        )
         products_to_update = []
 
         for op in order_products:

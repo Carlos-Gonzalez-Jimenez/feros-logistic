@@ -4,7 +4,6 @@ from django_filters import rest_framework as filters
 from user.models import User, EventLog
 from django.contrib.auth.models import Group
 
-
 class UserFilter(filters.FilterSet):
 
     role = ModelChoiceFilter(
@@ -15,12 +14,11 @@ class UserFilter(filters.FilterSet):
         return queryset.filter(groups=value)
 
     staff = BooleanFilter(field_name="is_staff")
-    delivery = BooleanFilter(field_name="is_deliverer")
     superuser = BooleanFilter(field_name="is_superuser")
 
     class Meta:
         model = User
-        fields = ["staff", "superuser", "delivery", "groups"]
+        fields = ["staff", "superuser", "groups"]
 
 
 class EventLogFilter(filters.FilterSet):

@@ -1,20 +1,17 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.utils.timezone import now
-
 from core.models import Config
-from payments.models import Wallet
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
 from logistic_backend.settings import MEDIA_URL
-from user.models import User, EventLog, Fee, Organization
+from user.models import User, EventLog
 from user.exceptions import (
     NotMatchException,
     UserNotActiveException,
     UserNotVerifiedException,
 )
-from core.services import WAHAService
 from django.db import transaction
 from django.template.loader import get_template
 from .tasks import send_mail, password_generator
@@ -77,53 +74,16 @@ class RoleSerializer(serializers.ModelSerializer):
             return instance
 
 
-class OrganizationSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = Organization
-        fields = "__all__"
-
-
-class FeeSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = Fee
-        fields = "__all__"
-
-    def create(self, validated_data):
-        with transaction.atomic():
-            default = validated_data["default"]
-
-            if default:
-                fees = Fee.objects.filter(default=True)
-                if fees.exists():
-                    fees.update(default=False)
-            fee = Fee.objects.create(**validated_data)
-            return fee
-
-    def update(self, instance, validated_data):
-        with transaction.atomic():
-            instance = super(FeeSerializer, self).update(instance, validated_data)
-
-            if instance.default:
-                Fee.objects.filter(default=True).exclude(id=instance.id).update(
-                    default=False
-                )
-
-            return instance
-
-
 class UserMinimalSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     email = serializers.EmailField(required=True, allow_blank=True, allow_null=True)
     profile_photo = serializers.ImageField(read_only=True)
     full_name = serializers.SerializerMethodField()
@@ -149,7 +109,6 @@ class UserMinimalSerializer(serializers.ModelSerializer):
             "verified",
             "whatsapp_chat_id",
             "next_login_change_password",
-            "newsletter",
             "date_joined",
         ]
 
@@ -157,7 +116,7 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         return f"{obj.first_name} {obj.last_name}"
 
 
-class EmployeeSerializer(UserMinimalSerializer):
+class UserSerializer(UserMinimalSerializer):
     """_summary_
 
     Args:
@@ -167,7 +126,6 @@ class EmployeeSerializer(UserMinimalSerializer):
         _type_: _description_
     """
 
-    email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
     groups = serializers.SerializerMethodField()
     groups_id = serializers.PrimaryKeyRelatedField(
         required=True, many=True, queryset=Group.objects.all(), source="groups"
@@ -177,7 +135,6 @@ class EmployeeSerializer(UserMinimalSerializer):
         model = User
         fields = UserMinimalSerializer.Meta.fields + [
             "is_superuser",
-            "is_deliverer",
             "groups",
             "groups_id",
         ]
@@ -205,20 +162,19 @@ class EmployeeSerializer(UserMinimalSerializer):
             user.check_terms_conditions = True
             user.check_privacy_policy = True
             user.save()
-            Wallet.objects.create(user=user)
             return user
 
     def update(self, instance, validated_data):
         with transaction.atomic():
             groups = validated_data.pop("groups_id", None)
-            instance = super(EmployeeSerializer, self).update(instance, validated_data)
+            instance = super(UserSerializer, self).update(instance, validated_data)
             if groups:
                 instance.groups.clear()
                 instance.groups.set(groups)
             return instance
 
 
-class UserSerializer(UserMinimalSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
     """_summary_
 
     Args:
@@ -228,50 +184,7 @@ class UserSerializer(UserMinimalSerializer):
         _type_: _description_
     """
 
-    fee = FeeSerializer(read_only=True)
-    fee_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=Fee.objects.all(), source="fee"
-    )
-    organization = OrganizationSerializer(read_only=True)
-    organization_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=Organization.objects.all(), source="organization"
-    )
-
-    class Meta:
-        model = User
-        fields = UserMinimalSerializer.Meta.fields + [
-            "fee",
-            "fee_id",
-            "organization",
-            "organization_id",
-        ]
-
-    def create(self, validated_data):
-        with transaction.atomic():
-            password = validated_data.pop("password", None)
-            user = User.objects.create(**validated_data)
-            if password:
-                user.set_password(password)
-            user.next_login_change_password = False
-            user.check_terms_conditions = True
-            user.check_privacy_policy = True
-            user.is_staff = False
-            user.save()
-            Wallet.objects.create(user=user)
-            return user
-
-
-class EmployeeRegisterSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
+    email = serializers.EmailField(required=True)
     groups = serializers.ListField(required=False, write_only=True)
     phone_number = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, default=None
@@ -291,7 +204,7 @@ class EmployeeRegisterSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        instance = super(EmployeeRegisterSerializer, self).create(validated_data)
+        instance = super(UserRegisterSerializer, self).create(validated_data)
         password = password_generator.generate()
         instance.set_password(password)
         instance.next_login_change_password = True
@@ -300,7 +213,6 @@ class EmployeeRegisterSerializer(serializers.ModelSerializer):
         instance.check_terms_conditions = True
         instance.check_privacy_policy = True
         instance.save()
-        Wallet.objects.create(user=instance)
         config_settings = Config.objects.get()
         context = {
             "logo": self.context.get("request").build_absolute_uri(
@@ -314,95 +226,10 @@ class EmployeeRegisterSerializer(serializers.ModelSerializer):
         message = get_template("mailing/staff_welcome.html").render(context)
         send_mail(
             [instance.email],
-            "Bienvenido a la plataforma de ventas FEROS GRUPO S.U.R.L.A",
+            "Bienvenido a la plataforma de control de importaciones FEROS GRUPO S.U.R.L.",
             message,
         )
         return instance
-
-    def save(self, **kwargs):
-        with transaction.atomic():
-            user = super(EmployeeRegisterSerializer, self).save(**kwargs)
-            return user
-
-
-class UserRegisterSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    email = serializers.EmailField(required=True, allow_blank=False, allow_null=False)
-    fee = FeeSerializer(read_only=True)
-    fee_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=Fee.objects.all(), source="fee", allow_null=True
-    )
-    check_terms_conditions = serializers.BooleanField(required=True)
-    check_privacy_policy = serializers.BooleanField(required=True)
-    phone_number = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=None
-    )
-
-    def validate(self, attrs):
-        if not attrs.get("check_terms_conditions"):
-            raise serializers.ValidationError(
-                _("You must accept the terms and conditions")
-            )
-        if not attrs.get("check_privacy_policy"):
-            raise serializers.ValidationError(_("You must accept the privacy policy"))
-        return attrs
-
-    class Meta:
-        model = User
-        fields = [
-            "email",
-            "dni",
-            "password",
-            "first_name",
-            "last_name",
-            "phone_number",
-            "fee",
-            "fee_id",
-            "date_joined",
-            "newsletter",
-            "check_terms_conditions",
-            "check_privacy_policy",
-        ]
-
-    def create(self, validated_data):
-        user = super(UserRegisterSerializer, self).create(validated_data)
-        password = validated_data.get("password")
-        user.set_password(password)
-        user.is_active = False
-        user.fee = Fee.objects.filter(default=True).first()
-        user.save()
-        Wallet.objects.create(user=user)
-
-        Token.objects.filter(user=user).delete()
-        token = Token.objects.create(user=user)
-
-        config_settings = Config.objects.get()
-        client_confirm_register_url = (
-            f"{config_settings.confirm_register_url}/{str(token)}"
-        )
-        context = {
-            "logo": self.context.get("request").build_absolute_uri(
-                f"{MEDIA_URL}{config_settings.logo_light}"
-            ),
-            "user_name": f"{user.first_name} {user.last_name}",
-            "business_name": config_settings.business_name,
-            "confirm_url": client_confirm_register_url,
-        }
-        message = get_template("mailing/clients_welcome.html").render(context)
-        send_mail(
-            [user.email],
-            "Bienvenido a la plataforma de ventas FEROS GRUPO S.U.R.L.",
-            message,
-        )
-        return user
 
     def save(self, **kwargs):
         with transaction.atomic():
@@ -478,14 +305,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     profile_photo_file = serializers.ImageField(
         write_only=True, source="profile_photo", required=False
     )
-    fee = FeeSerializer(read_only=True)
-    fee_id = serializers.PrimaryKeyRelatedField(
-        required=False, source="fee", read_only=True
-    )
-    organization = OrganizationSerializer(read_only=True)
-    organization_id = serializers.PrimaryKeyRelatedField(
-        required=False, read_only=True, source="organization"
-    )
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -501,19 +320,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "is_staff",
-            "is_deliverer",
             "phone_number",
-            "newsletter",
             "check_terms_conditions",
             "check_privacy_policy",
             "verified",
             "whatsapp_chat_id",
             "next_login_change_password",
             "groups",
-            "fee",
-            "fee_id",
-            "organization",
-            "organization_id",
             "date_joined",
         ]
 
@@ -534,7 +347,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    Serializer for user login authentication
+    Serializer for employee login authentication
     """
 
     email = serializers.EmailField(write_only=True)

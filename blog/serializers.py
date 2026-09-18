@@ -6,7 +6,6 @@ from cms.serializers import (
     get_any_blocks,
 )
 from cms.models import Composer, ContentType
-from cms.exceptions import InvalidContentTypeException
 from user.serializers import UserMinimalSerializer
 from django.db import transaction
 from django.utils.text import slugify

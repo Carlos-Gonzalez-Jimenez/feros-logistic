@@ -67,10 +67,6 @@ INSTALLED_APPS = [
     "core.apps.CoreConfig",
     "dashboard.apps.DashboardConfig",
     "blog.apps.BlogConfig",
-    "delivery.apps.DeliveryConfig",
-    "payments.apps.PaymentsConfig",
-    "pos.apps.PosConfig",
-    "promotions.apps.PromotionsConfig",
     "user.apps.UserConfig",
 ]
 

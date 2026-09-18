@@ -1,14 +1,8 @@
 from decimal import Decimal
-from math import ceil
-
-import pandas as pd
 from django.db import transaction
-from django.db.models import Avg, Count
-from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from cms.models import Composer, ContentType, BlockMEDIA
 from cms.serializers import (
     BlockMEDIASerializer,
@@ -17,14 +11,10 @@ from cms.serializers import (
 )
 from core import models
 from core.services import NotificationService
-from delivery.models import ShippingRate
-from payments.models import Payment, PaymentMethod
-from promotions.models import Coupon
 from user.models import User
-from user.serializers import UserSerializer, UserMinimalSerializer
 
 
-class BatchSerializer(serializers.ModelSerializer):
+class ShippingCompanySerializer(serializers.ModelSerializer):
     """_summary_
 
     Args:
@@ -32,142 +22,44 @@ class BatchSerializer(serializers.ModelSerializer):
     """
 
     class Meta:
-        model = models.Batch
+        model = models.ShippingCompany
         fields = "__all__"
 
 
-class BatchItemSerializer(serializers.ModelSerializer):
+class VesselSerializer(serializers.ModelSerializer):
     """_summary_
 
     Args:
         serializers (_type_): _description_
     """
 
-    batch_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Batch.objects.all(),
-        required=True,
-        source="batch",
+    shipping_company = ShippingCompanySerializer(read_only=True)
+    shipping_company_id = serializers.PrimaryKeyRelatedField(
+        allow_null=True,
+        required=False,
+        queryset=models.ShippingCompany.objects.all(),
+        source="shipping_company",
     )
-    product_name = serializers.SerializerMethodField()
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Product.objects.all(),
-        source="product",
-    )
-    total_amount = serializers.SerializerMethodField()
-    commercial_margin = serializers.SerializerMethodField()
-    unit_profit = serializers.SerializerMethodField()
-    total_profit = serializers.SerializerMethodField()
-    real_profit = serializers.SerializerMethodField()
-    break_event_point = serializers.SerializerMethodField()
 
     class Meta:
-        model = models.BatchItem
+        model = models.Vessel
         fields = [
-            "id",
-            "product_name",
-            "quantity",
-            "quantity_sold",
-            "amount_sold",
-            "cost_price",
-            "sale_price",
-            "sold",
-            "batch_id",
-            "product_id",
-            "total_amount",
-            "commercial_margin",
-            "unit_profit",
-            "total_profit",
-            "real_profit",
-            "break_event_point",
+            "name",
+            "shipping_company",
+            "shipping_company_id",
+            "active",
         ]
 
-    def get_product_name(self, obj):
-        return obj.product.name
 
-    def get_total_amount(self, obj) -> Decimal:
-        return obj.quantity * obj.sale_price
+class ContainerTypeSerializer(serializers.ModelSerializer):
+    """_summary_
 
-    def get_commercial_margin(self, obj) -> Decimal:
-        if obj.sale_price == 0:
-            return Decimal("0.00")
-        return (obj.sale_price - obj.cost_price) / obj.sale_price
-
-    def get_unit_profit(self, obj) -> Decimal:
-        return obj.sale_price - obj.cost_price
-
-    def get_total_profit(self, obj) -> Decimal:
-        return obj.quantity * self.get_unit_profit(obj)
-
-    def get_real_profit(self, obj) -> Decimal:
-        profit = obj.amount_sold - (obj.cost_price * obj.quantity)
-        if profit < 0:
-            return Decimal("0.00")
-        return profit
-
-    def get_break_event_point(self, obj):
-        if obj.sale_price == 0:
-            return None
-        return ceil(abs(obj.cost_price / obj.sale_price) * obj.quantity)
-
-
-class BatchImportSerializer(serializers.Serializer):
-    batch_items_file = serializers.FileField()
-
-    def validate_batch_items_file(self, value):
-        if not value.name.endswith(".xlsx"):
-            raise serializers.ValidationError(
-                _("The file must be an Excel file (.xlsx)")
-            )
-        df = pd.read_excel(value)
-        required_columns = [
-            "Código / No. de Parte",
-            "Nombre del Producto",
-            "Cantidad",
-            "Precio Costo USD",
-        ]
-        columns_df = df.columns.tolist()
-        for column in required_columns:
-            if column not in columns_df:
-                raise serializers.ValidationError(
-                    _("Required column not found in the Excel file")
-                )
-
-        rows = []
-        for index, row in df.iterrows():
-            rows.append(
-                {
-                    "part_code": str(row["Código / No. de Parte"]),
-                    "name": str(row["Nombre del Producto"]),
-                    "quantity": int(row["Cantidad"]),
-                    "cost_price": Decimal(row["Precio Costo USD"]),
-                }
-            )
-
-        return rows
-
-
-class BatchSalesReportSerializer(serializers.Serializer):
-    batch_id = serializers.IntegerField()
-    batch_identificator = serializers.CharField()
-    received_date = serializers.DateField()
-    exchange_rate = serializers.DecimalField(max_digits=10, decimal_places=2)
-    invoice_number = serializers.CharField()
-    part_code = serializers.CharField()
-    product_name = serializers.CharField()
-    product_id = serializers.IntegerField(allow_null=True)
-    cost_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    sale_price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_quantity = serializers.DecimalField(max_digits=10, decimal_places=2)
-    sold_quantity = serializers.DecimalField(max_digits=10, decimal_places=2)
-    remaining_quantity = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_cost = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_revenue = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_profit = serializers.DecimalField(max_digits=10, decimal_places=2)
-    profit_margin_percentage = serializers.DecimalField(max_digits=10, decimal_places=2)
-    total_orders = serializers.IntegerField()
-    average_selling_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    Args:
+        serializers (_type_): _description_
+    """
 
     class Meta:
+        model = models.ContainerType
         fields = "__all__"
 
 
@@ -206,61 +98,6 @@ class NotificationTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.NotificationType
         fields = "__all__"
-
-
-class VehicleTypeSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = models.VehicleType
-        fields = "__all__"
-
-
-class VehicleSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    vehicle_type = VehicleTypeSerializer(read_only=True)
-    vehicle_type_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.VehicleType.objects.all(),
-        required=True,
-        source="vehicle_type",
-    )
-    driver = UserSerializer(read_only=True)
-    driver_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.User.objects.all(),
-        source="driver",
-        required=True,
-    )
-
-    class Meta:
-        model = models.Vehicle
-        fields = [
-            "id",
-            "plate",
-            "avg_fuel_consumption",
-            "vehicle_type",
-            "vehicle_type_id",
-            "driver",
-            "driver_id",
-            "active",
-        ]
-
-
-class VehicleLocationSerializer(serializers.ModelSerializer):
-    vehicle = VehicleSerializer()
-    driver = UserMinimalSerializer()
-
-    class Meta:
-        model = models.VehicleLocation
-        fields = serializers.ALL_FIELDS
 
 
 class NotificationUserSerializer(serializers.ModelSerializer):
@@ -488,392 +325,6 @@ class MeasurementUnitSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class OrderStatusSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = models.OrderStatus
-        fields = "__all__"
-
-
-class OrderTrackingSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    status = OrderStatusSerializer(read_only=True)
-    status_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=models.OrderStatus.objects.all(),
-        source="status",
-    )
-
-    class Meta:
-        model = models.OrderTracking
-        fields = [
-            "id",
-            "order_tracking_date",
-            "observations",
-            "order_id",
-            "status",
-            "status_id",
-        ]
-
-
-class CreditTypeSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = models.CreditType
-        fields = "__all__"
-
-
-class ProvinceSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    class Meta:
-        model = models.Province
-        fields = "__all__"
-
-
-class MunicipalitySerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    province = ProvinceSerializer(read_only=True)
-    province_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=models.Province.objects.all(),
-        source="province",
-    )
-
-    class Meta:
-        model = models.Municipality
-        fields = ["id", "name", "province", "province_id"]
-
-
-class ContactAddressSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    user_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=False,
-        write_only=True,
-        source="user",
-        queryset=models.User.objects.filter(is_staff=False).all(),
-    )
-    municipality = MunicipalitySerializer(read_only=True)
-    municipality_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=models.Municipality.objects.all(),
-        source="municipality",
-    )
-    province_id = serializers.SerializerMethodField()
-    province = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.ContactAddress
-        fields = [
-            "id",
-            "address",
-            "reference",
-            "default",
-            "municipality",
-            "municipality_id",
-            "province",
-            "province_id",
-            "user_id",
-        ]
-
-    def get_province_id(self, obj) -> int:
-        return obj.municipality.province.id
-
-    def get_province(self, obj) -> str:
-        return ProvinceSerializer(obj.municipality.province).data
-
-    def create(self, validated_data):
-        with transaction.atomic():
-            user = validated_data.get("user", self.context.get("request").user)
-            address = validated_data["address"]
-            default = validated_data["default"]
-            municipality = validated_data["municipality"]
-
-            if default:
-                contact_addresses = models.ContactAddress.objects.filter(user=user)
-                if contact_addresses.exists():
-                    contact_addresses.update(default=False)
-
-            contact_address = models.ContactAddress.objects.create(
-                address=address, default=default, municipality=municipality, user=user
-            )
-            return contact_address
-
-    def update(self, instance, validated_data):
-        with transaction.atomic():
-            instance = super(ContactAddressSerializer, self).update(
-                instance, validated_data
-            )
-
-            if instance.default:
-                models.ContactAddress.objects.filter(user=instance.user).exclude(
-                    id=instance.id
-                ).update(default=False)
-
-            return instance
-
-
-def order_gross_weight(order_products: list[models.OrderProducts]) -> Decimal:
-    total_order_gross_weight = sum(
-        [
-            order_product.quantity * order_product.product.gross_weight
-            for order_product in order_products
-        ]
-    )
-    return Decimal(total_order_gross_weight)
-
-
-def order_net_weight(order_products: list[models.OrderProducts]) -> Decimal:
-    total_order_net_weight = sum(
-        [
-            order_product.quantity * order_product.product.net_weight
-            for order_product in order_products
-        ]
-    )
-    return Decimal(total_order_net_weight)
-
-
-class OrderMinimalSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    client = UserSerializer(read_only=True)
-    credit_type = CreditTypeSerializer(read_only=True)
-    total_gross_weight = serializers.SerializerMethodField()
-    total_net_weight = serializers.SerializerMethodField()
-    current_status = serializers.SerializerMethodField()
-    total_products = serializers.SerializerMethodField()
-    shipping = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.Order
-        fields = [
-            "id",
-            "creation_date",
-            "expiration_date",
-            "amount",
-            "credit_amount",
-            "total_discount",
-            "pending_amount",
-            "payment_deadline",
-            "total_amount",
-            "total_gross_weight",
-            "total_net_weight",
-            "client",
-            "credit_type",
-            "current_status",
-            "total_products",
-            "shipping",
-        ]
-
-    def get_shipping(self, obj) -> dict | None:
-        from delivery.serializers import OrderShippingSerializer
-
-        if hasattr(obj, "shipping"):
-            return OrderShippingSerializer(obj.shipping).data
-        return None
-
-    def get_total_products(self, obj) -> int:
-        return models.OrderProducts.objects.filter(order=obj).count()
-
-    def get_current_status(self, obj) -> dict | None:
-        return OrderTrackingSerializer(obj.current_status).data
-
-    def get_total_gross_weight(self, obj) -> Decimal:
-        order_products = models.OrderProducts.objects.filter(order=obj)
-        if order_products.exists():
-            return order_gross_weight(order_products)
-        return Decimal("0.00")
-
-    def get_total_net_weight(self, obj) -> Decimal:
-        order_products = models.OrderProducts.objects.filter(order=obj)
-        if order_products.exists():
-            return order_net_weight(order_products)
-        return Decimal("0.00")
-
-
-class OrderSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    client = UserSerializer(read_only=True)
-    client_id = serializers.PrimaryKeyRelatedField(
-        required=False,
-        queryset=models.User.objects.all(),
-        source="client",
-    )
-    credit_type = CreditTypeSerializer(read_only=True)
-    credit_type_id = serializers.PrimaryKeyRelatedField(
-        required=False,
-        allow_null=True,
-        queryset=models.CreditType.objects.all(),
-        source="credit_type",
-    )
-    seller = UserSerializer(read_only=True)
-    payments = serializers.SerializerMethodField()
-    shipping = serializers.SerializerMethodField()
-    order_products = serializers.SerializerMethodField()
-    order_statuses = serializers.SerializerMethodField()
-    total_gross_weight = serializers.SerializerMethodField()
-    total_net_weight = serializers.SerializerMethodField()
-    current_status = serializers.SerializerMethodField()
-    merged = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.Order
-        fields = [
-            "id",
-            "creation_date",
-            "expiration_date",
-            "amount",
-            "credit_amount",
-            "total_discount",
-            "pending_amount",
-            "payment_deadline",
-            "total_amount",
-            "total_gross_weight",
-            "total_net_weight",
-            "observations",
-            "percentual_fee",
-            "fixed_fee",
-            "client",
-            "client_id",
-            "credit_type",
-            "credit_type_id",
-            "seller",
-            "merged",
-            "current_status",
-            "order_products",
-            "order_statuses",
-            "payments",
-            "shipping",
-        ]
-
-    def get_payments(self, obj) -> dict:
-        from payments.serializers import PaymentSerializer
-
-        payments = Payment.objects.filter(order=obj)
-        return PaymentSerializer(
-            payments, many=True, context={"request": self.context.get("request")}
-        ).data
-
-    def get_shipping(self, obj) -> dict | None:
-        from delivery.serializers import OrderShippingSerializer
-
-        if hasattr(obj, "shipping"):
-            return OrderShippingSerializer(obj.shipping).data
-        return None
-
-    def get_order_products(self, obj) -> dict | None:
-        order_products = models.OrderProducts.objects.filter(order=obj)
-        if order_products.exists():
-            return OrderProductsSerializer(
-                order_products,
-                many=True,
-                context={"request": self.context.get("request")},
-            ).data
-        return None
-
-    def get_order_statuses(self, obj) -> dict | None:
-        order_statuses = models.OrderTracking.objects.filter(order=obj).order_by("id")
-        if order_statuses.exists():
-            return OrderTrackingSerializer(order_statuses, many=True).data
-        return None
-
-    def get_current_status(self, obj) -> dict | None:
-        return OrderTrackingSerializer(obj.current_status).data
-
-    def get_total_gross_weight(self, obj) -> Decimal:
-        order_products = models.OrderProducts.objects.filter(order=obj)
-        if order_products.exists():
-            return order_gross_weight(order_products)
-        return Decimal("0.00")
-
-    def get_total_net_weight(self, obj) -> Decimal:
-        order_products = models.OrderProducts.objects.filter(order=obj)
-        if order_products.exists():
-            return order_net_weight(order_products)
-        return Decimal("0.00")
-
-    def get_merged(self, obj) -> bool:
-        return models.Order.objects.filter(merge=obj.id).exists()
-
-
-class OrderAddPaymentSerializer(serializers.Serializer):
-    amount = serializers.DecimalField(
-        max_digits=10, decimal_places=2, min_value=Decimal("0.01")
-    )
-    payment_method_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=PaymentMethod.objects.filter(active=True, use_in_pos=True),
-    )
-    paid = serializers.BooleanField(required=True, allow_null=False)
-
-
-class ReviewSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    user = UserSerializer(read_only=True)
-    user_id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=models.User.objects.all(),
-        source="user",
-    )
-    product_id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=models.Product.objects.all(),
-        source="product",
-    )
-
-    class Meta:
-        model = models.Review
-        fields = ["comment", "rating", "review_date", "product_id", "user", "user_id"]
-
-
 class SpecificationsSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -969,21 +420,6 @@ class ProductWriteSerializer(serializers.ModelSerializer):
     gross_weight = serializers.DecimalField(
         max_digits=10, decimal_places=2, required=False, default=Decimal("0.00")
     )
-    daily_variation = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00"), read_only=True
-    )
-    wholesale_minimum = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.00"),
-    )
-    wholesale_price = serializers.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal("0.00"),
-    )
-    price_per_box = serializers.SerializerMethodField()
-    reviews = serializers.SerializerMethodField()
     blocks = serializers.ListField(write_only=True, required=False, allow_null=True)
 
     class Meta:
@@ -1009,60 +445,16 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "category_id",
             "quantity",
             "net_content",
-            "price_per_box",
             "cost_price",
             "unit_price",
-            "wholesale_price",
-            "has_wholesale_price",
-            "wholesale_minimum",
             "net_weight",
             "gross_weight",
             "quantity_per_box",
-            "daily_variation",
-            "minimal_stock",
             "description",
-            "on_offer",
             "use_custom_template",
             "active",
-            "reviews",
             "blocks",
         ]
-
-    def get_reviews(self, obj) -> dict:
-        reviews = models.Review.objects.filter(product=obj).aggregate(
-            total=Count("id"), rating_avg=Avg("rating")
-        )
-        return reviews
-
-    def get_price_per_box(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return obj.quantity_per_box * obj.unit_price
-        user = request.user
-        if user.is_authenticated:
-            return obj.quantity_per_box * obj.sell_price(user.fee)
-        return obj.quantity_per_box * obj.unit_price
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-
-        has_wholesale_price = attrs.get("has_wholesale_price")
-        wholesale_price = attrs.get("wholesale_price")
-        wholesale_minimum = attrs.get("wholesale_minimum")
-
-        errors = {}
-
-        if has_wholesale_price and not wholesale_price:
-            errors["wholesale_price"] = [_("There must be a wholesale price.")]
-        if has_wholesale_price and not wholesale_minimum:
-            errors["wholesale_minimum"] = [
-                _("There must be a minimum wholesale quantity.")
-            ]
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        return attrs
 
     def create(self, validated_data):
         with transaction.atomic():
@@ -1078,7 +470,6 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                         specification=detail["specification"],
                         value=detail["value"],
                     )
-            # product.product_images.set(product_images)
             if product_images:
                 all_medias = []
                 for media in product_images:
@@ -1108,7 +499,6 @@ class ProductWriteSerializer(serializers.ModelSerializer):
                         specification=detail["specification"],
                         value=detail["value"],
                     )
-            # instance.product_images.set(product_images)
             models.ProductImageOrder.objects.filter(product=instance).delete()
             if product_images:
                 all_medias = []
@@ -1185,12 +575,7 @@ class ProductReadSerializer(serializers.ModelSerializer):
         queryset=models.SpecificationDetails.objects.all(),
         source="specifications",
     )
-    price_per_box = serializers.SerializerMethodField()
-    reviews = serializers.SerializerMethodField()
     blocks = serializers.SerializerMethodField()
-    unit_price = serializers.SerializerMethodField()
-    wholesale_price = serializers.SerializerMethodField()
-    daily_variation = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Product
@@ -1216,67 +601,16 @@ class ProductReadSerializer(serializers.ModelSerializer):
             "category_id",
             "quantity",
             "net_content",
-            "price_per_box",
             "cost_price",
             "unit_price",
-            "wholesale_price",
-            "has_wholesale_price",
-            "wholesale_minimum",
             "net_weight",
             "gross_weight",
             "quantity_per_box",
-            "daily_variation",
-            "minimal_stock",
             "description",
-            "on_offer",
             "use_custom_template",
             "active",
-            "reviews",
             "blocks",
         ]
-
-    def get_reviews(self, obj) -> dict:
-        reviews = models.Review.objects.filter(product=obj).aggregate(
-            total=Count("id"), rating_avg=Avg("rating")
-        )
-        return reviews
-
-    def get_unit_price(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return Decimal("0.00")
-        user = request.user
-        if user.is_authenticated:
-            return obj.sell_price(user.fee)
-        return Decimal("0.00")
-
-    def get_wholesale_price(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return Decimal("0.00")
-        user = request.user
-        if user.is_authenticated:
-            return obj.sell_wholesale_price(user.fee)
-        return Decimal("0.00")
-
-    def get_daily_variation(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return Decimal("0.00")
-        user = request.user
-        if user.is_authenticated:
-            fee = user.fee
-            return obj.daily_variation * (1 + fee.percentual_fee if fee else 0)
-        return Decimal("0.00")
-
-    def get_price_per_box(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return obj.quantity_per_box * obj.unit_price
-        user = request.user
-        if user.is_authenticated:
-            return obj.quantity_per_box * obj.sell_price(user.fee)
-        return obj.quantity_per_box * obj.unit_price
 
     def get_blocks(self, obj) -> list:
         return get_any_blocks(
@@ -1343,11 +677,6 @@ class ProductReadMinimalSerializer(serializers.ModelSerializer):
         queryset=models.SpecificationDetails.objects.all(),
         source="specifications",
     )
-    price_per_box = serializers.SerializerMethodField()
-    unit_price = serializers.SerializerMethodField()
-    wholesale_price = serializers.SerializerMethodField()
-    daily_variation = serializers.SerializerMethodField()
-    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Product
@@ -1373,281 +702,15 @@ class ProductReadMinimalSerializer(serializers.ModelSerializer):
             "category_id",
             "quantity",
             "net_content",
-            "price_per_box",
             "cost_price",
             "unit_price",
-            "wholesale_price",
-            "has_wholesale_price",
-            "wholesale_minimum",
             "net_weight",
             "gross_weight",
             "quantity_per_box",
-            "daily_variation",
-            "minimal_stock",
             "description",
-            "on_offer",
             "use_custom_template",
             "active",
-            "reviews",
         ]
-
-    def get_reviews(self, obj) -> dict:
-        reviews = models.Review.objects.filter(product=obj).aggregate(
-            total=Count("id"), rating_avg=Avg("rating")
-        )
-        return reviews
-
-    def get_unit_price(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return obj.unit_price
-        user = request.user
-        if user.is_authenticated:
-            return obj.sell_price(user.fee)
-        return obj.unit_price
-
-    def get_wholesale_price(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return Decimal("0.00")
-        user = request.user
-        if user.is_authenticated:
-            return obj.sell_wholesale_price(user.fee)
-        return Decimal("0.00")
-
-    def get_daily_variation(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return Decimal("0.00")
-        user = request.user
-        if user.is_authenticated:
-            fee = user.fee
-            return obj.daily_variation * (1 + fee.percentual_fee if fee else 0)
-        return Decimal("0.00")
-
-    def get_price_per_box(self, obj) -> Decimal:
-        request = self.context.get("request")
-        if not request:
-            return obj.quantity_per_box * obj.unit_price
-        user = request.user
-        if user.is_authenticated:
-            return obj.quantity_per_box * obj.sell_price(user.fee)
-        return obj.quantity_per_box * obj.unit_price
-
-
-class OrderProfitReportSerializer(serializers.Serializer):
-    start_date = serializers.DateField(required=True, allow_null=False)
-    end_date = serializers.DateField(required=True, allow_null=False)
-
-
-class OrderProductsSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    product = ProductReadSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=models.Product.objects.filter(active=True),
-        source="product",
-    )
-    price = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
-    net_weight = serializers.SerializerMethodField()
-    gross_weight = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.OrderProducts
-        fields = [
-            "id",
-            "quantity",
-            "cost",
-            "price",
-            "amount",
-            "net_weight",
-            "gross_weight",
-            "product",
-            "product_id",
-        ]
-
-    def get_price(self, obj) -> Decimal:
-        return obj.price * (1 + obj.order.percentual_fee) + obj.order.fixed_fee
-
-    def get_amount(self, obj) -> Decimal:
-        return obj.amount
-
-    def get_net_weight(self, obj) -> Decimal:
-        return obj.quantity * obj.product.net_weight
-
-    def get_gross_weight(self, obj) -> Decimal:
-        return obj.quantity * obj.product.gross_weight
-
-
-class CartSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    product = ProductReadSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=models.Product.objects.filter(active=True),
-    )
-    price = serializers.SerializerMethodField()
-    amount = serializers.SerializerMethodField()
-    save_amount = serializers.SerializerMethodField()
-    weight_net = serializers.SerializerMethodField()
-    weight_gross = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.Cart
-        fields = [
-            "id",
-            "quantity",
-            "price",
-            "amount",
-            "save_amount",
-            "product",
-            "product_id",
-            "weight_net",
-            "weight_gross",
-        ]
-
-    def get_price(self, obj) -> Decimal:
-        if (
-            obj.product.has_wholesale_price
-            and obj.quantity >= obj.product.wholesale_minimum
-        ):
-            return obj.product.sell_wholesale_price(obj.client.fee)
-        return obj.product.sell_price(obj.client.fee)
-
-    def get_amount(self, obj) -> Decimal:
-        return obj.quantity * (
-            obj.product.sell_wholesale_price(obj.client.fee)
-            if obj.product.has_wholesale_price
-            and obj.quantity >= obj.product.wholesale_minimum
-            else obj.product.sell_price(obj.client.fee)
-        )
-
-    def get_save_amount(self, obj) -> Decimal:
-        save_amount = Decimal("0.00")
-        if (
-            obj.product.has_wholesale_price
-            and obj.quantity >= obj.product.wholesale_minimum
-        ):
-            save_amount = obj.quantity * obj.product.sell_price(
-                obj.client.fee
-            ) - obj.quantity * obj.product.sell_wholesale_price(obj.client.fee)
-        return save_amount
-
-    def get_weight_net(self, obj) -> Decimal:
-        return obj.quantity * obj.product.net_weight
-
-    def get_weight_gross(self, obj) -> Decimal:
-        return obj.quantity * obj.product.gross_weight
-
-    def create(self, validated_data):
-        with transaction.atomic():
-            client = self.context.get("request").user
-            product = validated_data["product_id"]
-            quantity = validated_data["quantity"]
-            cart_products = models.Cart.objects.filter(
-                product_id=product.id, client_id=client.id
-            )
-            if cart_products.exists():
-                cart_products.delete()
-            cart_product = models.Cart.objects.create(
-                product_id=product.id, client_id=client.id, quantity=quantity
-            )
-            return cart_product
-
-    def update(self, instance, validated_data):
-        with transaction.atomic():
-            instance = super(CartSerializer, self).update(instance, validated_data)
-            return instance
-
-
-class CreateOrderSerializer(serializers.Serializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-    """
-
-    delivery_address_id = serializers.PrimaryKeyRelatedField(
-        allow_null=True,
-        required=False,
-        queryset=models.ContactAddress.objects.all(),
-    )
-    shipping_rate_id = serializers.PrimaryKeyRelatedField(
-        allow_null=True,
-        required=False,
-        queryset=ShippingRate.objects.filter(
-            active=True, shipping_method__active=True, shipping_zone__active=True
-        ),
-    )
-    payment_method_id = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        required=True,
-        queryset=PaymentMethod.objects.filter(active=True, use_in_store=True),
-    )
-    observations = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, trim_whitespace=True
-    )
-    coupons_ids = serializers.PrimaryKeyRelatedField(
-        allow_null=False,
-        many=True,
-        required=True,
-        queryset=Coupon.objects.filter(active=True),
-    )
-
-    def validate(self, attrs):
-        attrs = super().validate(attrs)
-
-        errors = {}
-
-        delivery_address = attrs.get("delivery_address_id")
-        shipping_rate = attrs.get("shipping_rate_id")
-
-        if shipping_rate and not delivery_address:
-            errors["delivery_address_id"] = [
-                _("There can be no shipping fee without a delivery address.")
-            ]
-
-        if delivery_address and shipping_rate:
-            if (
-                delivery_address.municipality
-                not in shipping_rate.shipping_zone.municipalities.all()
-            ):
-                errors["shipping_rate_id"] = [
-                    _(
-                        "The shipping address does not belong to the shipping zone of the rate used."
-                    )
-                ]
-        elif delivery_address and not shipping_rate:
-            errors["shipping_rate_id"] = [
-                _("A shipping rate must be provided for the selected delivery address.")
-            ]
-
-        coupons = attrs.get("coupons_ids", [])
-        now = timezone.now()
-        invalid_coupons = []
-        for coupon in coupons:
-            if not (coupon.valid_from <= now <= coupon.valid_to):
-                invalid_coupons.append(str(coupon.id))
-        if invalid_coupons:
-            errors["coupons_ids"] = [_("The list contains no valid coupons")]
-
-        if errors:
-            raise serializers.ValidationError(errors)
-
-        return attrs
 
 
 class ConfigSerializer(serializers.ModelSerializer):
@@ -1735,92 +798,6 @@ class ConfigSerializer(serializers.ModelSerializer):
         ]
 
 
-class OrderProductSaleProfit(serializers.Serializer):
-    order_id = serializers.IntegerField()
-    client_name = serializers.CharField()
-    creation_date = serializers.DateTimeField()
-    quantity = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    sell_price = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    sale_amount = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    total_cost = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    absolute_margin = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    margin_percentual = serializers.DecimalField(
-        max_digits=10, decimal_places=4, default=Decimal("0.00")
-    )
-    profit_per_unit = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-
-
-class OrderProductProfit(serializers.Serializer):
-    product = ProductReadMinimalSerializer()
-    quantity = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    sale_amount = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    total_cost = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    absolute_margin = serializers.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-
-    avg_sell_price = serializers.SerializerMethodField()
-    avg_profit_per_unit = serializers.SerializerMethodField()
-
-    margin_percentual = serializers.SerializerMethodField()
-
-    sales = OrderProductSaleProfit(many=True)
-
-    def get_avg_profit_per_unit(self, obj) -> Decimal:
-        return Decimal(
-            sum([sale["profit_per_unit"] for sale in obj["sales"]]) / len(obj["sales"])
-        )
-
-    def get_avg_sell_price(self, obj) -> Decimal:
-        return obj["sell_price"] / len(obj["sales"])
-
-    def get_margin_percentual(self, obj) -> Decimal:
-        return obj["absolute_margin"] / obj["sale_amount"]
-
-
-class MergeOrderSerializer(serializers.Serializer):
-    order_list = serializers.PrimaryKeyRelatedField(
-        queryset=models.Order.objects.filter(merge__isnull=True).all(),
-        many=True,
-        allow_empty=True,
-    )
-    delivery_address_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.ContactAddress.objects.all(), allow_null=True
-    )
-    shipping_rate_id = serializers.PrimaryKeyRelatedField(
-        queryset=ShippingRate.objects.filter(
-            active=True, shipping_method__active=True, shipping_zone__active=True
-        ).all(),
-        allow_null=True,
-    )
-    observations = serializers.CharField()
-
-
-class OdooWebhookSerializer(serializers.Serializer):
-    order_id = serializers.IntegerField()
-    state = serializers.CharField()
-    pickup_date = serializers.DateField()
-    # PROXIMAMENTE MÁS CAMPOS
-
-
 class PortSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -1832,6 +809,7 @@ class PortSerializer(serializers.ModelSerializer):
         model = models.Port
         fields = "__all__"
 
+
 class IncotermsSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -1842,7 +820,8 @@ class IncotermsSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Incoterms
         fields = "__all__"
-        
+
+
 class ProcessingPlantSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -1853,6 +832,7 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProcessingPlant
         fields = "__all__"
+
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     """_summary_
