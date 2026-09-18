@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.utils.timezone import now
+from rest_framework.validators import UniqueValidator
+
 from core.models import Config
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -126,6 +128,11 @@ class UserSerializer(UserMinimalSerializer):
         _type_: _description_
     """
 
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    email = serializers.EmailField(required=True, allow_blank=True, allow_null=True, validators=[
+        UniqueValidator(queryset=User.objects.all())
+    ])
     groups = serializers.SerializerMethodField()
     groups_id = serializers.PrimaryKeyRelatedField(
         required=True, many=True, queryset=Group.objects.all(), source="groups"
@@ -186,9 +193,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField(required=True)
     groups = serializers.ListField(required=False, write_only=True)
-    phone_number = serializers.CharField(
-        required=False, allow_blank=True, allow_null=True, default=None
-    )
+    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
 
     class Meta:
         model = User
@@ -200,7 +205,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             "last_name",
             "phone_number",
             "groups",
-            "date_joined",
         ]
 
     def create(self, validated_data):
@@ -302,9 +306,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.CharField(read_only=True)
     groups = serializers.SerializerMethodField()
     profile_photo = serializers.ImageField(read_only=True)
-    profile_photo_file = serializers.ImageField(
-        write_only=True, source="profile_photo", required=False
-    )
+    profile_photo_file = serializers.ImageField(write_only=True, source="profile_photo", required=False)
     full_name = serializers.SerializerMethodField()
 
     class Meta:

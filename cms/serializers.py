@@ -4,6 +4,7 @@ import os
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from parler_rest.fields import TranslatedFieldsField
 from rest_framework import serializers
 from rest_framework.serializers import ALL_FIELDS
 
@@ -17,6 +18,7 @@ from cms.exceptions import (
     ItemRequiredForModelException,
 )
 from core.models import Product, Brand
+from core.serializer_fields import FullTranslatableModelSerializer
 
 
 class BlockMEDIASerializer(serializers.ModelSerializer):
@@ -73,7 +75,7 @@ class BlockMEDIASerializer(serializers.ModelSerializer):
         return mimetypes.guess_type(obj.media.path)[0]
 
 
-class BlockHTMLSerializer(serializers.ModelSerializer):
+class BlockHTMLSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -85,7 +87,7 @@ class BlockHTMLSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BlockMarkdownSerializer(serializers.ModelSerializer):
+class BlockMarkdownSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -299,43 +301,45 @@ class BlockCONTAINERReadSerializer(serializers.ModelSerializer):
         )
 
 
-class BlockMEDIACARDSerializer(serializers.ModelSerializer):
-    """_summary_
+class BlockMEDIACARDSerializer(FullTranslatableModelSerializer):
+    class TranslationSerializer(serializers.ModelSerializer):
+        image = BlockMEDIASerializer(read_only=True)
+        image_id = serializers.PrimaryKeyRelatedField(
+            required=False, queryset=models.BlockMEDIA.objects.all(),
+            source="image", allow_null=True
+        )
+        image_sm = BlockMEDIASerializer(read_only=True)
+        image_sm_id = serializers.PrimaryKeyRelatedField(
+            required=False, queryset=models.BlockMEDIA.objects.all(),
+            source="image_sm", allow_null=True
+        )
+        image_md = BlockMEDIASerializer(read_only=True)
+        image_md_id = serializers.PrimaryKeyRelatedField(
+            required=False, queryset=models.BlockMEDIA.objects.all(),
+            source="image_md", allow_null=True
+        )
+        image_lg = BlockMEDIASerializer(read_only=True)
+        image_lg_id = serializers.PrimaryKeyRelatedField(
+            required=False, queryset=models.BlockMEDIA.objects.all(),
+            source="image_lg", allow_null=True
+        )
 
-    Args:
-        serializers (_type_): _description_
-
-    Raises:
-        InvalidContentTypeException: _description_
-        UnexpectedRelatedObjectException: _description_
-
-    Returns:
-        _type_: _description_
-    """
+        class Meta:
+            model = models.BlockMEDIACARD._parler_meta.get_model_by_related_name('translations')
+            exclude = ['id', 'language_code']
 
     image = BlockMEDIASerializer(read_only=True)
-    image_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=models.BlockMEDIA.objects.all(), source="image", allow_null=True
-    )
     image_sm = BlockMEDIASerializer(read_only=True)
-    image_sm_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=models.BlockMEDIA.objects.all(), source="image_sm", allow_null=True
-    )
     image_md = BlockMEDIASerializer(read_only=True)
-    image_md_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=models.BlockMEDIA.objects.all(), source="image_md", allow_null=True
-    )
     image_lg = BlockMEDIASerializer(read_only=True)
-    image_lg_id = serializers.PrimaryKeyRelatedField(
-        required=False, queryset=models.BlockMEDIA.objects.all(), source="image_lg", allow_null=True
-    )
+    translations = TranslatedFieldsField(shared_model=models.BlockMEDIACARD, serializer_class=TranslationSerializer)
 
     class Meta:
         model = models.BlockMEDIACARD
-        fields = '__all__'
+        fields = serializers.ALL_FIELDS
 
 
-class BlockBUTTONSerializer(serializers.ModelSerializer):
+class BlockBUTTONSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -402,7 +406,7 @@ class BlockCAROUSELWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class BlockCARDSerializer(serializers.ModelSerializer):
+class BlockCARDSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -500,7 +504,7 @@ class RelationShipsSerializer(serializers.ModelSerializer):
         ]
 
 
-class BlockCARDGROUPReadSerializer(serializers.ModelSerializer):
+class BlockCARDGROUPReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -519,7 +523,7 @@ class BlockCARDGROUPReadSerializer(serializers.ModelSerializer):
         )
 
 
-class BlockCARDGROUPWriteSerializer(serializers.ModelSerializer):
+class BlockCARDGROUPWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -555,7 +559,7 @@ class BlockCARDGROUPWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class PageReadSerializer(serializers.ModelSerializer):
+class PageReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -577,12 +581,10 @@ class PageReadSerializer(serializers.ModelSerializer):
         ]
 
     def get_blocks(self, obj) -> list:
-        return get_any_blocks(
-            obj, "page", context={"request": self.context.get("request")}
-        )
+        return get_any_blocks(obj, "page", context=self.context)
 
 
-class PageWriteSerializer(serializers.ModelSerializer):
+class PageWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -711,24 +713,28 @@ class ComposerSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-class BlockFOOTERLINKSSerializer(serializers.ModelSerializer):
+class BlockFOOTERLINKSSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
         serializers (_type_): _description_
     """
+
+    translations = TranslatedFieldsField(shared_model=models.BlockFOOTERLINKS)
 
     class Meta:
         model = models.BlockFOOTERLINKS
         fields = "__all__"
 
 
-class BlockNAVBARSerializer(serializers.ModelSerializer):
+class BlockNAVBARSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
         serializers (_type_): _description_
     """
+
+    translations = TranslatedFieldsField(shared_model=models.BlockNAVBAR)
 
     class Meta:
         model = models.BlockNAVBAR
@@ -745,7 +751,7 @@ class BlockFilterProductFullSerializer(serializers.ModelSerializer):
     def get_results(self, obj):
         from core.serializers import ProductReadMinimalSerializer
 
-        results = Product.objects.all()
+        results = Product.objects.translated().filter(active=True).all()
 
         if obj.filters:
             if isinstance(obj.filters, dict):
@@ -807,9 +813,7 @@ class BlockFilterPostFullSerializer(serializers.ModelSerializer):
         if obj.limit and obj.limit > 0:
             results = results[: obj.limit]
 
-        return PostReadMinimalSerializer(
-            results, many=True, context={"request": self.context.get("request")}
-        ).data
+        return PostReadMinimalSerializer(results, many=True, context=self.context).data
 
 
 class BlockFilterPostSerializer(serializers.ModelSerializer):
@@ -963,7 +967,7 @@ class BlockHEROWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class BlockCTAReadSerializer(serializers.ModelSerializer):
+class BlockCTAReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -977,6 +981,7 @@ class BlockCTAReadSerializer(serializers.ModelSerializer):
         model = models.BlockCTA
         fields = [
             "id",
+            "label",
             "title",
             "size",
             "description",
@@ -989,17 +994,13 @@ class BlockCTAReadSerializer(serializers.ModelSerializer):
         ]
 
     def get_extra_blocks(self, obj) -> list:
-        return get_any_blocks(
-            obj, "blockcta", {"request": self.context.get("request")}, "extra"
-        )
+        return get_any_blocks(obj, "blockcta", self.context, "extra")
 
     def get_inner_blocks(self, obj) -> list:
-        return get_any_blocks(
-            obj, "blockcta", {"request": self.context.get("request")}, None
-        )
+        return get_any_blocks(obj, "blockcta", self.context, None)
 
 
-class BlockCTAWriteSerializer(serializers.ModelSerializer):
+class BlockCTAWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -1013,6 +1014,7 @@ class BlockCTAWriteSerializer(serializers.ModelSerializer):
         model = models.BlockCTA
         fields = [
             "id",
+            "label",
             "title",
             "size",
             "description",
@@ -1039,9 +1041,7 @@ class BlockCTAWriteSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             extra_blocks = validated_data.pop("extra_blocks", None)
             inner_blocks = validated_data.pop("inner_blocks", None)
-            instance = super(BlockCTAWriteSerializer, self).update(
-                instance, validated_data
-            )
+            instance = super(BlockCTAWriteSerializer, self).update(instance, validated_data)
             try:
                 local_content_type = ContentType.objects.get(model="blockcta")
             except ContentType.DoesNotExist as exception:
@@ -1161,9 +1161,7 @@ class FooterReadSerializer(serializers.ModelSerializer):
         ]
 
     def get_blocks(self, obj) -> list:
-        return get_any_blocks(
-            obj, "footer", context={"request": self.context.get("request")}
-        )
+        return get_any_blocks(obj, "footer", context=self.context)
 
 
 class FooterWriteSerializer(serializers.ModelSerializer):
@@ -1258,9 +1256,7 @@ class LandingWriteSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             customers_blocks = validated_data.pop("customers_blocks", None)
             guess_blocks = validated_data.pop("guess_blocks", None)
-            instance = super(LandingWriteSerializer, self).update(
-                instance, validated_data
-            )
+            instance = super(LandingWriteSerializer, self).update(instance, validated_data)
             try:
                 local_content_type = ContentType.objects.get(model="landing")
             except ContentType.DoesNotExist as exception:
@@ -1282,7 +1278,7 @@ class LandingWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class ShopPageReadSerializer(serializers.ModelSerializer):
+class ShopPageReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -1299,6 +1295,7 @@ class ShopPageReadSerializer(serializers.ModelSerializer):
             "design",
             "orientation",
             "blocks",
+            "wide"
         ]
 
     def get_blocks(self, obj) -> list:
@@ -1307,7 +1304,7 @@ class ShopPageReadSerializer(serializers.ModelSerializer):
         )
 
 
-class ShopPageWriteSerializer(serializers.ModelSerializer):
+class ShopPageWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -1324,6 +1321,7 @@ class ShopPageWriteSerializer(serializers.ModelSerializer):
             "design",
             "orientation",
             "blocks",
+            "wide"
         ]
 
     def update(self, instance, validated_data):
@@ -1341,7 +1339,7 @@ class ShopPageWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class BlogPageReadSerializer(serializers.ModelSerializer):
+class BlogPageReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -1373,7 +1371,7 @@ class BlogPageReadSerializer(serializers.ModelSerializer):
         )
 
 
-class BlogPageWriteSerializer(serializers.ModelSerializer):
+class BlogPageWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -1398,9 +1396,7 @@ class BlogPageWriteSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             header_blocks = validated_data.pop("header_blocks", None)
             footer_blocks = validated_data.pop("footer_blocks", None)
-            instance = super(BlogPageWriteSerializer, self).update(
-                instance, validated_data
-            )
+            instance = super(BlogPageWriteSerializer, self).update(instance, validated_data)
             try:
                 local_content_type = ContentType.objects.get(model="blogpage")
             except ContentType.DoesNotExist as exception:

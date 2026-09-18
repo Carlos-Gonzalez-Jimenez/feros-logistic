@@ -6,6 +6,8 @@ from cms.serializers import (
     get_any_blocks,
 )
 from cms.models import Composer, ContentType
+from cms.exceptions import InvalidContentTypeException
+from core.serializer_fields import FullTranslatableModelSerializer
 from user.serializers import UserMinimalSerializer
 from django.db import transaction
 from django.utils.text import slugify
@@ -15,7 +17,7 @@ from django.utils.translation import gettext_lazy as _
 from .obscene_words import SPANISH_OBSCENE_WORDS
 
 
-class BlogCategorySerializer(serializers.ModelSerializer):
+class BlogCategorySerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -27,7 +29,7 @@ class BlogCategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class TagSerializer(serializers.ModelSerializer):
+class TagSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -39,7 +41,7 @@ class TagSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class PostWriteSerializer(serializers.ModelSerializer):
+class PostWriteSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -94,10 +96,7 @@ class PostWriteSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             tags = validated_data.pop("tags", None)
             blocks = validated_data.pop("blocks", None)
-            validated_data["slug"] = slugify(validated_data["title"])
-            post = models.Post.objects.create(
-                **validated_data, author=self.context.get("request").user
-            )
+            post = models.Post.objects.create(**validated_data, author=self.context.get("request").user)
             if tags:
                 post.tags.set(tags)
             if blocks is not None:
@@ -111,7 +110,7 @@ class PostWriteSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             tags = validated_data.pop("tags_ids", None)
             blocks = validated_data.pop("blocks", None)
-            validated_data["slug"] = slugify(validated_data["title"])
+            # validated_data["slug"] = slugify(validated_data["title"])
             instance = super(PostWriteSerializer, self).update(instance, validated_data)
             if tags:
                 instance.tags.clear()
@@ -128,7 +127,7 @@ class PostWriteSerializer(serializers.ModelSerializer):
             return instance
 
 
-class PostReadSerializer(serializers.ModelSerializer):
+class PostReadSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:
@@ -191,7 +190,7 @@ class PostReadSerializer(serializers.ModelSerializer):
         )
 
 
-class PostReadMinimalSerializer(serializers.ModelSerializer):
+class PostReadMinimalSerializer(FullTranslatableModelSerializer):
     """_summary_
 
     Args:

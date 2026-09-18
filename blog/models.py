@@ -1,11 +1,13 @@
 from django.db import models
-from core.generics import PermissionsMeta
 from django.utils.translation import gettext_lazy as _
-from user.models import User
+from parler.models import TranslatableModel, TranslatedFields
+
 from cms.models import BlockMEDIA
+from core.generics import PermissionsMeta
+from user.models import User
 
 
-class BlogCategory(models.Model):
+class BlogCategory(TranslatableModel):
     """_summary_
 
     Args:
@@ -15,22 +17,25 @@ class BlogCategory(models.Model):
         _type_: _description_
     """
 
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100),
+        description=models.TextField(blank=True, null=True)
+    )
+
     def __str__(self):
-        return self.name
+        return self.translations.name
 
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_blog_categories", _("Can manage blog categories"))]
         verbose_name = "Blog Category"
         verbose_name_plural = "Blog Categories"
-        ordering = ["name"]
+        ordering = ["translations__name"]
 
 
-class Tag(models.Model):
+class Tag(TranslatableModel):
     """_summary_
 
     Args:
@@ -40,10 +45,12 @@ class Tag(models.Model):
         _type_: _description_
     """
 
-    name = models.CharField(max_length=50, unique=True)
+    translations = TranslatedFields(
+        name=models.CharField(max_length=50),
+    )
 
     def __str__(self):
-        return self.name
+        return self.translations.name
 
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_blog_tags", _("Can manage blog tags"))]
@@ -52,7 +59,7 @@ class Tag(models.Model):
         ordering = ["-id"]
 
 
-class Post(models.Model):
+class Post(TranslatableModel):
     """_summary_
 
     Args:
@@ -68,10 +75,6 @@ class Post(models.Model):
         ("archived", "Archived"),
     ]
 
-    title = models.CharField(max_length=200)
-    slug = models.SlugField(max_length=255, unique=True)
-    summary = models.TextField(blank=True, null=True)
-    content = models.TextField(blank=True, null=True)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
     category = models.ForeignKey(
         BlogCategory, on_delete=models.SET_NULL, null=True, related_name="posts"
@@ -91,6 +94,13 @@ class Post(models.Model):
     views_count = models.PositiveIntegerField(default=0)
     is_featured = models.BooleanField(default=False)
     no_comments = models.BooleanField(default=False)
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=200),
+        slug=models.SlugField(max_length=255, unique=True),
+        summary=models.TextField(blank=True, null=True),
+        content=models.TextField(blank=True, null=True),
+    )
 
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_blog", _("Can manage blog"))]

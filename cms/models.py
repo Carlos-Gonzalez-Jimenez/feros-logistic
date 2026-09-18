@@ -1,11 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from parler.models import TranslatableModel, TranslatedFields
 
 from core.generics import PermissionsMeta
 
 
-class BlockHTML(models.Model):
+class BlockHTML(TranslatableModel):
     """_summary_
 
     Args:
@@ -15,9 +16,10 @@ class BlockHTML(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    content = models.TextField(blank=True, null=True)
+    label = models.CharField(max_length=1024)
     styles = models.JSONField(default=dict)
+
+    translations = TranslatedFields(content=models.TextField(blank=True, null=True))
 
     def __str__(self):
         return self.label
@@ -67,7 +69,7 @@ class BlockMEDIA(models.Model):
         ordering = ["-id"]
 
 
-class BlockMEDIACARD(models.Model):
+class BlockMEDIACARD(TranslatableModel):
     """_summary_
 
     Args:
@@ -77,41 +79,40 @@ class BlockMEDIACARD(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    type = models.CharField(
-        choices=MEDIA_CARD_TYPES_CHOICES, default="simple", max_length=25
-    )
+    label = models.CharField(max_length=1024)
+    type = models.CharField(choices=MEDIA_CARD_TYPES_CHOICES, default="simple", max_length=25)
 
-    image = models.ForeignKey(
-        BlockMEDIA,
-        related_name="media_card_blocks",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
+    translations = TranslatedFields(
+        image=models.ForeignKey(
+            BlockMEDIA,
+            related_name="media_card_blocks",
+            on_delete=models.PROTECT,
+            null=True,
+            blank=True,
+        ),
+        image_sm=models.ForeignKey(
+            BlockMEDIA,
+            related_name="media_card_blocks_sm",
+            on_delete=models.PROTECT,
+            null=True,
+            blank=True,
+        ),
+        image_md=models.ForeignKey(
+            BlockMEDIA,
+            related_name="media_card_blocks_md",
+            on_delete=models.PROTECT,
+            null=True,
+            blank=True,
+        ),
+        image_lg=models.ForeignKey(
+            BlockMEDIA,
+            related_name="media_card_blocks_lg",
+            on_delete=models.PROTECT,
+            null=True,
+            blank=True,
+        ),
+        url=models.CharField(max_length=1024)
     )
-    image_sm = models.ForeignKey(
-        BlockMEDIA,
-        related_name="media_card_blocks_sm",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
-    image_md = models.ForeignKey(
-        BlockMEDIA,
-        related_name="media_card_blocks_md",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
-    image_lg = models.ForeignKey(
-        BlockMEDIA,
-        related_name="media_card_blocks_lg",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
-
-    url = models.CharField(max_length=1024)
 
     def __str__(self):
         return self.label
@@ -122,7 +123,7 @@ class BlockMEDIACARD(models.Model):
         ordering = ["-id"]
 
 
-class BlockBUTTON(models.Model):
+class BlockBUTTON(TranslatableModel):
     """_summary_
 
     Args:
@@ -132,9 +133,12 @@ class BlockBUTTON(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=255)
     color = models.CharField(max_length=255)
-    url = models.CharField(max_length=255)
+
+    translations = TranslatedFields(
+        label=models.CharField(max_length=255),
+        url=models.CharField(max_length=255)
+    )
 
     def __str__(self):
         return self.label
@@ -179,8 +183,7 @@ class BlockCAROUSEL(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    name = models.CharField(max_length=255)
+    label = models.CharField(max_length=1024)
     design = models.CharField(max_length=20, choices=DESIGN_CHOICES)
     indicators = models.BooleanField(default=False)
     autoplay = models.BooleanField(default=False)
@@ -193,7 +196,7 @@ class BlockCAROUSEL(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return self.label
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Block CAROUSEL"
@@ -201,33 +204,27 @@ class BlockCAROUSEL(models.Model):
         ordering = ["-id"]
 
 
-class BlockCARD(models.Model):
-    """_summary_
-
-    Args:
-        models (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    image = models.ForeignKey(
-        BlockMEDIA,
-        related_name="cards",
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-    )
+class BlockCARD(TranslatableModel):
+    label = models.CharField(max_length=1024)
     reverse = models.BooleanField(default=False)
     spotlight = models.BooleanField(default=False)
     spotlight_color = models.CharField(max_length=50, blank=True, null=True)
     highlight = models.BooleanField(default=False)
     highlight_color = models.CharField(max_length=50, blank=True, null=True)
     variant = models.CharField(max_length=50, blank=True, null=True)
-    url = models.CharField(max_length=255, blank=True, null=True)
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255),
+        description=models.TextField(blank=True, null=True),
+        image=models.ForeignKey(
+            BlockMEDIA,
+            related_name="cards",
+            on_delete=models.PROTECT,
+            null=True,
+            blank=True,
+        ),
+        url=models.CharField(max_length=255, blank=True, null=True)
+    )
 
     def __str__(self):
         return self.label
@@ -238,7 +235,7 @@ class BlockCARD(models.Model):
         ordering = ["-id"]
 
 
-class BlockCARDGROUP(models.Model):
+class BlockCARDGROUP(TranslatableModel):
     """_summary_
 
     Args:
@@ -248,16 +245,17 @@ class BlockCARDGROUP(models.Model):
         _type_: _description_
     """
 
-    title = models.CharField(max_length=255, blank=True, null=True)
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    subtitle = models.TextField(blank=True, null=True)
+    label = models.CharField(max_length=1024)
     card_group_type = models.CharField(max_length=5, choices=TYPE_CHOICES)
     design = models.CharField(max_length=20, choices=DESIGN_CHOICES)
     justify = models.CharField(max_length=20, default="center")
-    orientation = models.CharField(
-        max_length=15, choices=ORIENTATION_CHOICES, default="vertical"
-    )
+    orientation = models.CharField(max_length=15, choices=ORIENTATION_CHOICES, default="vertical")
     size = models.CharField(max_length=10, blank=True, null=True, default="md")
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255, blank=True, null=True),
+        subtitle=models.TextField(blank=True, null=True)
+    )
 
     def __str__(self):
         return "Block CARD GROUP"
@@ -357,7 +355,7 @@ class RelationShips(models.Model):
         ordering = ["-id"]
 
 
-class Page(models.Model):
+class Page(TranslatableModel):
     """_summary_
 
     Args:
@@ -367,11 +365,14 @@ class Page(models.Model):
         _type_: _description_
     """
 
-    name = models.CharField(max_length=255)
-    slug = models.CharField(max_length=255, blank=True, null=True)
     creation_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     active = models.BooleanField(default=True)
+
+    translations = TranslatedFields(
+        name=models.CharField(max_length=255),
+        slug=models.CharField(max_length=255, blank=True, null=True)
+    )
 
     def __str__(self):
         return self.name
@@ -392,7 +393,7 @@ class BlockCONTAINER(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
+    label = models.CharField(max_length=1024)
     back_image = models.ForeignKey(
         BlockMEDIA,
         related_name="container_blocks",
@@ -411,7 +412,7 @@ class BlockCONTAINER(models.Model):
         ordering = ["-id"]
 
 
-class BlockFOOTERLINKS(models.Model):
+class BlockFOOTERLINKS(TranslatableModel):
     """_summary_
 
     Args:
@@ -421,8 +422,10 @@ class BlockFOOTERLINKS(models.Model):
         _type_: _description_
     """
 
-    title = models.CharField(max_length=255)
-    links = models.JSONField(default=list)
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255),
+        links=models.JSONField(default=list)
+    )
 
     def __str__(self):
         return self.title
@@ -433,7 +436,7 @@ class BlockFOOTERLINKS(models.Model):
         ordering = ["-id"]
 
 
-class BlockNAVBAR(models.Model):
+class BlockNAVBAR(TranslatableModel):
     """_summary_
 
     Args:
@@ -444,7 +447,7 @@ class BlockNAVBAR(models.Model):
     """
 
     label = models.CharField(max_length=255)
-    items = models.JSONField(default=list)
+    translations = TranslatedFields(items=models.JSONField(default=list))
 
     def __str__(self):
         return self.label
@@ -460,6 +463,8 @@ HERO_TYPE_CHOICES = (("IMG", "Image"), ("GAL", "Gallery"))
 HERO_LOCATION_CHOICES = (("Left", "Left"), ("Right", "Right"))
 
 
+# YA NO SE USA TANTO
+# TODO VELAR POR LAS TRADUCCIONES
 class BlockHERO(models.Model):
     """_summary_
 
@@ -470,7 +475,7 @@ class BlockHERO(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
+    label = models.CharField(max_length=1024)
     name = models.CharField(max_length=255, default="Bloque HERO")
     hero_type = models.CharField(max_length=5, choices=HERO_TYPE_CHOICES)
     location = models.CharField(max_length=10, choices=HERO_LOCATION_CHOICES)
@@ -492,7 +497,7 @@ class BlockHERO(models.Model):
         ordering = ["-id"]
 
 
-class BlockCTA(models.Model):
+class BlockCTA(TranslatableModel):
     """_summary_
 
     Args:
@@ -502,17 +507,20 @@ class BlockCTA(models.Model):
         _type_: _description_
     """
 
-    label = models.CharField(max_length=1024, blank=True, null=True)
+    label = models.CharField(max_length=1024)
     size = models.CharField(max_length=10, blank=True, null=True)
-    title = models.TextField(blank=True, null=True)
-    description = models.TextField(blank=True, null=True)
     orientation = models.CharField(max_length=20, choices=ORIENTATION_CHOICES)
     reverse = models.BooleanField(default=False)
     variant = models.CharField(max_length=25, blank=True, null=True)
     buttons = models.JSONField(default=list)
 
+    translations = TranslatedFields(
+        title=models.TextField(blank=True, null=True),
+        description=models.TextField(blank=True, null=True),
+    )
+
     def __str__(self):
-        return self.description
+        return f"{self.title}: {self.description}"
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "CTA block"
@@ -521,7 +529,7 @@ class BlockCTA(models.Model):
 
 
 class BlockMarquee(models.Model):
-    label = models.CharField(max_length=1024, blank=True, null=True)
+    label = models.CharField(max_length=1024)
     orientation = models.CharField(max_length=20, choices=ORIENTATION_CHOICES)
     reverse = models.BooleanField(default=False)
     overlay = models.BooleanField(default=True)
@@ -609,7 +617,7 @@ class Landing(models.Model):
         ordering = ["-id"]
 
 
-class ShopPage(models.Model):
+class ShopPage(TranslatableModel):
     """_summary_
 
     Args:
@@ -619,11 +627,10 @@ class ShopPage(models.Model):
         _type_: _description_
     """
 
-    title = models.CharField(max_length=1024)
     design = models.CharField(max_length=5, choices=DESIGN_CHOICES)
-    orientation = models.CharField(
-        max_length=15, choices=ORIENTATION_CHOICES, default="vertical"
-    )
+    orientation = models.CharField(max_length=15, choices=ORIENTATION_CHOICES, default="vertical")
+    wide = models.BooleanField(default=True)
+    translations = TranslatedFields(title=models.CharField(max_length=1024))
 
     def __str__(self):
         return self.title
@@ -634,7 +641,7 @@ class ShopPage(models.Model):
         ordering = ["-id"]
 
 
-class BlogPage(models.Model):
+class BlogPage(TranslatableModel):
     """_summary_
 
     Args:
@@ -644,11 +651,11 @@ class BlogPage(models.Model):
         _type_: _description_
     """
 
-    title = models.CharField(max_length=1024)
     design = models.CharField(max_length=5, choices=DESIGN_CHOICES)
-    orientation = models.CharField(
-        max_length=15, choices=ORIENTATION_CHOICES, default="vertical"
-    )
+    orientation = models.CharField(max_length=15, choices=ORIENTATION_CHOICES, default="vertical")
+    wide = models.BooleanField(default=True)
+
+    translations = TranslatedFields(title=models.CharField(max_length=1024))
 
     def __str__(self):
         return self.title
@@ -660,7 +667,7 @@ class BlogPage(models.Model):
 
 
 class BlockFilter(models.Model):
-    label = models.CharField(max_length=1024, blank=True, null=True, default="")
+    label = models.CharField(max_length=1024)
     filters = models.JSONField(null=True, blank=True, default=None)
     exclude = models.JSONField(null=True, blank=True, default=None)
     limit = models.PositiveIntegerField(default=10)
@@ -705,9 +712,12 @@ class BlockFilterBrand(BlockFilter):
         ordering = ["-id"]
 
 
-class BlockMarkdown(models.Model):
-    label = models.CharField(max_length=1024, blank=True, null=True)
-    content = models.TextField(blank=True, null=True)
+class BlockMarkdown(TranslatableModel):
+    label = models.CharField(max_length=1024)
+
+    translations = TranslatedFields(
+        content=models.TextField(blank=True, null=True)
+    )
 
     def __str__(self):
         return self.label

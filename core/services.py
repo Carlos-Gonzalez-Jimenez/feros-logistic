@@ -7,7 +7,6 @@ from math import ceil
 import requests
 from django_q.tasks import async_task
 
-from core import tasks
 from core.exceptions import (
     StatusNotAllowedException,
     ConfigurationDoesNotExistException,

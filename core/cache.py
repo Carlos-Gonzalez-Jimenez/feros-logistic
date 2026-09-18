@@ -1,10 +1,27 @@
-import datetime
 import hashlib
 from typing import Optional, Any
+
 from data_fetcher.global_request_context import get_request
 from django.core.cache import cache
-from fpdf import FPDF
-from logistic_backend.settings import APPLICATION_DATA_PATH
+from django.utils.translation import get_language_from_request
+
+
+def update_cache_value(key, value):
+    cache.set(key, value)
+
+
+def set_translatable_cache(key: str, value, lang: str = None, **kwargs):
+    lang = get_language_from_request(lang or get_request())
+    cache.set(f"{key}.{lang}", value, **kwargs)
+
+
+def get_translatable_cache(key: str, lang: str = None, **kwargs):
+    lang = get_language_from_request(lang or get_request())
+    return cache.get(f"{key}.{lang}", **kwargs)
+
+
+def clear_translatable_cache(key: str, **kwargs):
+    cache.delete_pattern(f"{key}.*", **kwargs)
 
 
 class NomenclatorCacheManager:
@@ -15,7 +32,7 @@ class NomenclatorCacheManager:
 
     @staticmethod
     def get_cache_key(
-        model_name: str, action: str, user=None, pk: Optional[int] = None, **kwargs
+            model_name: str, action: str, user=None, pk: Optional[int] = None, **kwargs
     ) -> str:
         """
         Genera clave de cache CONSISTENTE con versión
@@ -62,36 +79,31 @@ class NomenclatorCacheManager:
 
     @staticmethod
     def get_cached_data(
-        model_name: str, action: str, user=None, pk: Optional[int] = None, **kwargs
+            model_name: str, action: str, user=None, pk: Optional[int] = None, **kwargs
     ) -> Any:
         """
         Obtiene datos del cache
         """
-        cache_key = NomenclatorCacheManager.get_cache_key(
-            model_name, action, user, pk, **kwargs
-        )
+        cache_key = NomenclatorCacheManager.get_cache_key(model_name, action, user, pk, **kwargs)
         return cache.get(cache_key)
 
     @staticmethod
     def set_cached_data(
-        data: Any,
-        model_name: str,
-        action: str,
-        user=None,
-        pk: Optional[int] = None,
-        timeout: Optional[int] = None,
-        **kwargs,
+            data: Any,
+            model_name: str,
+            action: str,
+            user=None,
+            pk: Optional[int] = None,
+            timeout: Optional[int] = None,
+            **kwargs,
     ) -> str:
         """
         Guarda datos en cache
         """
-        cache_key = NomenclatorCacheManager.get_cache_key(
-            model_name, action, user, pk, **kwargs
-        )
+        cache_key = NomenclatorCacheManager.get_cache_key(model_name, action, user, pk, **kwargs)
 
         if timeout is None:
             timeout = NomenclatorCacheManager.DEFAULT_TIMEOUT
 
         cache.set(cache_key, data, timeout)
         return cache_key
-

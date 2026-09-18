@@ -1,17 +1,17 @@
-from django.core.cache import cache
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, RetrieveAPIView
 from rest_framework.permissions import (
     AllowAny,
 )
 from rest_framework.response import Response
 
 from cms import models, serializers, filters
+from core.cache import get_translatable_cache, set_translatable_cache, clear_translatable_cache
 from core.exceptions import InvalidParameterException, ProtectedInstanceException
 from core.permissions import CustomPermissionFactory, ReadOnlyPermission
 from core.views import ProtectedResourceViewSet
@@ -39,22 +39,13 @@ class PageViewSet(ProtectedResourceViewSet):
         return serializers.PageReadSerializer
 
 
-class PageSlugView(ListAPIView):
+class PageSlugView(RetrieveAPIView):
     permission_classes = [AllowAny]
-    queryset = models.Page.objects.all()
+    queryset = models.Page.objects.translated()
     serializer_class = serializers.PageReadSerializer
 
-    def get(self, request, slug):
-        try:
-            page = models.Page.objects.get(slug=slug)
-            serializer = serializers.PageReadSerializer(
-                page,
-                context={"request": request},
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        except models.Page.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    def get_object(self):
+        return get_object_or_404(models.Page, translations__slug=self.kwargs['slug'])
 
 
 class BlockHTMLViewSet(ProtectedResourceViewSet):
@@ -447,7 +438,7 @@ class HeaderAPIView(RetrieveUpdateAPIView):
     serializer_class = serializers.HeaderSerializer
 
     def get_object(self):
-        return get_object_or_404(models.Header, pk=1)
+        return get_object_or_404(models.Header.objects, pk=1)
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -474,8 +465,7 @@ class LandingAPIView(RetrieveUpdateAPIView):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["user.manage_page"])
     ]
-
-    CACHE_KEY = "landing_response"
+    CACHE_KEY = 'cms.landing-page'
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -486,7 +476,7 @@ class LandingAPIView(RetrieveUpdateAPIView):
         return get_object_or_404(models.Landing, pk=1)
 
     def get(self, request, *args, **kwargs):
-        cached_response = cache.get(self.CACHE_KEY)
+        cached_response = get_translatable_cache(self.CACHE_KEY)
         if cached_response:
             return Response(cached_response)
 
@@ -494,14 +484,12 @@ class LandingAPIView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance)
         data = serializer.data
 
-        cache.set(self.CACHE_KEY, data, timeout=60 * 60 * 24)  # timeout diario
+        set_translatable_cache(self.CACHE_KEY, data, timeout=60 * 60)
         return Response(data)
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
-
-        cache.delete(self.CACHE_KEY)
-
+        clear_translatable_cache(self.CACHE_KEY)
         return response
 
     def put(self, request, *args, **kwargs):
@@ -516,7 +504,7 @@ class ShopPageAPIView(RetrieveUpdateAPIView):
         ReadOnlyPermission | CustomPermissionFactory(["user.manage_page"])
     ]
 
-    CACHE_KEY = "shop_page_response"
+    CACHE_KEY = 'cms.shop-page'
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -527,7 +515,7 @@ class ShopPageAPIView(RetrieveUpdateAPIView):
         return get_object_or_404(models.ShopPage, pk=1)
 
     def get(self, request, *args, **kwargs):
-        cached_response = cache.get(self.CACHE_KEY)
+        cached_response = get_translatable_cache(self.CACHE_KEY)
         if cached_response:
             return Response(cached_response)
 
@@ -535,21 +523,13 @@ class ShopPageAPIView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance)
         data = serializer.data
 
-        cache.set(self.CACHE_KEY, data, timeout=None)
+        set_translatable_cache(self.CACHE_KEY, data, timeout=60)
         return Response(data)
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
-
-        cache.delete(self.CACHE_KEY)
-
+        clear_translatable_cache(self.CACHE_KEY)
         return response
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def patch(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class BlogPageAPIView(RetrieveUpdateAPIView):
@@ -557,7 +537,7 @@ class BlogPageAPIView(RetrieveUpdateAPIView):
         ReadOnlyPermission | CustomPermissionFactory(["user.manage_page"])
     ]
 
-    CACHE_KEY = "blog_page_response"
+    CACHE_KEY = "cms.blog-page"
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -568,7 +548,7 @@ class BlogPageAPIView(RetrieveUpdateAPIView):
         return get_object_or_404(models.BlogPage, pk=1)
 
     def get(self, request, *args, **kwargs):
-        cached_response = cache.get(self.CACHE_KEY)
+        cached_response = get_translatable_cache(self.CACHE_KEY)
         if cached_response:
             return Response(cached_response)
 
@@ -576,14 +556,12 @@ class BlogPageAPIView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance)
         data = serializer.data
 
-        cache.set(self.CACHE_KEY, data, timeout=None)
+        set_translatable_cache(self.CACHE_KEY, data, timeout=60)
         return Response(data)
 
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
-
-        cache.delete(self.CACHE_KEY)
-
+        clear_translatable_cache(self.CACHE_KEY)
         return response
 
     def put(self, request, *args, **kwargs):

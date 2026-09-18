@@ -5,6 +5,7 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     CreateAPIView,
 )
+from django.utils.translation import gettext_lazy as _
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -221,14 +222,14 @@ class ChangeRecoverPasswordView(APIView):
                     user_token = auth_tokens.first()
                     elapsed_time = int(
                         (
-                            timezone.localtime(timezone.now()) - user_token.created
+                                timezone.localtime(timezone.now()) - user_token.created
                         ).total_seconds()
                         / 60
                     )
                     config_settings = Config.objects.get()
                     if (
-                        elapsed_time
-                        <= config_settings.recover_password_token_validation_time
+                            elapsed_time
+                            <= config_settings.recover_password_token_validation_time
                     ):
                         user = models.User.objects.filter(id=user_token.user_id).first()
                         user.set_password(serializer.validated_data["new_password"])
@@ -262,7 +263,7 @@ class ChangeRecoverPasswordView(APIView):
 
                     elapsed_time = int(
                         (
-                            timezone.localtime(timezone.now()) - user_token.created
+                                timezone.localtime(timezone.now()) - user_token.created
                         ).total_seconds()
                         / 60
                     )
@@ -270,8 +271,8 @@ class ChangeRecoverPasswordView(APIView):
                     config_settings = Config.objects.get()
 
                     if (
-                        elapsed_time
-                        > config_settings.recover_password_token_validation_time
+                            elapsed_time
+                            > config_settings.recover_password_token_validation_time
                     ):
                         user_token.delete()
                         raise TokenExpiredException()
@@ -358,9 +359,9 @@ class UserViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [
-        ReadOnlyPermission | CustomPermissionFactory(["user.manage_customer"]),
+        ReadOnlyPermission | CustomPermissionFactory(["user.manage_user"]),
     ]
-    queryset = models.User.objects.filter(is_staff=False)
+    queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     search_fields = ["first_name", "last_name", "email", "phone_number"]
 
@@ -398,9 +399,7 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = self.serializer_class(
-            data=request.data, context={"request": request}
-        )
+        serializer = self.serializer_class(data=request.data, context={"request": request})
 
         try:
             if serializer.is_valid():

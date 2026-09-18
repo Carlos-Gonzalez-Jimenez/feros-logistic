@@ -12,11 +12,13 @@ from core.generics import MultiplePermissionsView
 from core.permissions import (
     ReadOnlyPermission,
     CustomPermissionFactory,
+    ClientPermission,
 )
 from core.views import ProtectedResourceViewSet
 from rest_framework.decorators import action
 from rest_framework import status
 from django.db import transaction
+from core.cache import NomenclatorCacheManager
 
 
 class BlogCategoryViewSet(ProtectedResourceViewSet):
@@ -33,15 +35,83 @@ class BlogCategoryViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["blog.manage_blog_categories"]),
     ]
-    queryset = models.BlogCategory.objects.all()
+    queryset = models.BlogCategory.objects.translated()
     serializer_class = serializers.BlogCategorySerializer
-    search_fields = ["name", "description"]
+    search_fields = ["translations__name", "translations__description"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.request.user.is_staff:
             return queryset
         return queryset.filter(active=True)
+
+    def list(self, request, *args, **kwargs):
+        page = request.query_params.get("page")
+        page_size = request.query_params.get("page_size")
+        search_term = request.query_params.get("search", "")
+
+        if search_term and search_term.strip():
+            return super().list(request, *args, **kwargs)
+
+        cache_kwargs = {"page": page, "page_size": page_size, "search": search_term}
+
+        cached_data = NomenclatorCacheManager.get_cached_data(
+            "blogcategory", "list", request.user, **cache_kwargs
+        )
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            NomenclatorCacheManager.set_cached_data(
+                response.data,
+                "blogcategory",
+                "list",
+                request.user,
+                timeout=60 * 60 * 24,
+                **cache_kwargs,
+            )
+
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        cached_data = NomenclatorCacheManager.get_cached_data(
+            "blogcategory", "retrieve", request.user, kwargs.get("pk")
+        )
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().retrieve(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            NomenclatorCacheManager.set_cached_data(
+                response.data,
+                "blogcategory",
+                "retrieve",
+                request.user,
+                pk=kwargs.get("pk"),
+                timeout=60 * 60 * 24 * 7,
+            )
+
+        return response
+
+    def perform_create(self, serializer):
+        NomenclatorCacheManager.invalidate_model_cache("blogcategory")
+        response = super().perform_create(serializer)
+        return response
+
+    def perform_update(self, serializer):
+        NomenclatorCacheManager.invalidate_model_cache("blogcategory")
+        response = super().perform_update(serializer)
+        return response
+
+    def perform_destroy(self, instance):
+        NomenclatorCacheManager.invalidate_model_cache("blogcategory")
+        response = super().perform_destroy(instance)
+        return response
 
 
 class TagViewSet(ProtectedResourceViewSet):
@@ -58,15 +128,83 @@ class TagViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["blog.manage_blog_tags"]),
     ]
-    queryset = models.Tag.objects.all()
+    queryset = models.Tag.objects.translated()
     serializer_class = serializers.TagSerializer
-    search_fields = ["name"]
+    search_fields = ["translations__name"]
 
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.request.user.is_staff:
             return queryset
         return queryset.filter(active=True)
+
+    def list(self, request, *args, **kwargs):
+        page = request.query_params.get("page")
+        page_size = request.query_params.get("page_size")
+        search_term = request.query_params.get("search", "")
+
+        if search_term and search_term.strip():
+            return super().list(request, *args, **kwargs)
+
+        cache_kwargs = {"page": page, "page_size": page_size, "search": search_term}
+
+        cached_data = NomenclatorCacheManager.get_cached_data(
+            "tag", "list", request.user, **cache_kwargs
+        )
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().list(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            NomenclatorCacheManager.set_cached_data(
+                response.data,
+                "tag",
+                "list",
+                request.user,
+                timeout=60 * 60 * 24 * 7,
+                **cache_kwargs,
+            )
+
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        cached_data = NomenclatorCacheManager.get_cached_data(
+            "tag", "retrieve", request.user, kwargs.get("pk")
+        )
+
+        if cached_data is not None:
+            return Response(cached_data)
+
+        response = super().retrieve(request, *args, **kwargs)
+
+        if response.status_code == 200:
+            NomenclatorCacheManager.set_cached_data(
+                response.data,
+                "tag",
+                "retrieve",
+                request.user,
+                pk=kwargs.get("pk"),
+                timeout=60 * 60 * 24 * 30,
+            )
+
+        return response
+
+    def perform_create(self, serializer):
+        NomenclatorCacheManager.invalidate_model_cache("tag")
+        response = super().perform_create(serializer)
+        return response
+
+    def perform_update(self, serializer):
+        NomenclatorCacheManager.invalidate_model_cache("tag")
+        response = super().perform_update(serializer)
+        return response
+
+    def perform_destroy(self, instance):
+        NomenclatorCacheManager.invalidate_model_cache("tag")
+        response = super().perform_destroy(instance)
+        return response
 
 
 class PostViewSet(ProtectedResourceViewSet):

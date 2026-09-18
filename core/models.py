@@ -475,7 +475,7 @@ class Config(models.Model):
     business_licence = models.CharField(max_length=100, null=True, blank=True)
     business_schedule = models.TextField(null=True, blank=True)
     business_address = models.TextField(null=True, blank=True)
-    social_networks = models.JSONField(default=list)
+    social_networks = models.JSONField(default=list,blank=True)
 
     backend_url = models.CharField(max_length=255, default="")
     front_url = models.CharField(max_length=255, default="")

@@ -137,7 +137,6 @@ DATABASES = {
     )
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
@@ -257,3 +256,15 @@ DEFAULT_FROM_EMAIL = f"FEROS GRUPO S.U.R.L. <{EMAIL_HOST_USER}>"
 EMAIL_TIMEOUT = 30
 
 SILENCED_SYSTEM_CHECKS = ["auth.E003"]
+
+PARLER_DEFAULT_LANGUAGE_CODE = 'es'
+PARLER_LANGUAGES = {
+    None: (
+        {'code': 'en'},
+        {'code': 'es'},
+    ),
+    'default': {
+        'fallbacks': ['es'],
+        'hide_untranslated': False,
+    }
+}
