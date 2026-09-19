@@ -4,16 +4,10 @@ import string
 from django.core.mail import EmailMessage
 
 
-def send_mail(to, subject, message, excel_file=None):
+def send_mail(to, subject, message):
     subject = subject
     msg = EmailMessage(subject, message, to=to)
     msg.content_subtype = "html"
-    if excel_file is not None:
-        msg.attach(
-            f"Nueva solicitud de compra {datetime.datetime.now()}.xlsx",
-            excel_file.getvalue(),
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        )
     msg.send()
 
 
