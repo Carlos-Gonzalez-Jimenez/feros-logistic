@@ -1,4 +1,3 @@
-from decimal import Decimal
 from dateutil.utils import today
 from rest_framework import viewsets, status
 from rest_framework.generics import (
@@ -150,8 +149,7 @@ class ChangePasswordView(APIView):
 
 class RecoverPasswordView(APIView):
     """
-    Recover a forgotten password sending an email.\n
-    Assuming the user has verified his verification code.\n
+    Recover a forgotten password sending an email.
     """
 
     serializer_class = serializers.RecoverPasswordSerializer
@@ -205,7 +203,7 @@ class RecoverPasswordView(APIView):
 
 class ChangeRecoverPasswordView(APIView):
     """
-    Sets a new password for the recover password process.\n
+    Sets a new password for the recover password process.
     """
 
     serializer_class = serializers.ChangeRecoverPasswordSerializer
@@ -242,7 +240,7 @@ class ChangeRecoverPasswordView(APIView):
 
 class ChangeRecoverPasswordView(APIView):
     """
-    Sets a new password for the recover password process.\n
+    Sets a new password for the recover password process.
     """
 
     serializer_class = serializers.ChangeRecoverPasswordSerializer
@@ -297,7 +295,7 @@ class ChangeRecoverPasswordView(APIView):
 
 class ConfirmRegisterView(APIView):
     """
-    Confirm register process. Set active and verified to True\n
+    Confirm register process. Set active and verified to True
     """
 
     serializer_class = serializers.ConfirmRegisterSerializer
