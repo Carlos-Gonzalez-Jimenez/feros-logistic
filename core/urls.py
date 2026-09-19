@@ -11,32 +11,19 @@ router.register(r"brands", views.BrandViewSet, basename="brands")
 router.register(r"providers", views.ProviderViewSet, basename="providers")
 router.register(r"categories", views.CategoryViewSet, basename="categories")
 router.register(r"notifications", views.NotificationViewSet, basename="notifications")
-router.register(
-    r"notification-types", views.NotificationTypeViewSet, basename="notification-types"
-)
-router.register(
-    r"notification-users", views.NotificationUserViewSet, basename="notification-users"
-)
-router.register(
-    r"measurement-units", views.MeasurementUnitViewSet, basename="measurement-units"
-)
+router.register(r"notification-types", views.NotificationTypeViewSet, basename="notification-types")
+router.register(r"notification-users", views.NotificationUserViewSet, basename="notification-users")
+router.register(r"measurement-units", views.MeasurementUnitViewSet, basename="measurement-units")
 router.register(r"products", views.ProductViewSet, basename="products")
-router.register(
-    r"specifications", views.SpecificationsViewSet, basename="specifications"
-)
-router.register(
-    r"specification-details",
-    views.SpecificationDetailsViewSet,
-    basename="specification-details",
-)
+router.register(r"specifications", views.SpecificationsViewSet, basename="specifications")
+router.register(r"specification-details", views.SpecificationDetailsViewSet, basename="specification-details")
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
-router.register(
-    r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants"
-)
-router.register(
-    r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders"
-)
+router.register(r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants")
+router.register(r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders")
+router.register(r"vessels", views.VesselViewSet, basename="vessels")
+router.register(r"container-types", views.ContainerTypeViewSet, basename="container-types")
+router.register(r"shipping-companies", views.ShippingCompanyViewSet, basename="shipping-companies")
 
 urlpatterns = [
     path("", include(router.urls)),
