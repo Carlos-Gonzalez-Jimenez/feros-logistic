@@ -20,7 +20,8 @@ class ShippingCompany(models.Model):
         verbose_name = "Shipping Company"
         verbose_name_plural = "Shipping Companies"
         ordering = ["name"]
-        
+
+
 class Vessel(models.Model):
     name = models.CharField(max_length=255)
     shipping_company = models.ForeignKey(
@@ -32,12 +33,14 @@ class Vessel(models.Model):
 
     def __str__(self):
         return self.name
+
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_vessels", _("Can manage vessels"))]
         verbose_name = "Vessel"
         verbose_name_plural = "Vessels"
         ordering = ["name"]
-        
+
+
 class ContainerType(models.Model):
     name = models.CharField(max_length=255)
     free_days = models.PositiveIntegerField(default=0)
@@ -45,11 +48,13 @@ class ContainerType(models.Model):
 
     def __str__(self):
         return self.name
+
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_container_types", _("Can manage container types"))]
         verbose_name = "Container Type"
         verbose_name_plural = "Container Types"
         ordering = ["name"]
+
 
 class Currency(models.Model):
     name = models.CharField(max_length=255)
@@ -418,6 +423,7 @@ class Product(models.Model):
             models.Index(fields=["provider", "active"]),
         ]
 
+
 class ProductImageOrder(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     blockmedia = models.ForeignKey(BlockMEDIA, on_delete=models.CASCADE)
@@ -431,6 +437,7 @@ class ProductImageOrder(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - Imagen {str(self.id)}"
+
 
 class SpecificationDetails(models.Model):
     value = models.TextField(blank=True, null=True)
@@ -457,6 +464,7 @@ class SpecificationDetails(models.Model):
             models.Index(fields=["product", "specification"]),
         ]
 
+
 class Config(models.Model):
     """_summary_
 
@@ -475,7 +483,7 @@ class Config(models.Model):
     business_licence = models.CharField(max_length=100, null=True, blank=True)
     business_schedule = models.TextField(null=True, blank=True)
     business_address = models.TextField(null=True, blank=True)
-    social_networks = models.JSONField(default=list,blank=True)
+    social_networks = models.JSONField(default=list, blank=True)
 
     backend_url = models.CharField(max_length=255, default="")
     front_url = models.CharField(max_length=255, default="")
@@ -556,10 +564,12 @@ class Config(models.Model):
         verbose_name_plural = "Configurations"
         ordering = ["-id"]
 
+
 class Port(models.Model):
     name = models.CharField(max_length=100)
     abbreviation = models.CharField(max_length=20)
     description = models.TextField(blank=True, null=True)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
@@ -567,6 +577,9 @@ class Port(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Port"
         verbose_name_plural = "Ports"
+        permissions = [
+            ("manage_ports", _("Can manage ports")),
+        ]
         ordering = ["-id"]
         indexes = [
             models.Index(fields=["abbreviation"]),
@@ -584,6 +597,9 @@ class Incoterms(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Incoterms"
         verbose_name_plural = "Incoterms"
+        permissions = [
+            ("manage_incoterms", _("Can manage incoterms")),
+        ]
         ordering = ["-id"]
         indexes = [
             models.Index(fields=["abbreviation"]),
@@ -603,6 +619,9 @@ class ProcessingPlant(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Processing Plant"
         verbose_name_plural = "Processing Plants"
+        permissions = [
+            ("manage_processing_plants", _("Can manage processing plant")),
+        ]
         ordering = ["-id"]
         indexes = [
             models.Index(fields=["name"]),

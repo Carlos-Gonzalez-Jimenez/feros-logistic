@@ -23,7 +23,7 @@ class ShippingCompanySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.ShippingCompany
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class VesselSerializer(serializers.ModelSerializer):
@@ -43,12 +43,7 @@ class VesselSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Vessel
-        fields = [
-            "name",
-            "shipping_company",
-            "shipping_company_id",
-            "active",
-        ]
+        fields = serializers.ALL_FIELDS
 
 
 class ContainerTypeSerializer(serializers.ModelSerializer):
@@ -488,7 +483,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                validated_data.get("unit_price") - instance.unit_price
+                    validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
