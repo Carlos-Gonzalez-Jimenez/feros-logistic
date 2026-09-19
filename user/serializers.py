@@ -267,7 +267,7 @@ class ChangeRecoverPasswordSerializer(serializers.Serializer):
 
 class ConfirmRegisterSerializer(serializers.Serializer):
     """
-    Serializer for confirm register actiuon
+    Serializer for confirm register action
     """
 
     token = serializers.CharField(required=True)
@@ -370,7 +370,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 class EventLogSerializer(serializers.ModelSerializer):
     """
-    Serializer for Event Logs
+    Serializer for event logs
     """
 
     user = UserSerializer(read_only=True)
