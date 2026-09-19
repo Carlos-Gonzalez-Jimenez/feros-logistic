@@ -23,10 +23,8 @@ User = get_user_model()
 
 
 class PermissionSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Permission serializer
     """
 
     name = serializers.SerializerMethodField()
@@ -40,10 +38,8 @@ class PermissionSerializer(serializers.ModelSerializer):
 
 
 class RoleSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Role serializer
     """
 
     permissions = PermissionSerializer(read_only=True, many=True)
@@ -77,13 +73,8 @@ class RoleSerializer(serializers.ModelSerializer):
 
 
 class UserMinimalSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    User minimal serializer
     """
 
     email = serializers.EmailField(required=True, allow_blank=True, allow_null=True)
@@ -119,20 +110,18 @@ class UserMinimalSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(UserMinimalSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    User serializer
     """
 
     first_name = serializers.CharField()
     last_name = serializers.CharField()
-    email = serializers.EmailField(required=True, allow_blank=True, allow_null=True, validators=[
-        UniqueValidator(queryset=User.objects.all())
-    ])
+    email = serializers.EmailField(
+        required=True,
+        allow_blank=True,
+        allow_null=True,
+        validators=[UniqueValidator(queryset=User.objects.all())],
+    )
     groups = serializers.SerializerMethodField()
     groups_id = serializers.PrimaryKeyRelatedField(
         required=True, many=True, queryset=Group.objects.all(), source="groups"
@@ -182,18 +171,15 @@ class UserSerializer(UserMinimalSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    Serializer for user register
     """
 
     email = serializers.EmailField(required=True)
     groups = serializers.ListField(required=False, write_only=True)
-    phone_number = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
+    phone_number = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, default=None
+    )
 
     class Meta:
         model = User
@@ -242,10 +228,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Serializer for change password
     """
 
     current_password = serializers.CharField(required=True)
@@ -253,10 +237,8 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class RecoverPasswordSerializer(serializers.Serializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Recover password serializer
     """
 
     email = serializers.CharField(required=True)
@@ -284,29 +266,24 @@ class ChangeRecoverPasswordSerializer(serializers.Serializer):
 
 
 class ConfirmRegisterSerializer(serializers.Serializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Serializer for confirm register actiuon
     """
 
     token = serializers.CharField(required=True)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
-
-    Returns:
-        _type_: _description_
+    """
+    Serializer for user profile
     """
 
     email = serializers.CharField(read_only=True)
     groups = serializers.SerializerMethodField()
     profile_photo = serializers.ImageField(read_only=True)
-    profile_photo_file = serializers.ImageField(write_only=True, source="profile_photo", required=False)
+    profile_photo_file = serializers.ImageField(
+        write_only=True, source="profile_photo", required=False
+    )
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -349,7 +326,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    Serializer for employee login authentication
+    Serializer for user login authentication
     """
 
     email = serializers.EmailField(write_only=True)
@@ -392,10 +369,8 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class EventLogSerializer(serializers.ModelSerializer):
-    """_summary_
-
-    Args:
-        serializers (_type_): _description_
+    """
+    Serializer for Event Logs
     """
 
     user = UserSerializer(read_only=True)

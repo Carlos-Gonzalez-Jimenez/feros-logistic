@@ -103,8 +103,8 @@ class User(AbstractUser):
                 self.whatsapp_chat_id = WAHAService.check_exist(self.phone_number).get(
                     "chatId"
                 )
-            except ErrorContactingMessagingAPIException as e:
-                pass
+            except Exception as exception:
+                raise ErrorContactingMessagingAPIException() from exception
         super().save(*args, **kwargs)
 
     class Meta(PermissionsMeta.Meta):
