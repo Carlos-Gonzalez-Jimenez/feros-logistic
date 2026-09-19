@@ -6,7 +6,8 @@ from django.apps import apps
 
 def refresh_cache_for_related_blocks(sender, instance, created, **kwargs):
     if cache.add('clearing-cms', 1, timeout=2):
-        cache.delete_pattern('cms.*')
+        pass
+        #cache.delete_pattern('cms.*')
 
 
 cms_config = apps.get_app_config('cms')

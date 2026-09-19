@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
-
+from django.utils.translation.trans_real import get_languages
 from blog.models import Tag, BlogCategory, Post
 from cms.models import (
     Landing,
@@ -19,6 +19,7 @@ from cms.models import (
 )
 from core.models import (
     Currency,
+    Category,
     Measurement_Unit,
     Product,
     Brand,
@@ -55,20 +56,32 @@ class Command(BaseCommand):
         """Creates cms infrastructure objects"""
 
         self.stdout.write(self.style.NOTICE("start populating cms infrastructure"))
-
+        languages = get_languages()
         if not Landing.objects.first():
             Landing.objects.create()
         if not Header.objects.first():
             navbar = BlockNAVBAR.objects.first() or BlockNAVBAR.objects.create(
-                label="Menú principal", items=[{"label": "Productos", "to": "/shop"}]
+                label="Menú principal"
             )
+            for lang_code, lang in languages.items():
+                navbar.set_current_language(lang_code)
+                navbar.items = []
+                navbar.save()
             Header.objects.create(out_menu=navbar, in_menu=navbar)
         if not Footer.objects.first():
             Footer.objects.create(design="1/4")
         if not ShopPage.objects.first():
-            ShopPage.objects.create(title="Tienda", design="1", orientation="1/4")
+            shoppage = ShopPage.objects.create(design="1", orientation="1/4")
+            for lang_code, lang in languages.items():
+                shoppage.set_current_language(lang_code)
+                shoppage.title = "Tienda"
+                shoppage.save()
         if not BlogPage.objects.first():
-            BlogPage.objects.create(title="Tienda", design="1", orientation="1/4")
+            blogpage = BlogPage.objects.create(design="1", orientation="1/4")
+            for lang_code, lang in languages.items():
+                blogpage.set_current_language(lang_code)
+                blogpage.title = "Blog"
+                blogpage.save()
 
         # Content Types
         page_content_type = ContentType.objects.get(model="page")
@@ -315,7 +328,7 @@ class Command(BaseCommand):
             tropipay_client_id="",
             tropipay_client_secret="",
             astrack_url="https://astrackcuba.alascloud.com",
-            astrack_websocket="wss://astrackcuba.alascloud.com"
+            astrack_websocket="wss://astrackcuba.alascloud.com",
         )
 
     def create_currencies(self) -> None:
@@ -386,212 +399,22 @@ class Command(BaseCommand):
             )
             country.save()
 
-    def create_order_statuses(self) -> None:
-        """Creates all status objects"""
-
-        self.stdout.write(self.style.NOTICE("start populating statuses"))
-
-        statuses = [
-            ("Creado", "created", 1, True, False, True, True, "info", "mdi-file-plus"),
-            (
-                "En preparación",
-                "in_preparation",
-                2,
-                False,
-                False,
-                True,
-                True,
-                "warning",
-                "mdi-magnify",
-            ),
-            (
-                "Listo para recoger",
-                "pick_up",
-                3,
-                False,
-                False,
-                True,
-                False,
-                "warning",
-                "mdi-cube-outline",
-            ),
-            (
-                "Listo para envío",
-                "ready_shipping",
-                4,
-                False,
-                False,
-                False,
-                True,
-                "warning",
-                "mdi-cube",
-            ),
-            (
-                "En camino",
-                "on_way",
-                5,
-                False,
-                False,
-                False,
-                True,
-                "primary",
-                "mdi-motorbike",
-            ),
-            (
-                "Entregado",
-                "delivered",
-                6,
-                False,
-                False,
-                True,
-                True,
-                "primary",
-                "mdi-truck-check",
-            ),
-            (
-                "Completado",
-                "completed",
-                7,
-                False,
-                True,
-                True,
-                True,
-                "success",
-                "mdi-check-circle-outline",
-            ),
-            (
-                "Cancelado",
-                "cancelled",
-                8,
-                False,
-                True,
-                True,
-                True,
-                "error",
-                "mdi-cancel",
-            ),
-        ]
-
-        for status in statuses:
-            _ = OrderStatus.objects.get_or_create(
-                name=status[0],
-                code_name=status[1],
-                order=status[2],
-                initial_status=status[3],
-                final_status=status[4],
-                store_status=status[5],
-                delivery_status=status[6],
-                color=status[7],
-                icon=status[8],
-            )
-
-    def create_payment_methods(self) -> None:
-        """Creates all payment methods objects"""
-
-        self.stdout.write(self.style.NOTICE("start populating payment methods"))
-
-        payment_methods = [
-            (
-                "USD Efectivo",
-                "payment_methods/payment_method_default.png",
-                "usd_cash",
-                "USD",
-                True,
-                True,
-                True,
-            ),
-            (
-                "CUP Efectivo",
-                "payment_methods/payment_method_default.png",
-                "cup_cash",
-                "CUP",
-                True,
-                True,
-                True,
-            ),
-            (
-                "Transfermovil",
-                "payment_methods/pics/transfermovil.png",
-                "transfermovil",
-                "CUP",
-                True,
-                False,
-                False,
-            ),
-            (
-                "EnZona",
-                "payment_methods/pics/enzona.png",
-                "en_zona",
-                "CUP",
-                True,
-                False,
-                False,
-            ),
-            (
-                "Wallet",
-                "payment_methods/pics/wallet.png",
-                "wallet",
-                "USD",
-                True,
-                False,
-                True,
-            ),
-            (
-                "Zelle",
-                "payment_methods/pics/zelle.png",
-                "zelle",
-                "USD",
-                False,
-                False,
-                False,
-            ),
-            (
-                "PayPal",
-                "payment_methods/pics/paypal.png",
-                "paypal",
-                "USD",
-                False,
-                False,
-                False,
-            ),
-            (
-                "Stripe",
-                "payment_methods/pics/stripe.png",
-                "stripe",
-                "USD",
-                False,
-                False,
-                False,
-            ),
-        ]
-
-        for payment_method in payment_methods:
-            currency = Currency.objects.get(initials=payment_method[3])
-            _ = PaymentMethod.objects.get_or_create(
-                name=payment_method[0],
-                logo_payment_method=payment_method[1],
-                code_name=payment_method[2],
-                currency=currency,
-                active=payment_method[4],
-                use_in_pos=payment_method[5],
-                use_in_store=payment_method[6],
-            )
-
+    
     def create_blog_tags(self) -> None:
         """Creates all tags objects"""
 
         self.stdout.write(self.style.NOTICE("start populating blog tags"))
 
         tags = [
+            "incoterms",
+            "alimentos",
             "pollo",
-            "productos VIMA",
-            "huevos",
             "arroz",
             "atún",
         ]
 
         for tag in tags:
-            _ = Tag.objects.get_or_create(name=tag)
+            _ = Tag.objects.get_or_create(translations=[])
 
     def create_blog_categories(self) -> None:
         """Creates all blog categories objects"""
@@ -602,78 +425,6 @@ class Command(BaseCommand):
 
         for category in categories:
             _ = BlogCategory.objects.get_or_create(name=category)
-
-    def create_shipping_zones(self) -> None:
-        """Creates all shipping zones objects"""
-
-        self.stdout.write(self.style.NOTICE("start populating shipping zones"))
-
-        shipping_zones = [
-            ("Habana Norte", ["Plaza", "Centro Habana", "Habana Vieja"]),
-            ("Habana Sur", ["Diez de Octubre", "Cerro", "Arroyo Naranjo", "Boyeros"]),
-            (
-                "Habana Este",
-                [
-                    "Habana del Este",
-                    "Guanabacoa",
-                    "Regla",
-                    "San Miguel del Padrón",
-                    "Cotorro",
-                ],
-            ),
-            ("Habana Oeste", ["Playa", "Marianao", "La Lisa"]),
-        ]
-
-        for shipping_zone in shipping_zones:
-            shipping_zone_obj, _ = ShippingZone.objects.get_or_create(
-                name=shipping_zone[0]
-            )
-            municipalities = shipping_zone[1]
-            for municipality in municipalities:
-                municipality_obj = Municipality.objects.get(name=municipality)
-                shipping_zone_obj.municipalities.add(municipality_obj)
-
-    def create_shipping_methods(self) -> None:
-        """Creates all shipping methods objects"""
-
-        self.stdout.write(self.style.NOTICE("start populating shipping methods"))
-
-        shipping_methods = [
-            ("Estándar", "standard"),
-            ("Express", "express"),
-        ]
-
-        for shipping_method in shipping_methods:
-            _ = ShippingMethod.objects.get_or_create(
-                name=shipping_method[0],
-                shipping_method_type=shipping_method[1],
-            )
-
-    def create_shipping_rates(self) -> None:
-        """Creates all shipping rates objects"""
-
-        self.stdout.write(self.style.NOTICE("start populating shipping rates"))
-
-        shipping_rates = [
-            ("Habana Norte", "Estándar", 8.98, 15),
-            ("Habana Sur", "Estándar", 7.45, 12),
-            ("Habana Este", "Estándar", 10.22, 25),
-            ("Habana Oeste", "Estándar", 9.33, 18),
-            ("Habana Norte", "Express", 18.98, 10),
-            ("Habana Sur", "Express", 17.45, 11),
-            ("Habana Este", "Express", 14.22, 15),
-            ("Habana Oeste", "Express", 19.33, 12),
-        ]
-
-        for shipping_rate in shipping_rates:
-            shipping_zone = ShippingZone.objects.get(name=shipping_rate[0])
-            shipping_method = ShippingMethod.objects.get(name=shipping_rate[1])
-            _ = ShippingRate.objects.get_or_create(
-                shipping_zone=shipping_zone,
-                shipping_method=shipping_method,
-                price=shipping_rate[2],
-                estimated_delivery_time=shipping_rate[3],
-            )
 
     def create_specifications(self) -> None:
         """Creates all specifications objects"""
@@ -714,7 +465,7 @@ class Command(BaseCommand):
 
         measurement_units = [
             ("Caja", "CAJ"),
-            ("Paca", "PAC"),
+            ("Bolsa", "BOL"),
             ("Unidad", "UND"),
             ("Pomo", "POM"),
         ]
@@ -730,11 +481,11 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating product's categories"))
 
         categories = [
-            ("Pollos", None),
-            ("Huevos", None),
-            ("Arroz", None),
-            ("Atún", None),
-            ("Productos VIMA", None),
+            ("Alimentos", None),
+            ("Pollos", "Alimentos"),
+            ("Huevos", "Alimentos"),
+            ("Arroz", "Alimentos"),
+            ("Atún", "Alimentos"),
         ]
 
         for category in categories:
@@ -743,7 +494,7 @@ class Command(BaseCommand):
                 parent=(
                     None
                     if category[1] is None
-                    else Category.objects.get(name=categories[category[1]][0])
+                    else Category.objects.get(name=category[1])
                 ),
             )
 
@@ -752,268 +503,10 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE("start populating providers"))
 
-        providers = ["TYSON", "HOUSE OF RAEFORD", "UNCLE SAM", "ATLANTIKO", "VIMA"]
+        providers = ["GROVE", "AJC", "CHOCOMILK CANARIAS SI", "ROQUE ENTERPRISES INC."]
 
         for provider in providers:
             _ = Provider.objects.get_or_create(name=provider)
-
-    def create_provinces(self) -> None:
-        """Creates all provinces and municipalities objects"""
-
-        self.stdout.write(
-            self.style.NOTICE("start populating provinces and municipalities")
-        )
-
-        provinces = [
-            (
-                "Pinar del Río",
-                [
-                    "Consolación del Sur",
-                    "Guane",
-                    "La Palma",
-                    "Los Palacios",
-                    "Mantua",
-                    "Minas de Matahambre",
-                    "Pinar del Río",
-                    "San Juan y Martínez",
-                    "San Luis",
-                    "Sandino",
-                    "Viñales",
-                ],
-            ),
-            (
-                "Artemisa",
-                [
-                    "Alquízar",
-                    "Artemisa",
-                    "Bauta",
-                    "Caimito",
-                    "Guanajay",
-                    "Güira de Melena",
-                    "Mariel",
-                    "San Antonio de los Baños",
-                    "Bahía Honda",
-                    "San Cristóbal",
-                    "Candelaria",
-                ],
-            ),
-            (
-                "Mayabeque",
-                [
-                    "Batabanó",
-                    "Bejucal",
-                    "Güines",
-                    "Jaruco",
-                    "Madruga",
-                    "Melena del Sur",
-                    "Nueva Paz",
-                    "Quivicán",
-                    "San José de las Lajas",
-                    "San Nicolás de Bari",
-                    "Santa Cruz del Norte",
-                ],
-            ),
-            (
-                "La Habana",
-                [
-                    "Arroyo Naranjo",
-                    "Boyeros",
-                    "Centro Habana",
-                    "Cerro",
-                    "Cotorro",
-                    "Diez de Octubre",
-                    "Guanabacoa",
-                    "Habana del Este",
-                    "Habana Vieja",
-                    "La Lisa",
-                    "Marianao",
-                    "Playa",
-                    "Plaza",
-                    "Regla",
-                    "San Miguel del Padrón",
-                ],
-            ),
-            (
-                "Matanzas",
-                [
-                    "Calimete",
-                    "Cárdenas",
-                    "Ciénaga de Zapata",
-                    "Colón",
-                    "Jagüey Grande",
-                    "Jovellanos",
-                    "Limonar",
-                    "Los Arabos",
-                    "Martí",
-                    "Matanzas",
-                    "Pedro Betancourt",
-                    "Perico",
-                    "Unión de Reyes",
-                ],
-            ),
-            (
-                "Cienfuegos",
-                [
-                    "Abreus",
-                    "Aguada de Pasajeros",
-                    "Cienfuegos",
-                    "Cruces",
-                    "Cumanayagua",
-                    "Palmira",
-                    "Rodas",
-                    "Santa Isabel de las Lajas",
-                ],
-            ),
-            (
-                "Villa Clara",
-                [
-                    "Caibarién",
-                    "Camajuaní",
-                    "Cifuentes",
-                    "Corralillo",
-                    "Encrucijada",
-                    "Manicaragua",
-                    "Placetas",
-                    "Quemado de Güines",
-                    "Ranchuelo",
-                    "Remedios",
-                    "Sagua la Grande",
-                    "Santa Clara",
-                    "Santo Domingo",
-                ],
-            ),
-            (
-                "Sancti Spíritus",
-                [
-                    "Cabaigúan",
-                    "Fomento",
-                    "Jatibonico",
-                    "La Sierpe",
-                    "Sancti Spíritus",
-                    "Taguasco",
-                    "Trinidad",
-                    "Yaguajay",
-                ],
-            ),
-            (
-                "Ciego de Ávila",
-                [
-                    "Ciro Redondo",
-                    "Baraguá",
-                    "Bolivia",
-                    "Chambas",
-                    "Ciego de Ávila",
-                    "Florencia",
-                    "Majagua",
-                    "Morón",
-                    "Primero de Enero",
-                    "Venezuela",
-                ],
-            ),
-            (
-                "Camagüey",
-                [
-                    "Camagüey",
-                    "Carlos Manuel de Céspedes",
-                    "Esmeralda",
-                    "Florida",
-                    "Guaimaro",
-                    "Jimagüayú",
-                    "Minas",
-                    "Najasa",
-                    "Nuevitas",
-                    "Santa Cruz del Sur",
-                    "Sibanicú",
-                    "Sierra de Cubitas",
-                    "Vertientes",
-                ],
-            ),
-            (
-                "Las Tunas",
-                [
-                    "Amancio Rodríguez",
-                    "Colombia",
-                    "Jesús Menéndez",
-                    "Jobabo",
-                    "Las Tunas",
-                    "Majibacoa",
-                    "Manatí",
-                    "Puerto Padre",
-                ],
-            ),
-            (
-                "Holguín",
-                [
-                    "Antilla",
-                    "Báguanos",
-                    "Banes",
-                    "Cacocum",
-                    "Calixto García",
-                    "Cueto",
-                    "Frank País",
-                    "Gibara",
-                    "Holguín",
-                    "Mayarí",
-                    "Moa",
-                    "Rafael Freyre",
-                    "Sagua de Tánamo",
-                    "Urbano Noris",
-                ],
-            ),
-            (
-                "Santiago de Cuba",
-                [
-                    "Contramaestre",
-                    "Guamá",
-                    "Julio Antonio Mella",
-                    "Palma Soriano",
-                    "San Luis",
-                    "Santiago de Cuba",
-                    "Segundo Frente",
-                    "Songo la Maya",
-                    "Tercer Frente",
-                ],
-            ),
-            (
-                "Guantánamo",
-                [
-                    "Baracoa",
-                    "Caimanera",
-                    "El Salvador",
-                    "Guantánamo",
-                    "Imías",
-                    "Maisí",
-                    "Manuel Tames",
-                    "Niceto Pérez",
-                    "San Antonio del Sur",
-                    "Yateras",
-                ],
-            ),
-            ("Isla de la Juventud", ["Isla de la Juventud"]),
-            (
-                "Granma",
-                [
-                    "Bartolomé Masó",
-                    "Bayamo",
-                    "Buey Arriba",
-                    "Campechuela",
-                    "Cauto Cristo",
-                    "Guisa",
-                    "Jiguaní",
-                    "Manzanillo",
-                    "Media Luna",
-                    "Niquero",
-                    "Pilón",
-                    "Río Cauto",
-                    "Yara",
-                ],
-            ),
-        ]
-
-        for province in provinces:
-            prov = Province.objects.create(name=province[0])
-            for municipality in province[1]:
-                _ = Municipality.objects.create(name=municipality, province_id=prov.id)
 
     def create_notification_types(self) -> None:
         """Creates all notification types objects"""
@@ -1057,7 +550,6 @@ class Command(BaseCommand):
             ("HOUSE OF RAEFORD", "brands/pics/afro_love.png"),
             ("UNCLE SAM", "brands/pics/afro_love.png"),
             ("ATLANTIKO", "brands/pics/afro_love.png"),
-            ("VIMA", "brands/pics/afro_love.png"),
         ]
 
         for brand in brands:
@@ -1078,10 +570,10 @@ class Command(BaseCommand):
                 "USD",  # currency
                 30,  # quantity_per_box
                 "Arroz",  # category
-                "UNCLE SAM",  # provider
+                "GROVE",  # provider
                 "UNCLE SAM",  # brand
                 "USA",  # country
-                "PACA",  # measurement_unit
+                "Bolsa",  # measurement_unit
             ),
             (
                 "FC-0002",  # code_sku
@@ -1092,10 +584,10 @@ class Command(BaseCommand):
                 "USD",  # currency
                 48,  # quantity_per_box
                 "Atún",  # category
-                "ATLANTIKO",  # provider
+                "GROVE",  # provider
                 "ATLANTIKO",  # brand
                 "USA",  # country
-                "CAJA",  # measurement_unit
+                "Caja",  # measurement_unit
             ),
             (
                 "FC-0003",  # code_sku
@@ -1106,10 +598,10 @@ class Command(BaseCommand):
                 "USD",  # currency
                 12,  # quantity_per_box
                 "Huevos",  # category
-                None,  # provider
+                "GROVE",  # provider
                 None,  # brand
                 "USA",  # country
-                "CAJA",  # measurement_unit
+                "Caja",  # measurement_unit
             ),
             (
                 "FC-0004",  # code_sku
@@ -1120,10 +612,10 @@ class Command(BaseCommand):
                 "USD",  # currency
                 1,  # quantity_per_box
                 "Pollos",  # category
-                "HOUSE OF RAEFORD",  # provider
+                "GROVE",  # provider
                 "HOUSE OF RAEFORD",  # brand
                 "USA",  # country
-                "CAJA",  # measurement_unit
+                "Caja",  # measurement_unit
             ),
         ]
 
@@ -1167,7 +659,6 @@ class Command(BaseCommand):
             is_superuser=False,
             is_active=True,
             verified=True,
-            is_deliverer=True,
         )
         user.set_password("123456")
         user.save()
@@ -1198,7 +689,6 @@ class Command(BaseCommand):
             check_terms_conditions=True,
             check_privacy_policy=True,
             next_login_change_password=False,
-            newsletter=False,
             is_staff=False,
             is_superuser=False,
             is_active=True,
@@ -1206,7 +696,6 @@ class Command(BaseCommand):
         )
         cliente.set_password("123456")
         cliente.save()
-        Wallet.objects.create(user=cliente, amount=100)
 
         _ = User(
             first_name="Carlos R.",
@@ -1216,7 +705,6 @@ class Command(BaseCommand):
             check_terms_conditions=True,
             check_privacy_policy=True,
             next_login_change_password=False,
-            newsletter=True,
             is_staff=True,
             is_superuser=True,
             is_active=True,
@@ -1234,7 +722,6 @@ class Command(BaseCommand):
             check_terms_conditions=True,
             check_privacy_policy=True,
             next_login_change_password=False,
-            newsletter=True,
             is_staff=True,
             is_superuser=True,
             is_active=True,
@@ -1259,8 +746,7 @@ class Command(BaseCommand):
         self.create_roles()
         self.create_users()
         self.create_brands()
-        self.create_provinces()
-        self.create_order_statuses()
+        # self.create_order_statuses()
         self.create_currencies()
         self.create_countries()
         self.create_measurement_units()
@@ -1268,11 +754,7 @@ class Command(BaseCommand):
         self.create_providers()
         self.create_specifications()
         self.create_cms_infrastructure()
-        self.create_blog_tags()
-        self.create_blog_categories()
-        self.create_shipping_zones()
-        self.create_shipping_methods()
-        self.create_shipping_rates()
-        self.create_payment_methods()
-        self.create_post()
+        #self.create_blog_tags()
+        #self.create_blog_categories()
+        #self.create_post()
         self.create_products()
