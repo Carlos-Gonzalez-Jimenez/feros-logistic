@@ -436,20 +436,27 @@ class Presentation(models.Model):
         return self.name
 
 
-class ProductPresentation(models.Model):
+class ProductProvider(models.Model):
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
-    presentation = models.ManyToManyField(
-        Presentation, related_name="products", blank=True
-    )
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Product - Presentation"
         verbose_name_plural = "Product - Presentations"
         ordering = ["-id"]
+        unique_together = ["product", "provider"]
 
     def __str__(self):
         return f"{self.product.name} - {self.provider.name}"
+
+
+class ProductProviderPresentation(models.Model):
+    product_provider = models.ForeignKey(ProductProvider, on_delete=models.CASCADE)
+    presentation = models.ForeignKey(Presentation, related_name='product_providers', on_delete=models.PROTECT)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["product_provider", "presentation"]
 
 
 class ProductImageOrder(models.Model):

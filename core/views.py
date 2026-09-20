@@ -1,43 +1,19 @@
-import datetime
-from decimal import Decimal
-from io import BytesIO
-
-import openpyxl
-import pandas as pd
-from django.core.cache import cache
-from django.db import models as output_field
 from django.db import transaction
-from django.db.models import Exists, ProtectedError, QuerySet, Value
 from django.db.models import Prefetch
+from django.db.models import ProtectedError
 from django.db.models import (
-    Subquery,
-    OuterRef,
-    F,
-    ExpressionWrapper,
-    DecimalField,
     Q,
-    Sum,
-    Avg,
-    Count,
 )
-from django.db.models.functions import Coalesce
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.template.loader import get_template
-from django.utils.text import slugify
-from django.utils.timezone import now
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
+from django_filters.views import FilterView
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
-from rest_framework.generics import GenericAPIView
 from rest_framework.generics import (
     RetrieveUpdateAPIView,
     ListAPIView,
 )
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
 
@@ -45,14 +21,10 @@ from core import models, serializers, filters
 from core.exceptions import (
     ProtectedInstanceException,
 )
-from logistic_backend.settings import MEDIA_URL
-from user.tasks import send_mail
-from .generics import MultiplePermissionsView
 from .permissions import (
     CustomPermissionFactory,
     ReadOnlyPermission,
 )
-from .services import NotificationService, get_state_handler
 
 
 class ProtectedResourceViewSet(viewsets.ModelViewSet):
@@ -512,7 +484,7 @@ class PresentationViewSet(ProtectedResourceViewSet):
     search_fields = ["name"]
 
 
-class ProductPresentationViewSet(ProtectedResourceViewSet):
+class ProductProviderViewSet(ProtectedResourceViewSet):
     """
     Product Presentation model\n
     GET: Shows all Product Presentations created.\n
@@ -526,8 +498,19 @@ class ProductPresentationViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
     ]
-    serializer_class = serializers.ProductPresentationSerializer
-    queryset = models.ProductPresentation.objects.all()
+    queryset = models.ProductProvider.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return serializers.ProductProviderWriteSerializer
+        return serializers.ProductProviderReadSerializer
+
+
+class ProductProviderPresentationsListAPIView(ListAPIView):
+    serializer_class = serializers.ProductProviderPresentationSerializer
+    queryset = models.ProductProviderPresentation.objects.filter(active=True).all()
+    filterset_class = filters.ProductProviderPresentationFilter
+    pagination_class = None
 
 
 class ProductSlugView(ListAPIView):

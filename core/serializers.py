@@ -1,8 +1,9 @@
 from decimal import Decimal
+
 from django.db import transaction
 from django.utils.text import slugify
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+
 from cms.models import Composer, ContentType, BlockMEDIA
 from cms.serializers import (
     BlockMEDIASerializer,
@@ -483,7 +484,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                validated_data.get("unit_price") - instance.unit_price
+                    validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -717,10 +718,10 @@ class PresentationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Presentation
-        fields = "__all__"
+        fields = ['id', 'name']
 
 
-class ProductPresentationSerializer(serializers.ModelSerializer):
+class ProductProviderReadSerializer(serializers.ModelSerializer):
     """_summary_
 
     Args:
@@ -741,44 +742,102 @@ class ProductPresentationSerializer(serializers.ModelSerializer):
         queryset=models.Provider.objects.filter(active=True),
         source="provider",
     )
-    presentation = PresentationSerializer(read_only=True, many=True)
-    presentation_ids = serializers.PrimaryKeyRelatedField(
-        required=False,
-        many=True,
-        queryset=models.Presentation.objects.all(),
-        source="presentation",
-    )
+    presentations = serializers.SerializerMethodField(read_only=True)
+    presentations_ids = serializers.SerializerMethodField(read_only=True)
+
+    def _get_presentations(self, obj):
+        return models.Presentation.objects.filter(
+            product_providers__product_provider=obj, product_providers__active=True
+        ).all()
+
+    def get_presentations(self, obj):
+        return PresentationSerializer(self._get_presentations(obj), many=True).data
+
+    def get_presentations_ids(self, obj):
+        return self._get_presentations(obj).values_list("id", flat=True)
 
     class Meta:
-        model = models.ProductPresentation
+        model = models.ProductProvider
         fields = [
             "id",
             "product",
             "product_id",
             "provider",
             "provider_id",
-            "presentation",
-            "presentation_ids",
+            "presentations",
+            "presentations_ids",
+        ]
+
+
+class ProductProviderWriteSerializer(ProductProviderReadSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    presentations_ids = serializers.PrimaryKeyRelatedField(
+        required=True,
+        many=True, write_only=True,
+        queryset=models.Presentation.objects.all(),
+    )
+
+    class Meta:
+        model = models.ProductProvider
+        fields = [
+            "id",
+            "product",
+            "product_id",
+            "provider",
+            "provider_id",
+            "presentations",
+            "presentations_ids",
         ]
 
     def create(self, validated_data):
         with transaction.atomic():
-            presentation_ids = validated_data.pop("presentation_ids", None)
-            product_presentation = models.ProductPresentation.objects.create(
-                **validated_data
-            )
-            if presentation_ids:
-                product_presentation.presentation.set(presentation_ids)
-            return product_presentation
+            presentations = validated_data.pop("presentations_ids", None)
+            product_provider = models.ProductProvider.objects.create(**validated_data)
+            if presentations:
+                models.ProductProviderPresentation.objects.bulk_create(
+                    [models.ProductProviderPresentation(
+                        product_provider=product_provider,
+                        presentation=presentation) for presentation in
+                        presentations]
+                )
+            return product_provider
 
     def update(self, instance, validated_data):
         with transaction.atomic():
-            presentation_ids = validated_data.pop("presentation_ids", None)
-            instance = super().update(instance, validated_data)
-            if presentation_ids:
-                instance.presentation.clear()
-                instance.presentation.set(presentation_ids)
+            presentations = validated_data.pop("presentations_ids", None)
+            product_provider = super().update(instance, validated_data)
+            if presentations:
+                models.ProductProviderPresentation.objects.filter(
+                    product_provider=product_provider).update(active=False)
+                models.ProductProviderPresentation.objects.filter(
+                    product_provider=product_provider,
+                    presentation__in=presentations).update(active=True)
+
+                current_presentations = self.get_presentations_ids(product_provider)
+                for presentation in presentations:
+                    if not presentation.pk in current_presentations:
+                        models.ProductProviderPresentation.objects.create(
+                            product_provider=product_provider,
+                            presentation=presentation
+                        )
             return instance
+
+
+class ProductProviderPresentationSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField(read_only=True)
+    presentation = PresentationSerializer(read_only=True)
+
+    def get_product(self, obj):
+        return ProductReadMinimalSerializer(obj.product_provider.product).data
+
+    class Meta:
+        model = models.ProductProviderPresentation
+        exclude = ['active', 'product_provider']
 
 
 class ConfigSerializer(serializers.ModelSerializer):
