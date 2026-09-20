@@ -23,6 +23,10 @@ from core.models import (
     Measurement_Unit,
     Product,
     Brand,
+    ShippingCompany,
+    Vessel,
+    Port,
+    ContainerType,
     Presentation,
     ProductPresentation,
     Provider,
@@ -568,13 +572,104 @@ class Command(BaseCommand):
 
         brands = [
             ("TYSON", "brands/pics/afro_love.png"),
-            ("HOUSE OF RAEFORD", "brands/pics/afro_love.png"),
-            ("UNCLE SAM", "brands/pics/afro_love.png"),
-            ("ATLANTIKO", "brands/pics/afro_love.png"),
+            ("HOUSE OF RAEFORD", "brands/brand_image_default.png"),
+            ("PILGRIMS", "brands/brand_image_default.png"),
+            ("MUMILK", "brands/brand_image_default.png"),
+            ("SANDERSON", "brands/brand_image_default.png"),
+            ("EARLY DAWN PREMIUM", "brands/brand_image_default.png"),
+            ("PECO FARMS", "brands/brand_image_default.png"),
+            ("CLAXTON", "brands/brand_image_default.png"),
         ]
 
         for brand in brands:
             _ = Brand.objects.get_or_create(name=brand[0], logo_brand=brand[1])
+
+    def create_shipping_companies(self) -> None:
+        """Creates all shipping companies objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating shipping companies"))
+
+        shipping_companies = ["CROWLEY", "SEABOARD", "CTM"]
+
+        for shipping_company in shipping_companies:
+            _ = ShippingCompany.objects.get_or_create(name=shipping_company)
+
+    def create_vessels(self) -> None:
+        """Creates all vessels objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating vessels"))
+
+        vessels = [
+            ("QUETZAL", "CROWLEY"),
+            ("PIONEER", "SEABOARD"),
+            ("TOROGOZ", "CROWLEY"),
+            ("TISCAPA", "CROWLEY"),
+            ("PRIDE", "SEABOARD"),
+            ("SL HARRIER", "SEABOARD"),
+            ("EA TURIA", "SEABOARD"),
+            ("STORM", "CROWLEY"),
+            ("BREEZE", "CROWLEY"),
+            ("REGULA", "CROWLEY"),
+            ("COPAN", "CROWLEY"),
+        ]
+
+        for vessel in vessels:
+            shipping_company = ShippingCompany.objects.get(name=vessel[1])
+            _ = Vessel.objects.get_or_create(
+                name=vessel[0], shipping_company=shipping_company
+            )
+
+    def create_ports(self) -> None:
+        """Creates all ports objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating ports"))
+
+        ports = [
+            (
+                "MARIEL",
+                "CU MAR",
+                "El puerto de Mariel es un notable centro marítimo, con un canal que ha sido dragado a una impresionante profundidad de 18 metros, lo que permite acomodar incluso a los buques Super-Panamax más grandes. Este puerto moderno no solo recibe enormes cruceros, sino que también cuenta con centros logísticos y áreas comerciales.",
+            ),
+            (
+                "JAXPORT",
+                "US JAX",
+                "El Puerto de Jacksonville, también conocido como JAXPORT, es uno de los principales gateways marítimos de Florida y una plataforma logística estratégica para el sureste de Estados Unidos, el Caribe, América Latina y rutas globales. Ubicado en Jacksonville, Florida, sobre el río St. Johns, conecta importadores, exportadores, fabricantes, retailers, distribuidores y cadenas de suministro internacionales con Florida, Georgia, Alabama, South Carolina, North Carolina y otros mercados interiores.\nJacksonville es especialmente importante para carga contenerizada, automoción, RoRo, productos de consumo, retail, eCommerce, alimentos, bebidas, carga refrigerada, maquinaria, productos industriales, químicos permitidos, productos forestales, carga general, breakbulk y project cargo. Sus principales instalaciones de carga incluyen Blount Island Marine Terminal, Dames Point Marine Terminal y Talleyrand Marine Terminal.",
+            ),
+            (
+                "HOUSTON",
+                "US HOU",
+                "El Puerto de Houston es uno de los principales gateways marítimos de Estados Unidos y un puerto estratégico para el comercio internacional del Golfo de México. Ubicado en Houston, Texas, y conectado con el Houston Ship Channel, sirve a una de las regiones industriales, energéticas, petroquímicas, agrícolas, manufactureras y logísticas más importantes de Norteamérica.\nHouston es especialmente importante para carga contenerizada, resinas, plásticos, productos químicos permitidos, maquinaria, alimentos, retail, eCommerce, carga refrigerada, productos industriales, autopartes, carga general, breakbulk, project cargo, carga de exportación estadounidense e importaciones destinadas a Texas y mercados interiores. Sus principales terminales de contenedores incluyen Bayport y Barbours Cut, ambas operadas por Port Houston.",
+            ),
+            (
+                "NOLA",
+                "US MSY",
+                "El Puerto de Nueva Orleans, también conocido como Port NOLA, es un gateway marítimo estratégico del Golfo de México y del corredor del río Mississippi. Ubicado en Nueva Orleans, Louisiana, conecta importadores, exportadores, fabricantes, distribuidores, retailers, agroindustria y cadenas de suministro internacionales con Louisiana, Mississippi, Arkansas, Tennessee, Missouri, Texas, Alabama y otros mercados interiores de Estados Unidos.\nNueva Orleans es especialmente importante para carga contenerizada, carga general, breakbulk, productos forestales, acero, alimentos, productos agrícolas, café, bebidas, maquinaria, productos industriales, químicos permitidos, resinas, plásticos, carga refrigerada, mercancía de retail, eCommerce, project cargo y flujos conectados con el río Mississippi. Su ubicación permite combinar transporte marítimo, fluvial, ferroviario y terrestre en una de las regiones logísticas más importantes del sur de Estados Unidos.",
+            ),
+        ]
+
+        for port in ports:
+            _ = Port.objects.get_or_create(
+                name=port[0], abbreviation=port[1], description=port[2]
+            )
+
+    def create_container_types(self) -> None:
+        """Creates all container types objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating container types"))
+
+        container_types = [
+            ("40' Contenedor Frigorífico (reefer container)", 7),
+            ("40' Contenedor Carga General (dry container)", 15),
+            ("Contenedor Tanque (ISO tank)", 0),
+            ("Contenedor sin techo (open top container)", 0),
+            ("Contenedor Plataforma (flat rack container)", 0),
+            ("Contenedor de Costado Abierto (open side container)", 0),
+        ]
+
+        for container_type in container_types:
+            _ = ContainerType.objects.get_or_create(
+                name=container_type[0], free_days=container_type[1]
+            )
 
     def create_products(self) -> None:
         """Creates all product´s objects"""
@@ -592,7 +687,7 @@ class Command(BaseCommand):
                 30,  # quantity_per_box
                 "Arroz",  # category
                 "GROVE",  # provider
-                "UNCLE SAM",  # brand
+                "TYSON",  # brand
                 "USA",  # country
                 "Bolsa",  # measurement_unit
             ),
@@ -606,7 +701,7 @@ class Command(BaseCommand):
                 48,  # quantity_per_box
                 "Atún",  # category
                 "GROVE",  # provider
-                "ATLANTIKO",  # brand
+                "MUMILK",  # brand
                 "USA",  # country
                 "Caja",  # measurement_unit
             ),
@@ -781,6 +876,10 @@ class Command(BaseCommand):
         self.create_roles()
         self.create_users()
         self.create_brands()
+        self.create_shipping_companies()
+        self.create_vessels()
+        self.create_ports()
+        self.create_container_types()
         self.create_presentations()
         # self.create_order_statuses()
         self.create_currencies()
