@@ -697,4 +697,3 @@ class PurchaseOrderViewSet(ProtectedResourceViewSet):
 
     queryset = models.PurchaseOrder.objects.all()
     serializer_class = serializers.PurchaseOrderSerializer
-    search_fields = ["po_number"]

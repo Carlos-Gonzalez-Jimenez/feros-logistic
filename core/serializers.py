@@ -13,6 +13,7 @@ from cms.serializers import (
 from core import models
 from core.services import NotificationService
 from user.models import User
+from user.serializers import UserMinimalSerializer
 
 
 class ShippingCompanySerializer(serializers.ModelSerializer):
@@ -961,6 +962,20 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PurchaseOrderItemSerializer(serializers.ModelSerializer):
+    product = ProductReadMinimalSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.all(), source='product')
+    measurement_unit = MeasurementUnitSerializer(read_only=True)
+    measurement_unit_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Measurement_Unit.objects.all(),
+        source='measurement_unit'
+    )
+
+    class Meta:
+        model = models.PurchaseOrderItem
+        fields = serializers.ALL_FIELDS
+
+
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -968,36 +983,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         serializers (_type_): _description_
     """
 
-    product = ProductReadSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=models.Product.objects.all(),
-        source="product",
-    )
     provider = ProviderSerializer(read_only=True)
     provider_id = serializers.PrimaryKeyRelatedField(
         required=True,
         queryset=models.Provider.objects.all(),
         source="provider",
     )
-    measurement_unit = MeasurementUnitSerializer(read_only=True)
-    measurement_unit_id = serializers.PrimaryKeyRelatedField(
-        required=True,
-        queryset=models.Measurement_Unit.objects.all(),
-        source="measurement_unit",
-    )
+    user = UserMinimalSerializer(read_only=True)
+    purchase_order_items = PurchaseOrderItemSerializer(many=True)
 
     class Meta:
         model = models.PurchaseOrder
-        fields = [
-            "po_number",
-            "po_date",
-            "quantity",
-            "product",
-            "product_id",
-            "provider",
-            "provider_id",
-            "measurement_unit",
-            "measurement_unit_id",
-            "created_at",
-        ]
+        fields = serializers.ALL_FIELDS

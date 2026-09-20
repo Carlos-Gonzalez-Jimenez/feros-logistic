@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -664,32 +665,25 @@ class ProcessingPlant(models.Model):
 
 
 class PurchaseOrder(models.Model):
-    po_number = models.CharField(max_length=100)
-    po_date = models.DateField()
-    quantity = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    product = models.ForeignKey(
-        Product, related_name="purchase_orders", on_delete=models.CASCADE
-    )
-    provider = models.ForeignKey(
-        Provider, related_name="purchase_orders", on_delete=models.CASCADE
-    )
-    measurement_unit = models.ForeignKey(
-        Measurement_Unit, related_name="purchase_orders", on_delete=models.CASCADE
-    )
+    provider = models.ForeignKey(Provider, related_name="purchase_orders", on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="purchase_orders", on_delete=models.PROTECT)
+    observations = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.po_number
+        return self.pk
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Purchase Order"
         verbose_name_plural = "Purchase Orders"
-        ordering = ["-po_date"]
-        indexes = [
-            models.Index(fields=["po_number"]),
-        ]
+
+class PurchaseOrderItem(models.Model):
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name="purchase_order_items", on_delete=models.PROTECT)
+    product = models.ForeignKey(
+        ProductProviderPresentation, related_name="purchase_order_items", on_delete=models.PROTECT
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
 
 
 class SaleOrder(models.Model):
