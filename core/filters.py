@@ -10,7 +10,7 @@ from core.models import (
     Category,
     Brand,
     Country,
-    NotificationUser,
+    NotificationUser, Provider, ProductProviderPresentation,
 )
 from user.models import User
 
@@ -68,3 +68,10 @@ class NotificationUserFilter(filters.FilterSet):
         model = NotificationUser
         fields = ["user"]
 
+
+class ProductProviderPresentationFilter(filters.FilterSet):
+    provider = ModelChoiceFilter(queryset=Provider.objects.all(), field_name="product_provider__provider")
+
+    class Meta:
+        model = ProductProviderPresentation
+        fields = ['provider']

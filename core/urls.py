@@ -31,9 +31,9 @@ router.register(
 )
 router.register(r"presentations", views.PresentationViewSet, basename="presentations")
 router.register(
-    r"product-presentations",
-    views.ProductPresentationViewSet,
-    basename="product-presentations",
+    r"product-providers",
+    views.ProductProviderViewSet,
+    basename="product-providers",
 )
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
@@ -53,6 +53,12 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
+
+    path(
+        r"product-provider-presentations",
+        views.ProductProviderPresentationsListAPIView.as_view(),
+        name="product-provider-presentations",
+    ),
     path(
         "product/<slug:slug>/",
         views.ProductSlugView.as_view(),

@@ -24,7 +24,7 @@ from core.models import (
     Product,
     Brand,
     Presentation,
-    ProductPresentation,
+    ProductProvider,
     Provider,
     Country,
     NotificationType,
@@ -672,7 +672,7 @@ class Command(BaseCommand):
         product = Product.objects.get(name="Pollo")
         provider = Provider.objects.get(name="GROVE")
         presentation = [1, 3]
-        _ = ProductPresentation.objects.create(
+        _ = ProductProvider.objects.create(
             product_id=product.id, provider_id=provider.id
         )
         _.presentation.set(presentation)
