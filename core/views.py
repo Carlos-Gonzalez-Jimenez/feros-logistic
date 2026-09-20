@@ -492,6 +492,7 @@ class ProductViewSet(ProtectedResourceViewSet):
                 root_categories.append(cat_data)
         return root_categories
 
+
 class PresentationViewSet(ProtectedResourceViewSet):
     """
     Presentation model\n
@@ -506,9 +507,29 @@ class PresentationViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
     ]
+    serializer_class = serializers.PresentationSerializer
     queryset = models.Presentation.objects.all()
     search_fields = ["name"]
-   
+
+
+class ProductPresentationViewSet(ProtectedResourceViewSet):
+    """
+    Product Presentation model\n
+    GET: Shows all Product Presentations created.\n
+    POST: Adds a new Product Presentation.\n
+    GET{id}: Retrieves a specific Product Presentation determined by id.\n
+    PUT{id}: Modifies all fields of a specific Product Presentation determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Product Presentation determined by id.\n
+    DELETE{id}: Deletes a specific Product Presentation determined by id.\n
+    """
+
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
+    ]
+    serializer_class = serializers.ProductPresentationSerializer
+    queryset = models.ProductPresentation.objects.all()
+
+
 class ProductSlugView(ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = serializers.ProductReadSerializer

@@ -30,6 +30,11 @@ router.register(
     basename="specification-details",
 )
 router.register(r"presentations", views.PresentationViewSet, basename="presentations")
+router.register(
+    r"product-presentations",
+    views.ProductPresentationViewSet,
+    basename="product-presentations",
+)
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
 router.register(

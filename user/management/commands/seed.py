@@ -24,6 +24,7 @@ from core.models import (
     Product,
     Brand,
     Presentation,
+    ProductPresentation,
     Provider,
     Country,
     NotificationType,
@@ -532,19 +533,19 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating presentations"))
 
         presentations = [
-            ("3 x 5 Kg"),
-            ("A granel"),
-            ("Muslo y contramuslo"),
-            ("4 x 10 Lbs"),
-            ("Muslos (drumstick)"),
-            ("33 Libras"),
-            ("22 Libras"),
-            ("40 Libras"),
-            ("15 bolsas de 1 Kg"),
+            "3 x 5 Kg",
+            "A granel",
+            "Muslo y contramuslo",
+            "4 x 10 Lbs",
+            "Muslos (drumstick)",
+            "33 Libras",
+            "22 Libras",
+            "40 Libras",
+            "15 bolsas de 1 Kg",
         ]
 
         for presentation in presentations:
-            _ = Presentation.objects.get_or_create(name=presentation[0])
+            _ = Presentation.objects.get_or_create(name=presentation)
 
     def create_roles(self) -> None:
         """Creates all rol objects"""
@@ -625,7 +626,7 @@ class Command(BaseCommand):
             ),
             (
                 "FC-0004",  # code_sku
-                "Pollo 40 libras",  # name
+                "Pollo",  # name
                 "25000",  # quantity
                 30.3,  # unit_price
                 20.55,  # cost_price
@@ -662,6 +663,20 @@ class Command(BaseCommand):
                 country=Country.objects.get(code_alpha3=product[10]),
                 measurement_unit=Measurement_Unit.objects.get(name=product[11]),
             )
+
+    def create_product_presentation(self):
+        """Create all product's presentation"""
+
+        self.stdout.write(self.style.NOTICE("start populating product's presentation"))
+
+        product = Product.objects.get(name="Pollo")
+        provider = Provider.objects.get(name="GROVE")
+        presentation = [1, 3]
+        _ = ProductPresentation.objects.create(
+            product_id=product.id, provider_id=provider.id
+        )
+        _.presentation.set(presentation)
+        _.save()
 
     def create_users(self):
         """Creates all users object"""
@@ -779,3 +794,4 @@ class Command(BaseCommand):
         # self.create_blog_categories()
         # self.create_post()
         self.create_products()
+        self.create_product_presentation()

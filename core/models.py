@@ -444,6 +444,8 @@ class ProductPresentation(models.Model):
     )
 
     class Meta(PermissionsMeta.Meta):
+        verbose_name = "Product - Presentation"
+        verbose_name_plural = "Product - Presentations"
         ordering = ["-id"]
 
     def __str__(self):

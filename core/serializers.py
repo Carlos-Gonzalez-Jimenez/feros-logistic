@@ -720,6 +720,67 @@ class PresentationSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class ProductPresentationSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    product = ProductReadSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        allow_null=True,
+        required=False,
+        queryset=models.Product.objects.filter(active=True),
+        source="product",
+    )
+    provider = ProviderSerializer(read_only=True)
+    provider_id = serializers.PrimaryKeyRelatedField(
+        allow_null=True,
+        required=False,
+        queryset=models.Provider.objects.filter(active=True),
+        source="provider",
+    )
+    presentation = PresentationSerializer(read_only=True, many=True)
+    presentation_ids = serializers.PrimaryKeyRelatedField(
+        required=False,
+        many=True,
+        queryset=models.Presentation.objects.all(),
+        source="presentation",
+    )
+
+    class Meta:
+        model = models.ProductPresentation
+        fields = [
+            "id",
+            "product",
+            "product_id",
+            "provider",
+            "provider_id",
+            "presentation",
+            "presentation_ids",
+        ]
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            presentation_ids = validated_data.pop("presentation_ids", None)
+            product_presentation = models.ProductPresentation.objects.create(
+                **validated_data
+            )
+            if presentation_ids:
+                product_presentation.presentation.set(presentation_ids)
+            return product_presentation
+
+    def update(self, instance, validated_data):
+        with transaction.atomic():
+            presentation_ids = validated_data.pop("presentation_ids", None)
+            instance = super().update(instance, validated_data)
+            if presentation_ids:
+                instance.presentation.clear()
+                instance.presentation.set(presentation_ids)
+            return instance
+
+
 class ConfigSerializer(serializers.ModelSerializer):
     """_summary_
 
