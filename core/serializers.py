@@ -483,7 +483,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                    validated_data.get("unit_price") - instance.unit_price
+                validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -706,6 +706,18 @@ class ProductReadMinimalSerializer(serializers.ModelSerializer):
             "use_custom_template",
             "active",
         ]
+
+
+class PresentationSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.Presentation
+        fields = "__all__"
 
 
 class ConfigSerializer(serializers.ModelSerializer):

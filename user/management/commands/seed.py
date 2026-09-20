@@ -23,6 +23,7 @@ from core.models import (
     Measurement_Unit,
     Product,
     Brand,
+    Presentation,
     Provider,
     Country,
     NotificationType,
@@ -399,7 +400,6 @@ class Command(BaseCommand):
             )
             country.save()
 
-    
     def create_blog_tags(self) -> None:
         """Creates all tags objects"""
 
@@ -525,6 +525,26 @@ class Command(BaseCommand):
                 color=notification_type[1],
                 icon=notification_type[2],
             )
+
+    def create_presentations(self) -> None:
+        """Creates all presentation objects related to products"""
+
+        self.stdout.write(self.style.NOTICE("start populating presentations"))
+
+        presentations = [
+            ("3 x 5 Kg"),
+            ("A granel"),
+            ("Muslo y contramuslo"),
+            ("4 x 10 Lbs"),
+            ("Muslos (drumstick)"),
+            ("33 Libras"),
+            ("22 Libras"),
+            ("40 Libras"),
+            ("15 bolsas de 1 Kg"),
+        ]
+
+        for presentation in presentations:
+            _ = Presentation.objects.get_or_create(name=presentation[0])
 
     def create_roles(self) -> None:
         """Creates all rol objects"""
@@ -746,6 +766,7 @@ class Command(BaseCommand):
         self.create_roles()
         self.create_users()
         self.create_brands()
+        self.create_presentations()
         # self.create_order_statuses()
         self.create_currencies()
         self.create_countries()
@@ -754,7 +775,7 @@ class Command(BaseCommand):
         self.create_providers()
         self.create_specifications()
         self.create_cms_infrastructure()
-        #self.create_blog_tags()
-        #self.create_blog_categories()
-        #self.create_post()
+        # self.create_blog_tags()
+        # self.create_blog_categories()
+        # self.create_post()
         self.create_products()

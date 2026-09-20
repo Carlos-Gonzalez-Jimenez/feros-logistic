@@ -12,6 +12,7 @@ from core.models import (
     Specifications,
     SpecificationDetails,
     Brand,
+    Presentation,
     Config,
     PurchaseOrder,
     SaleOrder,
@@ -33,6 +34,7 @@ admin.site.register(Specifications)
 admin.site.register(SpecificationDetails)
 admin.site.register(Brand)
 admin.site.register(Config)
+admin.site.register(Presentation)
 admin.site.register(PurchaseOrder)
 admin.site.register(SaleOrder)
 admin.site.register(Port)

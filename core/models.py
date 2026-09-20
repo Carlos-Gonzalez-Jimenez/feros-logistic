@@ -16,7 +16,9 @@ class ShippingCompany(models.Model):
         return self.name
 
     class Meta(PermissionsMeta.Meta):
-        permissions = [("manage_shipping_companies", _("Can manage shipping companies"))]
+        permissions = [
+            ("manage_shipping_companies", _("Can manage shipping companies"))
+        ]
         verbose_name = "Shipping Company"
         verbose_name_plural = "Shipping Companies"
         ordering = ["name"]
@@ -419,6 +421,33 @@ class Product(models.Model):
             models.Index(fields=["brand", "active"]),
             models.Index(fields=["provider", "active"]),
         ]
+
+
+class Presentation(models.Model):
+    name = models.CharField(max_length=200)
+
+    class Meta(PermissionsMeta.Meta):
+        permissions = [("manage_presentation", _("Can manage presentation"))]
+        verbose_name = "Presentation"
+        verbose_name_plural = "Presentations"
+        ordering = ["-id"]
+
+    def __str__(self):
+        return self.name
+
+
+class ProductPresentation(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
+    presentation = models.ManyToManyField(
+        Presentation, related_name="products", blank=True
+    )
+
+    class Meta(PermissionsMeta.Meta):
+        ordering = ["-id"]
+
+    def __str__(self):
+        return f"{self.product.name} - {self.provider.name}"
 
 
 class ProductImageOrder(models.Model):
