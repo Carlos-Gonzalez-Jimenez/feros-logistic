@@ -351,9 +351,6 @@ class Product(models.Model):
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
-    wholesale_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
     net_weight = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
