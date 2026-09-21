@@ -17,9 +17,12 @@ from core.models import (
     Config,
     PurchaseOrder,
     SaleOrder,
+    SaleOrderItems,
     Port,
     ProcessingPlant,
     Incoterms,
+    ProviderInvoice,
+    ProviderInvoicePayments,
 )
 
 admin.site.register(Currency)
@@ -42,3 +45,6 @@ admin.site.register(SaleOrder)
 admin.site.register(Port)
 admin.site.register(ProcessingPlant)
 admin.site.register(Incoterms)
+admin.site.register(SaleOrderItems)
+admin.site.register(ProviderInvoice)
+admin.site.register(ProviderInvoicePayments)

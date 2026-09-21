@@ -453,7 +453,9 @@ class ProductProvider(models.Model):
 
 class ProductProviderPresentation(models.Model):
     product_provider = models.ForeignKey(ProductProvider, on_delete=models.CASCADE)
-    presentation = models.ForeignKey(Presentation, related_name='product_providers', on_delete=models.PROTECT)
+    presentation = models.ForeignKey(
+        Presentation, related_name="product_providers", on_delete=models.PROTECT
+    )
     active = models.BooleanField(default=True)
 
     class Meta:
@@ -665,8 +667,14 @@ class ProcessingPlant(models.Model):
 
 
 class PurchaseOrder(models.Model):
-    provider = models.ForeignKey(Provider, related_name="purchase_orders", on_delete=models.PROTECT)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="purchase_orders", on_delete=models.PROTECT)
+    provider = models.ForeignKey(
+        Provider, related_name="purchase_orders", on_delete=models.PROTECT
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="purchase_orders",
+        on_delete=models.PROTECT,
+    )
     observations = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -679,9 +687,13 @@ class PurchaseOrder(models.Model):
 
 
 class PurchaseOrderItem(models.Model):
-    purchase_order = models.ForeignKey(PurchaseOrder, related_name="purchase_order_items", on_delete=models.CASCADE)
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, related_name="purchase_order_items", on_delete=models.CASCADE
+    )
     product = models.ForeignKey(
-        ProductProviderPresentation, related_name="purchase_order_items", on_delete=models.PROTECT
+        ProductProviderPresentation,
+        related_name="purchase_order_items",
+        on_delete=models.PROTECT,
     )
     quantity = models.PositiveIntegerField(default=1)
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
@@ -691,20 +703,38 @@ class SaleOrder(models.Model):
     so_number = models.CharField(max_length=100)
     so_date = models.DateField()
     observations = models.TextField(blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     purchase_order = models.ForeignKey(
-        PurchaseOrder, related_name="sale_orders", on_delete=models.PROTECT, null=True, blank=True
+        PurchaseOrder,
+        related_name="sale_orders",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
     )
 
-    provider = models.ForeignKey(Provider, related_name="sale_orders", on_delete=models.PROTECT)
-    processing_plant = models.ForeignKey(
-        ProcessingPlant, related_name="sale_orders", on_delete=models.PROTECT, null=True, blank=True
+    provider = models.ForeignKey(
+        Provider, related_name="sale_orders", on_delete=models.PROTECT
     )
-    incoterms = models.ForeignKey(Incoterms, related_name="sale_orders", on_delete=models.PROTECT)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="sale_orders", on_delete=models.PROTECT,
-                             editable=False)
+    processing_plant = models.ForeignKey(
+        ProcessingPlant,
+        related_name="sale_orders",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+    )
+    incoterms = models.ForeignKey(
+        Incoterms, related_name="sale_orders", on_delete=models.PROTECT
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="sale_orders",
+        on_delete=models.PROTECT,
+        editable=False,
+    )
 
     def __str__(self):
         return self.so_number
@@ -719,8 +749,80 @@ class SaleOrder(models.Model):
 
 
 class SaleOrderItems(models.Model):
-    sale_order = models.ForeignKey(SaleOrder, related_name='sale_order_items', on_delete=models.CASCADE)
-    product = models.ForeignKey(ProductProviderPresentation, related_name="sale_order_items", on_delete=models.PROTECT)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    sale_order = models.ForeignKey(
+        SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE
+    )
+    product = models.ForeignKey(
+        ProductProviderPresentation,
+        related_name="sale_order_items",
+        on_delete=models.PROTECT,
+    )
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f"{self.sale_order.so_number} - {self.product.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Sale Order Item"
+        verbose_name_plural = "Sale Order Items"
+        ordering = ["-id"]
+
+
+class ProviderInvoice(models.Model):
+    pi_number = models.CharField(max_length=100)
+    issue_date = models.DateField()
+    due_date = models.DateField()
+    payment_date = models.DateField()
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    provider_sale_order = models.ForeignKey(
+        SaleOrder,
+        related_name="invoice",
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+    )
+    invoice_image = models.ImageField(
+        upload_to="invoices/pics",
+        default="invoices/invoice_image_default.png",
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f"{self.pi_number} - {self.provider_sale_order.so_number}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Provider Invoice"
+        verbose_name_plural = "Provider Invoices"
+        ordering = ["issue_date"]
+        indexes = [
+            models.Index(fields=["pi_number"]),
+        ]
+
+
+class ProviderInvoicePayments(models.Model):
+    amount_paid = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    provider_invoice = models.ForeignKey(
+        ProviderInvoice, related_name="payments", on_delete=models.CASCADE
+    )
+    observations = models.TextField(blank=True, null=True)
+    payment_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.provider_invoice.pi_number} - {self.amount_paid} - {self.payment_date}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Provider Invoice Payment"
+        verbose_name_plural = "Provider Invoice Payments"
+        ordering = ["-id"]

@@ -37,8 +37,12 @@ router.register(
 )
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
-router.register(r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants")
-router.register(r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders")
+router.register(
+    r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants"
+)
+router.register(
+    r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders"
+)
 router.register(r"sale-orders", views.SaleOrderViewSet, basename="sale-orders")
 router.register(r"vessels", views.VesselViewSet, basename="vessels")
 router.register(
@@ -47,10 +51,16 @@ router.register(
 router.register(
     r"shipping-companies", views.ShippingCompanyViewSet, basename="shipping-companies"
 )
-
+router.register(
+    r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices"
+)
+router.register(
+    r"provider-invoice-payments",
+    views.ProviderInvoicePaymentsViewSet,
+    basename="provider-invoice-payments",
+)
 urlpatterns = [
     path("", include(router.urls)),
-
     path(
         r"product-provider-presentations",
         views.ProductProviderPresentationsListAPIView.as_view(),

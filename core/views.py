@@ -357,12 +357,6 @@ class MeasurementUnitViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.MeasurementUnitSerializer
     search_fields = ["name", "abbreviation"]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
-
 
 class SpecificationsViewSet(ProtectedResourceViewSet):
     """
@@ -378,12 +372,6 @@ class SpecificationsViewSet(ProtectedResourceViewSet):
     queryset = models.Specifications.objects.all()
     serializer_class = serializers.SpecificationsSerializer
     search_fields = ["name"]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
 
 
 class SpecificationDetailsViewSet(ProtectedResourceViewSet):
@@ -701,3 +689,34 @@ class PurchaseOrderViewSet(ProtectedResourceViewSet):
 class SaleOrderViewSet(ProtectedResourceViewSet):
     queryset = models.SaleOrder.objects.all()
     serializer_class = serializers.SaleOrderSerializer
+
+
+class ProviderInvoiceViewSet(ProtectedResourceViewSet):
+    """
+    Provider Invoice model\n
+    GET: Shows all Provider Invoices created.\n
+    POST: Adds a new Provider Invoice.\n
+    GET{id}: Retrieves a specific Provider Invoice determined by id.\n
+    PUT{id}: Modifies all fields of a specific Provider Invoice determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Provider Invoice determined by id.\n
+    DELETE{id}: Deletes a specific Provider Invoice determined by id.\n
+    """
+
+    queryset = models.ProviderInvoice.objects.all()
+    serializer_class = serializers.ProviderInvoiceSerializer
+    search_fields = ["pi_number"]
+
+
+class ProviderInvoicePaymentsViewSet(ProtectedResourceViewSet):
+    """
+    Provider Invoice Payment model\n
+    GET: Shows all Provider Invoice Payments created.\n
+    POST: Adds a new Provider Invoice Payment.\n
+    GET{id}: Retrieves a specific Provider Invoice Payment determined by id.\n
+    PUT{id}: Modifies all fields of a specific Provider Invoice Payment determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Provider Invoice Payment determined by id.\n
+    DELETE{id}: Deletes a specific Provider Invoice Payment determined by id.\n
+    """
+
+    queryset = models.ProviderInvoicePayments.objects.all()
+    serializer_class = serializers.ProviderInvoicePaymentsSerializer
