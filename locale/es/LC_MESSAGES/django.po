@@ -203,10 +203,8 @@ msgid "User already verified"
 msgstr "El usuario ya está verificado"
 
 #: .\user\models.py:93
-#, fuzzy
-#| msgid "A file with that name already exists."
 msgid "A user with this email already exists."
-msgstr "Ya existe un archivo con ese mismo nombre"
+msgstr "Ya existe un usuario con ese mismo correo electrónico"
 
 #: .\user\models.py:114
 msgid "Can manage user"
@@ -246,7 +244,7 @@ msgstr "La contraseña debe tener al menos 6 caracteres de longitud"
 
 #: .\user\views.py:192
 msgid "A recovery link has been sent to your email."
-msgstr ""
+msgstr "Un enlace de recuperación ha sido enviado a su buzón de correo electrónico"
 
 #~ msgid "Can manage credit types"
 #~ msgstr "Gestionar tipos de crédito"

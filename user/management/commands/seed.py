@@ -26,9 +26,12 @@ from core.models import (
     ShippingCompany,
     Vessel,
     Port,
+    Incoterms,
     ContainerType,
     Presentation,
     ProductProvider,
+    PurchaseOrder,
+    PurchaseOrderItem,
     Provider,
     Country,
     NotificationType,
@@ -426,7 +429,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE("start populating blog categories"))
 
-        categories = ["Pollos", "Huevos", "Arroz", "Atún", "Productos VIMA"]
+        categories = ["Incoterms"]
 
         for category in categories:
             _ = BlogCategory.objects.get_or_create(name=category)
@@ -583,6 +586,74 @@ class Command(BaseCommand):
 
         for brand in brands:
             _ = Brand.objects.get_or_create(name=brand[0], logo_brand=brand[1])
+
+    def create_incoterms(self) -> None:
+        """Creates all incoterms objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating incoterms"))
+
+        incoterms = [
+            (
+                "Franco a bordo (Free On Board)",
+                "FOB",
+                "El vendedor entrega cuando las mercancías se cargan en el buque en el puerto de embarque acordado. Los riesgos se transfieren al comprador en ese punto.",
+            ),
+            (
+                "En fábrica (ExWorks)",
+                "EXW",
+                "El vendedor realiza la entrega cuando pone las mercancías a disposición del comprador en sus instalaciones. El comprador asume todos los costos y riesgos desde ese punto.",
+            ),
+            (
+                "Franco al costado del buque",
+                "FAS",
+                "El vendedor entrega cuando las mercancías se colocan al costado del buque en el puerto de embarque acordado. Desde ese momento, el comprador asume todos los costos y riesgos.",
+            ),
+            (
+                "Costo y flete (Cost and Freight)",
+                "CFR",
+                "El vendedor paga por el transporte hasta el puerto de destino, pero el riesgo se transfiere al comprador una vez que las mercancías se cargan en el buque.",
+            ),
+            (
+                "Costo, seguro y flete (Cost, Insurance and Freight)",
+                "CIF",
+                "Similar a CFR, pero el vendedor también debe asegurar las mercancías durante el transporte.",
+            ),
+            (
+                "Free Carrier (Free Carrier)",
+                "FCA",
+                "El vendedor entrega las mercancías al transportista en un lugar acordado. Desde ese punto, el comprador asume todos los riesgos y costos.",
+            ),
+            (
+                "Transporte pagado hasta (Carriage Paid To)",
+                "CPT",
+                "El vendedor paga por el transporte hasta un destino especificado, pero el riesgo se transfiere al comprador una vez que la mercancía ha sido entregada al transportista.",
+            ),
+            (
+                "Transporte y seguro pagados hasta (Carriage and Insurance Paid To)",
+                "CIP",
+                "Similar a CPT, pero el vendedor también debe asegurar la mercancía durante el transporte.",
+            ),
+            (
+                "Entregado en el lugar (Delivered At Place)",
+                "DAP",
+                "El vendedor asume todos los costos y riesgos hasta que las mercancías se entregan en un lugar acordado y están listas para la descarga.",
+            ),
+            (
+                "Entregado en el lugar, descargado (Delivered at Place Unloaded)",
+                "DPU",
+                "El vendedor entrega cuando las mercancías, una vez descargadas del medio de transporte de llegada, se ponen a disposición del comprador en un lugar acordado.",
+            ),
+            (
+                "Entregado con derechos pagados (Delivered Duty Paid)",
+                "DDP",
+                "El vendedor asume todos los costos y riesgos hasta que las mercancías son entregadas en el país de destino, incluyendo el pago de derechos de aduana.",
+            ),
+        ]
+
+        for incoterm in incoterms:
+            _ = Incoterms.objects.get_or_create(
+                name=incoterm[0], abbreviation=incoterm[1], description=incoterm[2]
+            )
 
     def create_shipping_companies(self) -> None:
         """Creates all shipping companies objects"""
@@ -766,12 +837,34 @@ class Command(BaseCommand):
 
         product = Product.objects.get(name="Pollo")
         provider = Provider.objects.get(name="GROVE")
-        presentation = [1, 3]
+
         _ = ProductProvider.objects.create(
             product_id=product.id, provider_id=provider.id
         )
-        _.presentation.set(presentation)
-        _.save()
+
+    def create_purchase_order(self):
+        """Create purchase orders"""
+
+        self.stdout.write(self.style.NOTICE("start populating purchase orders"))
+
+        provider = Provider.objects.get(name="GROVE")
+        user = User.objects.get(email="perezpavel5426@gmail.com")
+
+        purchase_order = PurchaseOrder.objects.create(
+            provider_id=provider.id, user_id=user.id
+        )
+
+        product = Product.objects.get(name="Pollo")
+        measurement_unit = Measurement_Unit.objects.get(name="Caja")
+        product_provider_presentation = ProductProvider.objects.get(
+            provider_id=provider.id, product_id=product.id
+        )
+        PurchaseOrderItem.objects.create(
+            purchase_order=purchase_order,
+            product_id=product_provider_presentation.id,
+            quantity=28000,
+            measurement_unit_id=measurement_unit.id,
+        )
 
     def create_users(self):
         """Creates all users object"""
@@ -876,17 +969,18 @@ class Command(BaseCommand):
         self.create_roles()
         self.create_users()
         self.create_brands()
+        self.create_providers()
         self.create_shipping_companies()
         self.create_vessels()
         self.create_ports()
         self.create_container_types()
         self.create_presentations()
+        self.create_incoterms()
         # self.create_order_statuses()
         self.create_currencies()
         self.create_countries()
         self.create_measurement_units()
         self.create_notification_types()
-        self.create_providers()
         self.create_specifications()
         self.create_cms_infrastructure()
         # self.create_blog_tags()
@@ -894,3 +988,4 @@ class Command(BaseCommand):
         # self.create_post()
         self.create_products()
         self.create_product_presentation()
+        # self.create_purchase_order()
