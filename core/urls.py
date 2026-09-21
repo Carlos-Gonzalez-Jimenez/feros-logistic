@@ -37,12 +37,9 @@ router.register(
 )
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
-router.register(
-    r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants"
-)
-router.register(
-    r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders"
-)
+router.register(r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants")
+router.register(r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders")
+router.register(r"sale-orders", views.SaleOrderViewSet, basename="sale-orders")
 router.register(r"vessels", views.VesselViewSet, basename="vessels")
 router.register(
     r"container-types", views.ContainerTypeViewSet, basename="container-types"

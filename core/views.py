@@ -5,7 +5,6 @@ from django.db.models import (
     Q,
 )
 from django.shortcuts import get_object_or_404
-from django_filters.views import FilterView
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import (
@@ -697,3 +696,8 @@ class PurchaseOrderViewSet(ProtectedResourceViewSet):
 
     queryset = models.PurchaseOrder.objects.all()
     serializer_class = serializers.PurchaseOrderSerializer
+
+
+class SaleOrderViewSet(ProtectedResourceViewSet):
+    queryset = models.SaleOrder.objects.all()
+    serializer_class = serializers.SaleOrderSerializer

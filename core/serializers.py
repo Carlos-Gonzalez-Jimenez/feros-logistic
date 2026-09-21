@@ -832,6 +832,10 @@ class ProductProviderWriteSerializer(ProductProviderReadSerializer):
 class ProductProviderPresentationSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField(read_only=True)
     presentation = PresentationSerializer(read_only=True)
+    format = serializers.SerializerMethodField()
+
+    def get_format(self, obj):
+        return f"{obj.product_provider.product.name} - {obj.presentation.name}"
 
     def get_product(self, obj):
         return ProductReadMinimalSerializer(obj.product_provider.product).data
@@ -963,8 +967,10 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
-    product = ProductReadMinimalSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.all(), source='product')
+    product = ProductProviderPresentationSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.ProductProviderPresentation.objects.all(),
+        source='product')
     measurement_unit = MeasurementUnitSerializer(read_only=True)
     measurement_unit_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Measurement_Unit.objects.all(),
@@ -973,7 +979,7 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.PurchaseOrderItem
-        fields = serializers.ALL_FIELDS
+        exclude = ['purchase_order']
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
@@ -992,6 +998,104 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     user = UserMinimalSerializer(read_only=True)
     purchase_order_items = PurchaseOrderItemSerializer(many=True)
 
+    def create_or_update_order_items(self, purchase_order, purchase_order_items):
+        models.PurchaseOrderItem.objects.filter(purchase_order=purchase_order).delete()
+        models.PurchaseOrderItem.objects.bulk_create([
+            models.PurchaseOrderItem(purchase_order=purchase_order, **purchase_order_item) for purchase_order_item in
+            purchase_order_items
+        ])
+
+    def create(self, validated_data):
+        purchase_order_items = validated_data.pop('purchase_order_items')
+        validated_data['user'] = self.context.get('request').user
+        purchase_order = super().create(validated_data)
+        self.create_or_update_order_items(purchase_order, purchase_order_items)
+        return purchase_order
+
+    def update(self, instance, validated_data):
+        purchase_order_items = validated_data.pop('purchase_order_items')
+        purchase_order = super().update(instance, validated_data)
+        self.create_or_update_order_items(purchase_order, purchase_order_items)
+        return purchase_order
+
     class Meta:
         model = models.PurchaseOrder
         fields = serializers.ALL_FIELDS
+
+
+class SaleOrderItemsSerializer(serializers.ModelSerializer):
+    product = ProductProviderPresentationSerializer(read_only=True)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.ProductProviderPresentation.objects.all(),
+        source='product')
+    measurement_unit = MeasurementUnitSerializer(read_only=True)
+    measurement_unit_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Measurement_Unit.objects.all(),
+        source='measurement_unit'
+    )
+    amount = serializers.SerializerMethodField()
+
+    def get_amount(self, obj):
+        return obj.quantity * obj.unit_price
+
+    class Meta:
+        model = models.SaleOrderItems
+        exclude = ['sale_order']
+
+
+class SaleOrderSerializer(serializers.ModelSerializer):
+    purchase_order_id = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    processing_plant = ProcessingPlantSerializer(read_only=True)
+    processing_plant_id = serializers.PrimaryKeyRelatedField(
+        required=False, allow_null=True,
+        queryset=models.ProcessingPlant.objects.all(),
+        source="processing_plant",
+    )
+    incoterms = IncotermsSerializer(read_only=True)
+    incoterms_id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=models.Incoterms.objects.all(),
+        source="incoterms",
+    )
+    provider = ProviderSerializer(read_only=True)
+    provider_id = serializers.PrimaryKeyRelatedField(
+        required=True,
+        queryset=models.Provider.objects.all(),
+        source="provider",
+    )
+    user = UserMinimalSerializer(read_only=True)
+    sale_order_items = SaleOrderItemsSerializer(many=True)
+    format = serializers.SerializerMethodField()
+
+    def get_format(self, obj):
+        return f"{obj.so_number} - {obj.provider.name}"
+
+    def create_or_update_order_items(self, sale_order, sale_order_items):
+        models.SaleOrderItems.objects.filter(sale_order=sale_order).delete()
+        models.SaleOrderItems.objects.bulk_create([
+            models.SaleOrderItems(sale_order=sale_order, **sale_order_item) for sale_order_item in
+            sale_order_items
+        ])
+
+    def __set_total_amount(self, sale_order_items, validated_data):
+        validated_data['total_amount'] = sum([item['unit_price'] * item['quantity'] for item in sale_order_items])
+
+    def create(self, validated_data):
+        sale_order_items = validated_data.pop('sale_order_items')
+        validated_data['user'] = self.context.get('request').user
+        self.__set_total_amount(sale_order_items, validated_data)
+        sale_order = super().create(validated_data)
+        self.create_or_update_order_items(sale_order, sale_order_items)
+        return sale_order
+
+    def update(self, instance, validated_data):
+        sale_order_items = validated_data.pop('sale_order_items')
+        self.__set_total_amount(sale_order_items, validated_data)
+        sale_order = super().update(instance, validated_data)
+        self.create_or_update_order_items(sale_order, sale_order_items)
+        return sale_order
+
+    class Meta:
+        model = models.SaleOrder
+        exclude = ['purchase_order']

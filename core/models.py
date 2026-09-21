@@ -677,8 +677,9 @@ class PurchaseOrder(models.Model):
         verbose_name = "Purchase Order"
         verbose_name_plural = "Purchase Orders"
 
+
 class PurchaseOrderItem(models.Model):
-    purchase_order = models.ForeignKey(PurchaseOrder, related_name="purchase_order_items", on_delete=models.PROTECT)
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name="purchase_order_items", on_delete=models.CASCADE)
     product = models.ForeignKey(
         ProductProviderPresentation, related_name="purchase_order_items", on_delete=models.PROTECT
     )
@@ -689,29 +690,21 @@ class PurchaseOrderItem(models.Model):
 class SaleOrder(models.Model):
     so_number = models.CharField(max_length=100)
     so_date = models.DateField()
-    quantity = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    unit_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    purchase_order = models.ForeignKey(
-        PurchaseOrder, related_name="sale_orders", on_delete=models.CASCADE
-    )
-    processing_plant = models.ForeignKey(
-        ProcessingPlant, related_name="sale_orders", on_delete=models.CASCADE
-    )
-    incoterms = models.ForeignKey(
-        Incoterms, related_name="sale_orders", on_delete=models.CASCADE
-    )
-    shipment_port = models.ForeignKey(
-        Port, related_name="shipment_sale_orders", on_delete=models.CASCADE
-    )
-    arrival_port = models.ForeignKey(
-        Port, related_name="arrival_sale_orders", on_delete=models.CASCADE
-    )
     observations = models.TextField(blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, related_name="sale_orders", on_delete=models.PROTECT, null=True, blank=True
+    )
+
+    provider = models.ForeignKey(Provider, related_name="sale_orders", on_delete=models.PROTECT)
+    processing_plant = models.ForeignKey(
+        ProcessingPlant, related_name="sale_orders", on_delete=models.PROTECT, null=True, blank=True
+    )
+    incoterms = models.ForeignKey(Incoterms, related_name="sale_orders", on_delete=models.PROTECT)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="sale_orders", on_delete=models.PROTECT,
+                             editable=False)
 
     def __str__(self):
         return self.so_number
@@ -723,3 +716,11 @@ class SaleOrder(models.Model):
         indexes = [
             models.Index(fields=["so_number"]),
         ]
+
+
+class SaleOrderItems(models.Model):
+    sale_order = models.ForeignKey(SaleOrder, related_name='sale_order_items', on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductProviderPresentation, related_name="sale_order_items", on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
