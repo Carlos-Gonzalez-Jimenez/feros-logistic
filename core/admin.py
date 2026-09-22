@@ -21,8 +21,6 @@ from core.models import (
     Port,
     ProcessingPlant,
     Incoterms,
-    ProviderInvoice,
-    ProviderInvoicePayments,
     PaymentAgreement,
     ShippingCompanyInvoice,
     ShippingCompany,
@@ -55,8 +53,6 @@ admin.site.register(Port)
 admin.site.register(ProcessingPlant)
 admin.site.register(Incoterms)
 admin.site.register(SaleOrderItems)
-admin.site.register(ProviderInvoice)
-admin.site.register(ProviderInvoicePayments)
 admin.site.register(ShippingCompany)
 admin.site.register(ShippingCompanyInvoice)
 admin.site.register(Vessel)

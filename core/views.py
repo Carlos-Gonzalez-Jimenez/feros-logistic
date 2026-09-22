@@ -701,37 +701,6 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.SaleOrderSerializer
 
 
-class ProviderInvoiceViewSet(ProtectedResourceViewSet):
-    """
-    Provider Invoice model\n
-    GET: Shows all Provider Invoices created.\n
-    POST: Adds a new Provider Invoice.\n
-    GET{id}: Retrieves a specific Provider Invoice determined by id.\n
-    PUT{id}: Modifies all fields of a specific Provider Invoice determined by id.\n
-    PATCH{id}: Partially modifies the fields of a specific Provider Invoice determined by id.\n
-    DELETE{id}: Deletes a specific Provider Invoice determined by id.\n
-    """
-
-    queryset = models.ProviderInvoice.objects.all()
-    serializer_class = serializers.ProviderInvoiceSerializer
-    search_fields = ["pi_number"]
-
-
-class ProviderInvoicePaymentsViewSet(ProtectedResourceViewSet):
-    """
-    Provider Invoice Payment model\n
-    GET: Shows all Provider Invoice Payments created.\n
-    POST: Adds a new Provider Invoice Payment.\n
-    GET{id}: Retrieves a specific Provider Invoice Payment determined by id.\n
-    PUT{id}: Modifies all fields of a specific Provider Invoice Payment determined by id.\n
-    PATCH{id}: Partially modifies the fields of a specific Provider Invoice Payment determined by id.\n
-    DELETE{id}: Deletes a specific Provider Invoice Payment determined by id.\n
-    """
-
-    queryset = models.ProviderInvoicePayments.objects.all()
-    serializer_class = serializers.ProviderInvoicePaymentsSerializer
-
-
 class PaymentAgreementViewSet(ProtectedResourceViewSet):
     """
     Payment Agreement model\n
@@ -765,6 +734,17 @@ class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.ShippingCompanyInvoiceSerializer
 
 
-class ProviderInvoiceV2ViewSet(ProtectedResourceViewSet):
-    queryset = models.ProviderInvoiceV2.objects.all()
-    serializer_class = serializers.ProviderInvoiceV2Serializer
+class ProviderInvoiceViewSet(ProtectedResourceViewSet):
+    queryset = models.ProviderInvoice.objects.all()
+    serializer_class = serializers.ProviderInvoiceSerializer
+
+
+class InvoicePaymentViewSet(ProtectedResourceViewSet):
+    queryset = models.InvoicePayment.objects.all()
+    serializer_class = serializers.InvoicePaymentSerializer
+    filterset_class = filters.InvoicePaymentFilter
+
+    def perform_destroy(self, instance):
+        invoice = instance.invoice
+        instance.delete()
+        invoice.sync_pending_amount()

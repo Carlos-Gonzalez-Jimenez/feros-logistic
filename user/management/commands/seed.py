@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
@@ -7,6 +8,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.translation.trans_real import get_languages
+
 from blog.models import Tag, BlogCategory, Post
 from cms.models import (
     Landing,
@@ -41,6 +43,7 @@ from core.models import (
 )
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
+
 
 # python manage.py seed
 
@@ -702,7 +705,7 @@ class Command(BaseCommand):
         ]
 
         for payment_agreement in payment_agreements:
-            _ = PaymentAgreement.objects.get_or_create(name=payment_agreement[0])
+            _ = PaymentAgreement.objects.get_or_create(name=payment_agreement)
 
     def create_ports(self) -> None:
         """Creates all ports objects"""

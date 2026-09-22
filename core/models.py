@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Sum
+from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 from cms.models import BlockMEDIA
@@ -802,54 +804,6 @@ class SaleOrderItems(models.Model):
         ordering = ["-id"]
 
 
-class ProviderInvoice(models.Model):
-    pi_number = models.CharField(max_length=100)
-    issue_date = models.DateField()
-    due_date = models.DateField()
-    payment_date = models.DateField()
-    total_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    provider_sale_order = models.ForeignKey(
-        SaleOrder,
-        related_name="invoice",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
-
-    def __str__(self):
-        return f"{self.pi_number} - {self.provider_sale_order.so_number}"
-
-    class Meta(PermissionsMeta.Meta):
-        verbose_name = "Provider Invoice"
-        verbose_name_plural = "Provider Invoices"
-        ordering = ["issue_date"]
-        indexes = [
-            models.Index(fields=["pi_number"]),
-        ]
-
-
-class ProviderInvoicePayments(models.Model):
-    amount_paid = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    provider_invoice = models.ForeignKey(
-        ProviderInvoice, related_name="payments", on_delete=models.CASCADE
-    )
-    observations = models.TextField(blank=True, null=True)
-    payment_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.provider_invoice.pi_number} - {self.amount_paid} - {self.payment_date}"
-
-    class Meta(PermissionsMeta.Meta):
-        verbose_name = "Provider Invoice Payment"
-        verbose_name_plural = "Provider Invoice Payments"
-        ordering = ["-id"]
-
-
 class Invoice(models.Model):
     bill_number = models.CharField(max_length=100)
     emission_date = models.DateField()
@@ -867,15 +821,25 @@ class Invoice(models.Model):
         verbose_name_plural = "Invoices"
         ordering = ["-id"]
 
+    def sync_pending_amount(self):
+        self.pending_amount = (
+                self.total_amount -
+                self.payments.aggregate(pending_amount=Sum('amount_paid', default=0))['pending_amount']
+        )
+        if self.pending_amount <= 0:
+            self.payment_date = now().date()
+        else:
+            self.payment_date = None
+        self.save()
+
 
 class InvoicePayment(models.Model):
-    invoice = models.ForeignKey(
-        Invoice, related_name="payments", on_delete=models.CASCADE
-    )
+    invoice = models.ForeignKey(Invoice, related_name="payments", on_delete=models.CASCADE)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     observations = models.TextField(blank=True, null=True)
     payment_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
 
     def __str__(self):
         return f"{self.invoice.bill_number} : {self.amount_paid}"
@@ -898,7 +862,7 @@ class ShippingCompanyInvoice(Invoice):
         ordering = ["-id"]
 
 
-class ProviderInvoiceV2(Invoice):
+class ProviderInvoice(Invoice):
     sale_order = models.ForeignKey(
         SaleOrder, related_name="invoices", on_delete=models.PROTECT
     )
