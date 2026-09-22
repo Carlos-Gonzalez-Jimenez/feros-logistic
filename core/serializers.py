@@ -1081,6 +1081,9 @@ class SaleOrderMinimalSerializer(serializers.ModelSerializer):
     user = UserMinimalSerializer(read_only=True)
     format = serializers.SerializerMethodField()
 
+    def get_format(self, obj):
+        return f"{obj.so_number} - {obj.provider.name}"
+
     class Meta:
         model = models.SaleOrder
         exclude = ["purchase_order"]
@@ -1220,7 +1223,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data['pending_amount'] = instance.payments.aggregate(pending_amount=Sum('amount'))['pending_amount']
+        validated_data['pending_amount'] = (
+                validated_data['total_amount'] -
+                instance.payments.aggregate(pending_amount=Sum('amount_paid', default=0))['pending_amount'])
         return super().update(instance, validated_data)
 
 
