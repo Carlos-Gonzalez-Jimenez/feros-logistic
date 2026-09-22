@@ -1148,10 +1148,6 @@ class ProviderInvoiceSerializer(serializers.ModelSerializer):
         queryset=models.SaleOrder.objects.all(),
         source="provider_sale_order",
     )
-    invoice_image = serializers.ImageField(read_only=True)
-    invoice_image_file = serializers.ImageField(
-        write_only=True, source="invoice_image", required=False
-    )
     payments = serializers.SerializerMethodField()
 
     class Meta:
@@ -1165,8 +1161,6 @@ class ProviderInvoiceSerializer(serializers.ModelSerializer):
             "total_amount",
             "sale_order",
             "sale_order_id",
-            "invoice_image",
-            "invoice_image_file",
             "payments",
         ]
 
@@ -1228,9 +1222,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data['pending_amount'] = (
-                validated_data['total_amount'] -
-                instance.payments.aggregate(pending_amount=Sum('amount_paid', default=0))['pending_amount'])
+        validated_data["pending_amount"] = (
+            validated_data["total_amount"]
+            - instance.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                "pending_amount"
+            ]
+        )
         return super().update(instance, validated_data)
 
 

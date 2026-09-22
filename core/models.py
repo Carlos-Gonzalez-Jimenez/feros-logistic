@@ -814,12 +814,6 @@ class ProviderInvoice(models.Model):
         blank=True,
         null=True,
     )
-    invoice_image = models.ImageField(
-        upload_to="invoices/pics",
-        default="invoices/invoice_image_default.png",
-        blank=True,
-        null=True,
-    )
 
     def __str__(self):
         return f"{self.pi_number} - {self.provider_sale_order.so_number}"
