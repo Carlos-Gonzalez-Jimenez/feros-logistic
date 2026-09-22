@@ -26,6 +26,11 @@ from core.models import (
     PaymentAgreement,
     ShippingCompanyInvoice,
     ShippingCompany,
+    PurchaseOrderItem,
+    ProductProviderPresentation,
+    Invoice,
+    InvoicePayment,
+    Vessel,
 )
 
 admin.site.register(Currency)
@@ -54,4 +59,8 @@ admin.site.register(ProviderInvoice)
 admin.site.register(ProviderInvoicePayments)
 admin.site.register(ShippingCompany)
 admin.site.register(ShippingCompanyInvoice)
-
+admin.site.register(Vessel)
+admin.site.register(PurchaseOrderItem)
+admin.site.register(ProductProviderPresentation)
+admin.site.register(Invoice)
+admin.site.register(InvoicePayment)
