@@ -260,7 +260,7 @@ class ProviderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Provider
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -321,7 +321,7 @@ class MeasurementUnitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Measurement_Unit
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class SpecificationsSerializer(serializers.ModelSerializer):
@@ -333,7 +333,7 @@ class SpecificationsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Specifications
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class SpecificationDetailsSerializer(serializers.ModelSerializer):
@@ -944,7 +944,7 @@ class PortSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Port
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class IncotermsSerializer(serializers.ModelSerializer):
@@ -956,13 +956,13 @@ class IncotermsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Incoterms
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class PaymentAgreementSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.PaymentAgreement
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class ProcessingPlantSerializer(serializers.ModelSerializer):
@@ -974,7 +974,7 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.ProcessingPlant
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
