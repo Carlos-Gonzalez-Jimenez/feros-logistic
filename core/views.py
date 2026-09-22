@@ -733,11 +733,34 @@ class ProviderInvoicePaymentsViewSet(ProtectedResourceViewSet):
 
 
 class PaymentAgreementViewSet(ProtectedResourceViewSet):
+    """
+    Payment Agreement model\n
+    GET: Shows all Payment Agreements created.\n
+    POST: Adds a new Payment Agreement.\n
+    GET{id}: Retrieves a specific Payment Agreement determined by id.\n
+    PUT{id}: Modifies all fields of a specific Payment Agreement determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Payment Agreement determined by id.\n
+    DELETE{id}: Deletes a specific Payment Agreement determined by id.\n
+    """
+
     queryset = models.PaymentAgreement.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_payment_agreements"])
+    ]
     serializer_class = serializers.PaymentAgreementSerializer
 
 
 class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
+    """
+    Shipping Company Invoice model\n
+    GET: Shows all Shipping Company Invoices created.\n
+    POST: Adds a new Shipping Company Invoice.\n
+    GET{id}: Retrieves a specific Shipping Company Invoice determined by id.\n
+    PUT{id}: Modifies all fields of a specific Shipping Company Invoice determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Shipping Company Invoice determined by id.\n
+    DELETE{id}: Deletes a specific Shipping Company Invoice determined by id.\n
+    """
+
     queryset = models.ShippingCompanyInvoice.objects.all()
     serializer_class = serializers.ShippingCompanyInvoiceSerializer
 

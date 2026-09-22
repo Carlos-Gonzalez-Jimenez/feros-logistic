@@ -653,7 +653,10 @@ class PaymentAgreement(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Payment Agreement"
         verbose_name_plural = "Payment Agreement"
-        ordering = ["-id"]
+        permissions = [
+            ("manage_payment_agreements", _("Can manage payment agreements")),
+        ]
+        ordering = ["name"]
 
 
 class ProcessingPlant(models.Model):
@@ -885,6 +888,14 @@ class InvoicePayment(models.Model):
 
 class ShippingCompanyInvoice(Invoice):
     booking = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.booking
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Shipping Company Invoice"
+        verbose_name_plural = "Shipping Company Invoices"
+        ordering = ["-id"]
 
 
 class ProviderInvoiceV2(Invoice):

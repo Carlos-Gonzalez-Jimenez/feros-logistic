@@ -23,6 +23,9 @@ from core.models import (
     Incoterms,
     ProviderInvoice,
     ProviderInvoicePayments,
+    PaymentAgreement,
+    ShippingCompanyInvoice,
+    ShippingCompany,
 )
 
 admin.site.register(Currency)
@@ -41,6 +44,7 @@ admin.site.register(Config)
 admin.site.register(Presentation)
 admin.site.register(ProductProvider)
 admin.site.register(PurchaseOrder)
+admin.site.register(PaymentAgreement)
 admin.site.register(SaleOrder)
 admin.site.register(Port)
 admin.site.register(ProcessingPlant)
@@ -48,3 +52,6 @@ admin.site.register(Incoterms)
 admin.site.register(SaleOrderItems)
 admin.site.register(ProviderInvoice)
 admin.site.register(ProviderInvoicePayments)
+admin.site.register(ShippingCompany)
+admin.site.register(ShippingCompanyInvoice)
+

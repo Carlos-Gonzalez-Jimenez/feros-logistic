@@ -32,6 +32,7 @@ from core.models import (
     ProductProvider,
     PurchaseOrder,
     PurchaseOrderItem,
+    PaymentAgreement,
     Provider,
     Country,
     NotificationType,
@@ -690,6 +691,19 @@ class Command(BaseCommand):
                 name=vessel[0], shipping_company=shipping_company
             )
 
+    def create_payment_agreements(self) -> None:
+        """Creates all payment agreements objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating payment agreements"))
+
+        payment_agreements = [
+            "Pago anticipado",
+            "Pago a 30 días de recibida la factura",
+        ]
+
+        for payment_agreement in payment_agreements:
+            _ = PaymentAgreement.objects.get_or_create(name=payment_agreement[0])
+
     def create_ports(self) -> None:
         """Creates all ports objects"""
 
@@ -972,6 +986,7 @@ class Command(BaseCommand):
         self.create_providers()
         self.create_shipping_companies()
         self.create_vessels()
+        self.create_payment_agreements()
         self.create_ports()
         self.create_container_types()
         self.create_presentations()

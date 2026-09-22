@@ -960,6 +960,11 @@ class IncotermsSerializer(serializers.ModelSerializer):
 
 
 class PaymentAgreementSerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
     class Meta:
         model = models.PaymentAgreement
         fields = serializers.ALL_FIELDS
