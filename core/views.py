@@ -720,3 +720,18 @@ class ProviderInvoicePaymentsViewSet(ProtectedResourceViewSet):
 
     queryset = models.ProviderInvoicePayments.objects.all()
     serializer_class = serializers.ProviderInvoicePaymentsSerializer
+
+
+class PaymentAgreementViewSet(ProtectedResourceViewSet):
+    queryset = models.PaymentAgreement.objects.all()
+    serializer_class = serializers.PaymentAgreementSerializer
+
+
+class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
+    queryset = models.ShippingCompanyInvoice.objects.all()
+    serializer_class = serializers.ShippingCompanyInvoiceSerializer
+
+
+class ProviderInvoiceV2ViewSet(ProtectedResourceViewSet):
+    queryset = models.ProviderInvoiceV2.objects.all()
+    serializer_class = serializers.ProviderInvoiceV2Serializer

@@ -1,6 +1,8 @@
+from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.text import slugify
 from rest_framework import serializers
 
@@ -485,7 +487,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                validated_data.get("unit_price") - instance.unit_price
+                    validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -957,6 +959,12 @@ class IncotermsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PaymentAgreementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.PaymentAgreement
+        fields = "__all__"
+
+
 class ProcessingPlantSerializer(serializers.ModelSerializer):
     """_summary_
 
@@ -1048,7 +1056,7 @@ class SaleOrderItemsSerializer(serializers.ModelSerializer):
         exclude = ["sale_order"]
 
 
-class SaleOrderSerializer(serializers.ModelSerializer):
+class SaleOrderMinimalSerializer(serializers.ModelSerializer):
     purchase_order_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     processing_plant = ProcessingPlantSerializer(read_only=True)
@@ -1071,11 +1079,15 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         source="provider",
     )
     user = UserMinimalSerializer(read_only=True)
-    sale_order_items = SaleOrderItemsSerializer(many=True)
     format = serializers.SerializerMethodField()
 
-    def get_format(self, obj):
-        return f"{obj.so_number} - {obj.provider.name}"
+    class Meta:
+        model = models.SaleOrder
+        exclude = ["purchase_order"]
+
+
+class SaleOrderSerializer(SaleOrderMinimalSerializer):
+    sale_order_items = SaleOrderItemsSerializer(many=True)
 
     def create_or_update_order_items(self, sale_order, sale_order_items):
         models.SaleOrderItems.objects.filter(sale_order=sale_order).delete()
@@ -1105,10 +1117,6 @@ class SaleOrderSerializer(serializers.ModelSerializer):
         sale_order = super().update(instance, validated_data)
         self.create_or_update_order_items(sale_order, sale_order_items)
         return sale_order
-
-    class Meta:
-        model = models.SaleOrder
-        exclude = ["purchase_order"]
 
 
 class ProviderInvoicePaymentsSerializer(serializers.ModelSerializer):
@@ -1162,3 +1170,68 @@ class ProviderInvoiceSerializer(serializers.ModelSerializer):
     def get_payments(self, obj):
         payments = models.ProviderInvoicePayments.objects.filter(provider_invoice=obj)
         return ProviderInvoicePaymentsSerializer(payments, many=True).data
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    payment_agreement = PaymentAgreementSerializer(read_only=True)
+    payment_agreement_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.PaymentAgreement.objects.all(),
+        source='payment_agreement'
+    )
+
+    pending_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    pending_amount_0_15 = serializers.SerializerMethodField()
+    pending_amount_16_30 = serializers.SerializerMethodField()
+    pending_amount_31_45 = serializers.SerializerMethodField()
+    pending_amount_46_60 = serializers.SerializerMethodField()
+    pending_amount_61_75 = serializers.SerializerMethodField()
+    pending_amount_75_over = serializers.SerializerMethodField()
+
+    def _pending_by_range(self, obj, from_day, until_day):
+        days_diff = (date.today() - obj.expiration_date or date.today()).days
+        if days_diff < 0 or days_diff < from_day or (until_day is not None and days_diff > until_day):
+            return 0
+        return obj.pending_amount
+
+    def get_pending_amount_0_15(self, obj):
+        return self._pending_by_range(obj, 0, 15)
+
+    def get_pending_amount_16_30(self, obj):
+        return self._pending_by_range(obj, 16, 30)
+
+    def get_pending_amount_31_45(self, obj):
+        return self._pending_by_range(obj, 31, 45)
+
+    def get_pending_amount_46_60(self, obj):
+        return self._pending_by_range(obj, 40, 60)
+
+    def get_pending_amount_61_75(self, obj):
+        return self._pending_by_range(obj, 61, 75)
+
+    def get_pending_amount_75_over(self, obj):
+        return self._pending_by_range(obj, 75, None)
+
+    class Meta:
+        model = models.Invoice
+        fields = serializers.ALL_FIELDS
+
+    def create(self, validated_data):
+        validated_data['pending_amount'] = validated_data['total_amount']
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data['pending_amount'] = instance.payments.aggregate(pending_amount=Sum('amount'))['pending_amount']
+        return super().update(instance, validated_data)
+
+
+class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
+    class Meta(InvoiceSerializer.Meta):
+        model = models.ShippingCompanyInvoice
+
+
+class ProviderInvoiceV2Serializer(InvoiceSerializer):
+    sale_order = SaleOrderMinimalSerializer(read_only=True)
+    sale_order_id = serializers.PrimaryKeyRelatedField(queryset=models.SaleOrder.objects.all(), source="sale_order")
+
+    class Meta(InvoiceSerializer.Meta):
+        model = models.ProviderInvoiceV2

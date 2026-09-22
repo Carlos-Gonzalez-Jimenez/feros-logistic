@@ -52,13 +52,12 @@ router.register(
     r"shipping-companies", views.ShippingCompanyViewSet, basename="shipping-companies"
 )
 router.register(
-    r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices"
+    r"provider-invoice-payments", views.ProviderInvoicePaymentsViewSet, basename="provider-invoice-payments"
 )
-router.register(
-    r"provider-invoice-payments",
-    views.ProviderInvoicePaymentsViewSet,
-    basename="provider-invoice-payments",
-)
+router.register(r'payment-agreements', views.PaymentAgreementViewSet, basename='payment-agreements')
+router.register(r'shipping-company-invoices', views.ShippingCompanyInvoiceViewSet, basename='shipping-company-invoices')
+router.register(r'provider-invoices', views.ProviderInvoiceV2ViewSet, basename='provider-invoices')
+# router.register(r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices")
 
 urlpatterns = [
     path("", include(router.urls)),

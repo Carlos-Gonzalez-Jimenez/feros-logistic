@@ -644,6 +644,13 @@ class Incoterms(models.Model):
         ]
 
 
+class PaymentAgreement(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
 class ProcessingPlant(models.Model):
     name = models.CharField(max_length=100)
     phytosanitary_permit = models.BooleanField(default=False)
@@ -766,7 +773,7 @@ class SaleOrderItems(models.Model):
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
 
     def __str__(self):
-        return f"{self.sale_order.so_number} - {self.product.name}"
+        return f"{self.sale_order.so_number} - {self.product.product_provider.product.name}"
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Sale Order Item"
@@ -826,3 +833,29 @@ class ProviderInvoicePayments(models.Model):
         verbose_name = "Provider Invoice Payment"
         verbose_name_plural = "Provider Invoice Payments"
         ordering = ["-id"]
+
+
+class Invoice(models.Model):
+    bill_number = models.CharField(max_length=100)
+    emission_date = models.DateField()
+    expiration_date = models.DateField()
+    payment_date = models.DateField(default=None, blank=True, null=True)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    pending_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
+
+
+class InvoicePayment(models.Model):
+    invoice = models.ForeignKey(Invoice, related_name='payments', on_delete=models.CASCADE)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    observations = models.TextField(blank=True, null=True)
+    payment_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ShippingCompanyInvoice(Invoice):
+    booking = models.CharField(max_length=100)
+
+
+class ProviderInvoiceV2(Invoice):
+    sale_order = models.ForeignKey(SaleOrder, related_name="invoices", on_delete=models.PROTECT)
