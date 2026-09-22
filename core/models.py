@@ -691,6 +691,9 @@ class PurchaseOrder(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Purchase Order"
         verbose_name_plural = "Purchase Orders"
+        permissions = [
+            ("manage_purchase_orders", _("Can manage purchase orders")),
+        ]
 
 
 class PurchaseOrderItem(models.Model):
@@ -749,6 +752,9 @@ class SaleOrder(models.Model):
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Sale Order"
         verbose_name_plural = "Sale Orders"
+        permissions = [
+            ("manage_sale_orders", _("Can manage sale orders")),
+        ]
         ordering = ["-so_date"]
         indexes = [
             models.Index(fields=["so_number"]),
@@ -846,7 +852,9 @@ class Invoice(models.Model):
 
 
 class InvoicePayment(models.Model):
-    invoice = models.ForeignKey(Invoice, related_name='payments', on_delete=models.CASCADE)
+    invoice = models.ForeignKey(
+        Invoice, related_name="payments", on_delete=models.CASCADE
+    )
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     observations = models.TextField(blank=True, null=True)
     payment_date = models.DateField()
@@ -858,4 +866,6 @@ class ShippingCompanyInvoice(Invoice):
 
 
 class ProviderInvoiceV2(Invoice):
-    sale_order = models.ForeignKey(SaleOrder, related_name="invoices", on_delete=models.PROTECT)
+    sale_order = models.ForeignKey(
+        SaleOrder, related_name="invoices", on_delete=models.PROTECT
+    )

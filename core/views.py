@@ -61,7 +61,7 @@ class ShippingCompanyViewSet(ProtectedResourceViewSet):
 class VesselViewSet(ProtectedResourceViewSet):
     """
     Vessel model\n
-    GET: Shows all Shipping Vessels created.\n
+    GET: Shows all Vessels created.\n
     POST: Adds a new Vessel.\n
     GET{id}: Retrieves a specific Vessel determined by id.\n
     PUT{id}: Modifies all fields of a specific Vessel determined by id.\n
@@ -133,12 +133,6 @@ class CountryViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.CountrySerializer
     search_fields = ["name", "code_alpha3"]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
-
 
 class ProviderViewSet(ProtectedResourceViewSet):
     """
@@ -157,12 +151,6 @@ class ProviderViewSet(ProtectedResourceViewSet):
     queryset = models.Provider.objects.all()
     serializer_class = serializers.ProviderSerializer
     search_fields = ["name"]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
 
 
 class NotificationTypeViewSet(ProtectedResourceViewSet):
@@ -288,12 +276,6 @@ class BrandViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.BrandSerializer
     search_fields = ["name", "description"]
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
-
 
 class CategoryViewSet(ProtectedResourceViewSet):
     """
@@ -312,12 +294,6 @@ class CategoryViewSet(ProtectedResourceViewSet):
     queryset = models.Category.objects.all()
     serializer_class = serializers.CategorySerializer
     search_fields = ["name"]
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.request.user.is_staff:
-            return queryset
-        return queryset.filter(active=True)
 
     @action(
         detail=True,
@@ -635,6 +611,9 @@ class PortViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.Port.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_ports"])
+    ]
     serializer_class = serializers.PortSerializer
     search_fields = ["name", "abbreviation"]
 
@@ -651,6 +630,9 @@ class IncotermsViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.Incoterms.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_incoterms"])
+    ]
     serializer_class = serializers.IncotermsSerializer
     search_fields = ["name", "abbreviation"]
 
@@ -667,6 +649,9 @@ class ProcessingPlantViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.ProcessingPlant.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_processing_plant"])
+    ]
     serializer_class = serializers.ProcessingPlantSerializer
     search_fields = ["name"]
 
@@ -683,11 +668,27 @@ class PurchaseOrderViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.PurchaseOrder.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_purchase_orders"])
+    ]
     serializer_class = serializers.PurchaseOrderSerializer
 
 
 class SaleOrderViewSet(ProtectedResourceViewSet):
+    """
+    Sale Order model\n
+    GET: Shows all sale orders created.\n
+    POST: Adds a new sale order.\n
+    GET{id}: Retrieves a specific sale order determined by id.\n
+    PUT{id}: Modifies all fields of a specific sale order determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific sale order determined by id.\n
+    DELETE{id}: Deletes a specific sale order determined by id.\n
+    """
+
     queryset = models.SaleOrder.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_sale_orders"])
+    ]
     serializer_class = serializers.SaleOrderSerializer
 
 

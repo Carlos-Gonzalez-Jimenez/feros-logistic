@@ -59,7 +59,7 @@ class ContainerTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.ContainerType
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -71,7 +71,7 @@ class CurrencySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Currency
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
     def create(self, validated_data):
         currency = models.Currency(**validated_data)
@@ -96,7 +96,7 @@ class NotificationTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.NotificationType
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class NotificationUserSerializer(serializers.ModelSerializer):
@@ -116,7 +116,7 @@ class NotificationUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.NotificationUser
-        fields = "__all__"
+        fields = serializers.ALL_FIELDS
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -487,7 +487,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                    validated_data.get("unit_price") - instance.unit_price
+                validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1175,11 +1175,12 @@ class ProviderInvoiceSerializer(serializers.ModelSerializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     payment_agreement = PaymentAgreementSerializer(read_only=True)
     payment_agreement_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.PaymentAgreement.objects.all(),
-        source='payment_agreement'
+        queryset=models.PaymentAgreement.objects.all(), source="payment_agreement"
     )
 
-    pending_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    pending_amount = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True
+    )
     pending_amount_0_15 = serializers.SerializerMethodField()
     pending_amount_16_30 = serializers.SerializerMethodField()
     pending_amount_31_45 = serializers.SerializerMethodField()
@@ -1189,7 +1190,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def _pending_by_range(self, obj, from_day, until_day):
         days_diff = (date.today() - obj.expiration_date or date.today()).days
-        if days_diff < 0 or days_diff < from_day or (until_day is not None and days_diff > until_day):
+        if (
+            days_diff < 0
+            or days_diff < from_day
+            or (until_day is not None and days_diff > until_day)
+        ):
             return 0
         return obj.pending_amount
 
@@ -1216,11 +1221,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
     def create(self, validated_data):
-        validated_data['pending_amount'] = validated_data['total_amount']
+        validated_data["pending_amount"] = validated_data["total_amount"]
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
-        validated_data['pending_amount'] = instance.payments.aggregate(pending_amount=Sum('amount'))['pending_amount']
+        validated_data["pending_amount"] = instance.payments.aggregate(
+            pending_amount=Sum("amount")
+        )["pending_amount"]
         return super().update(instance, validated_data)
 
 
@@ -1231,7 +1238,9 @@ class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
 
 class ProviderInvoiceV2Serializer(InvoiceSerializer):
     sale_order = SaleOrderMinimalSerializer(read_only=True)
-    sale_order_id = serializers.PrimaryKeyRelatedField(queryset=models.SaleOrder.objects.all(), source="sale_order")
+    sale_order_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.SaleOrder.objects.all(), source="sale_order"
+    )
 
     class Meta(InvoiceSerializer.Meta):
         model = models.ProviderInvoiceV2
