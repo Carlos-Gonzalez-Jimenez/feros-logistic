@@ -470,6 +470,15 @@ class ProductProviderViewSet(ProtectedResourceViewSet):
 
 
 class ProductProviderPresentationsListAPIView(ListAPIView):
+    """_summary_
+
+    Args:
+        ListAPIView (_type_): _description_
+    """
+
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
+    ]
     serializer_class = serializers.ProductProviderPresentationSerializer
     queryset = models.ProductProviderPresentation.objects.filter(active=True).all()
     filterset_class = filters.ProductProviderPresentationFilter
