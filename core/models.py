@@ -862,7 +862,7 @@ class Booking(models.Model):
     port_discharge = models.ForeignKey(
         Port, on_delete=models.PROTECT, related_name="port_discharge"
     )
-    shiping_company = models.ForeignKey(
+    shipping_company = models.ForeignKey(
         ShippingCompany, related_name="bookings", on_delete=models.PROTECT
     )
     vessel = models.ForeignKey(

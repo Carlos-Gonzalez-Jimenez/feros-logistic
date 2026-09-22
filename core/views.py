@@ -698,7 +698,11 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_sale_orders"])
     ]
-    serializer_class = serializers.SaleOrderSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['list']:
+            return serializers.SaleOrderMinimalSerializer
+        return serializers.SaleOrderSerializer
 
 
 class PaymentAgreementViewSet(ProtectedResourceViewSet):
@@ -718,6 +722,7 @@ class PaymentAgreementViewSet(ProtectedResourceViewSet):
     ]
     serializer_class = serializers.PaymentAgreementSerializer
 
+
 class BookingViewSet(ProtectedResourceViewSet):
     """
     Booking model\n
@@ -734,6 +739,12 @@ class BookingViewSet(ProtectedResourceViewSet):
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
     ]
     serializer_class = serializers.BookingSerializer
+
+    def get_serializer_class(self):
+        if self.action in ['list']:
+            return serializers.BookingMinimalSerializer
+        return serializers.BookingSerializer
+
 
 class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
     """

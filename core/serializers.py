@@ -486,7 +486,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                validated_data.get("unit_price") - instance.unit_price
+                    validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1146,9 +1146,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def _pending_by_range(self, obj, from_day, until_day):
         days_diff = (date.today() - obj.expiration_date or date.today()).days
         if (
-            days_diff < 0
-            or days_diff < from_day
-            or (until_day is not None and days_diff > until_day)
+                days_diff < 0
+                or days_diff < from_day
+                or (until_day is not None and days_diff > until_day)
         ):
             return 0
         return obj.pending_amount
@@ -1185,7 +1185,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return instance
 
 
-class BookingSerializer(serializers.ModelSerializer):
+class BookingMinimalSerializer(serializers.ModelSerializer):
     port_loading = PortSerializer(read_only=True)
     port_loading_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Port.objects.all(), source="port_loading"
@@ -1203,12 +1203,26 @@ class BookingSerializer(serializers.ModelSerializer):
         queryset=models.Vessel.objects.all(), source="vessel"
     )
 
+    format = serializers.SerializerMethodField()
+
+    def get_format(self, obj):
+        return f"{obj.booking_number} - {obj.shipping_company.name}"
+
     class Meta:
         model = models.Booking
         fields = serializers.ALL_FIELDS
 
 
+class BookingSerializer(BookingMinimalSerializer):
+    pass
+
+
 class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
+    booking = BookingMinimalSerializer(read_only=True)
+    booking_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Booking.objects.filter(cancelled_at__isnull=True), source="booking"
+    )
+
     class Meta(InvoiceSerializer.Meta):
         model = models.ShippingCompanyInvoice
 
