@@ -458,7 +458,7 @@ class ProductProviderPresentation(models.Model):
     )
     active = models.BooleanField(default=True)
 
-    class Meta:
+    class Meta(PermissionsMeta.Meta):
         unique_together = ["product_provider", "presentation"]
 
 
@@ -650,6 +650,11 @@ class PaymentAgreement(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Payment Agreement"
+        verbose_name_plural = "Payment Agreement"
+        ordering = ["-id"]
+
 
 class ProcessingPlant(models.Model):
     name = models.CharField(max_length=100)
@@ -694,6 +699,7 @@ class PurchaseOrder(models.Model):
         permissions = [
             ("manage_purchase_orders", _("Can manage purchase orders")),
         ]
+        ordering = ["-id"]
 
 
 class PurchaseOrderItem(models.Model):
@@ -708,6 +714,14 @@ class PurchaseOrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return self.pk
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Purchase Order Item"
+        verbose_name_plural = "Purchase Order Items"
+        ordering = ["-id"]
+
 
 class SaleOrder(models.Model):
     so_number = models.CharField(max_length=100)
@@ -716,7 +730,6 @@ class SaleOrder(models.Model):
     total_amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
     )
-
     created_at = models.DateTimeField(auto_now_add=True)
     purchase_order = models.ForeignKey(
         PurchaseOrder,
@@ -725,7 +738,6 @@ class SaleOrder(models.Model):
         null=True,
         blank=True,
     )
-
     provider = models.ForeignKey(
         Provider, related_name="sale_orders", on_delete=models.PROTECT
     )
@@ -850,6 +862,14 @@ class Invoice(models.Model):
     pending_amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return self.bill_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Invoice"
+        verbose_name_plural = "Invoices"
+        ordering = ["-id"]
+
 
 class InvoicePayment(models.Model):
     invoice = models.ForeignKey(
@@ -859,6 +879,14 @@ class InvoicePayment(models.Model):
     observations = models.TextField(blank=True, null=True)
     payment_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.invoice.bill_number} : {self.amount_paid}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Invoice Payment"
+        verbose_name_plural = "Invoice Payments"
+        ordering = ["-id"]
 
 
 class ShippingCompanyInvoice(Invoice):
