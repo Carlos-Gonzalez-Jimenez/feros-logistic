@@ -823,8 +823,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-                self.total_amount -
-                self.payments.aggregate(pending_amount=Sum('amount_paid', default=0))['pending_amount']
+            self.total_amount
+            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                "pending_amount"
+            ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -834,7 +836,9 @@ class Invoice(models.Model):
 
 
 class InvoicePayment(models.Model):
-    invoice = models.ForeignKey(Invoice, related_name="payments", on_delete=models.CASCADE)
+    invoice = models.ForeignKey(
+        Invoice, related_name="payments", on_delete=models.CASCADE
+    )
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     observations = models.TextField(blank=True, null=True)
     payment_date = models.DateField()
@@ -850,11 +854,48 @@ class InvoicePayment(models.Model):
         ordering = ["-id"]
 
 
-class ShippingCompanyInvoice(Invoice):
-    booking = models.CharField(max_length=100)
+class Booking(models.Model):
+    booking_number = models.CharField(max_length=30)
+    port_loading = models.ForeignKey(
+        Port, on_delete=models.PROTECT, related_name="port_loading"
+    )
+    port_discharge = models.ForeignKey(
+        Port, on_delete=models.PROTECT, related_name="port_discharge"
+    )
+    shiping_company = models.ForeignKey(
+        ShippingCompany, related_name="bookings", on_delete=models.PROTECT
+    )
+    vessel = models.ForeignKey(
+        Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True
+    )
+    voyage_number = models.CharField(max_length=20, blank=True)
+    cut_off = models.DateField(null=True, blank=True)
+    ets = models.DateField(null=True, blank=True)
+    eta = models.DateField(null=True, blank=True)
+    observations = models.TextField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return self.booking
+        return self.booking_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Booking"
+        verbose_name_plural = "Bookings"
+        permissions = [
+            ("manage_bookings", _("Can manage bookings")),
+        ]
+        ordering = ["-id"]
+        indexes = [models.Index(fields=["booking_number"])]
+
+
+class ShippingCompanyInvoice(Invoice):
+    booking = models.ForeignKey(
+        Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
+    )
+
+    def __str__(self):
+        return self.bill_number
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Shipping Company Invoice"

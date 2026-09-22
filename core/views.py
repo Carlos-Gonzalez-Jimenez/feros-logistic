@@ -718,6 +718,22 @@ class PaymentAgreementViewSet(ProtectedResourceViewSet):
     ]
     serializer_class = serializers.PaymentAgreementSerializer
 
+class BookingViewSet(ProtectedResourceViewSet):
+    """
+    Booking model\n
+    GET: Shows all Bookings created.\n
+    POST: Adds a new Booking.\n
+    GET{id}: Retrieves a specific Booking determined by id.\n
+    PUT{id}: Modifies all fields of a specific Booking determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Booking determined by id.\n
+    DELETE{id}: Deletes a specific Bookingt determined by id.\n
+    """
+
+    queryset = models.Booking.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
+    ]
+    serializer_class = serializers.BookingSerializer
 
 class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
     """
