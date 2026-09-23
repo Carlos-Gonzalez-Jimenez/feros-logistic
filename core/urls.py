@@ -55,6 +55,7 @@ router.register(
     r"payment-agreements", views.PaymentAgreementViewSet, basename="payment-agreements"
 )
 router.register(r"bookings", views.BookingViewSet, basename="bookings")
+router.register(r"containers", views.ContainerViewSet, basename="containers")
 router.register(
     r"shipping-company-invoices",
     views.ShippingCompanyInvoiceViewSet,

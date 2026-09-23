@@ -820,6 +820,7 @@ class Invoice(models.Model):
         verbose_name = "Invoice"
         verbose_name_plural = "Invoices"
         ordering = ["-id"]
+        indexes = [models.Index(fields=["bill_number"])]
 
     def sync_pending_amount(self):
         self.pending_amount = (
@@ -889,6 +890,25 @@ class Booking(models.Model):
         indexes = [models.Index(fields=["booking_number"])]
 
 
+class Container(models.Model):
+    booking = models.ForeignKey(
+        Booking, on_delete=models.CASCADE, related_name="containers"
+    )
+    container_type = models.ForeignKey(
+        ContainerType, on_delete=models.PROTECT, related_name="containers"
+    )
+    container_number = models.CharField(max_length=15, null=True, blank=True)
+    seal_number = models.CharField(max_length=20, null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.booking.booking_number} - {self.container_type.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Container"
+        verbose_name_plural = "Containers"
+        ordering = ["-id"]
+
+
 class ShippingCompanyInvoice(Invoice):
     booking = models.ForeignKey(
         Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
@@ -907,3 +927,11 @@ class ProviderInvoice(Invoice):
     sale_order = models.ForeignKey(
         SaleOrder, related_name="invoices", on_delete=models.PROTECT
     )
+
+    def __str__(self):
+        return self.bill_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Provider Invoice"
+        verbose_name_plural = "Provider Invoices"
+        ordering = ["-id"]

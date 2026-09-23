@@ -700,7 +700,7 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
     ]
 
     def get_serializer_class(self):
-        if self.action in ['list']:
+        if self.action in ["list"]:
             return serializers.SaleOrderMinimalSerializer
         return serializers.SaleOrderSerializer
 
@@ -731,7 +731,7 @@ class BookingViewSet(ProtectedResourceViewSet):
     GET{id}: Retrieves a specific Booking determined by id.\n
     PUT{id}: Modifies all fields of a specific Booking determined by id.\n
     PATCH{id}: Partially modifies the fields of a specific Booking determined by id.\n
-    DELETE{id}: Deletes a specific Bookingt determined by id.\n
+    DELETE{id}: Deletes a specific Booking determined by id.\n
     """
 
     queryset = models.Booking.objects.all()
@@ -741,9 +741,27 @@ class BookingViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.BookingSerializer
 
     def get_serializer_class(self):
-        if self.action in ['list']:
+        if self.action in ["list"]:
             return serializers.BookingMinimalSerializer
         return serializers.BookingSerializer
+
+
+class ContainerViewSet(ProtectedResourceViewSet):
+    """
+    Container model\n
+    GET: Shows all Containers created.\n
+    POST: Adds a new Container.\n
+    GET{id}: Retrieves a specific Container determined by id.\n
+    PUT{id}: Modifies all fields of a specific Container determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Container determined by id.\n
+    DELETE{id}: Deletes a specific Container determined by id.\n
+    """
+
+    queryset = models.Container.objects.all()
+    permission_classes = [
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
+    ]
+    serializer_class = serializers.ContainerSerializer
 
 
 class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):

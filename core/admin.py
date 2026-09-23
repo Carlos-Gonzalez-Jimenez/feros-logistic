@@ -30,6 +30,9 @@ from core.models import (
     InvoicePayment,
     Vessel,
     Booking,
+    ContainerType,
+    Container,
+    ProviderInvoice,
 )
 
 admin.site.register(Currency)
@@ -56,9 +59,12 @@ admin.site.register(Incoterms)
 admin.site.register(SaleOrderItems)
 admin.site.register(ShippingCompany)
 admin.site.register(ShippingCompanyInvoice)
+admin.site.register(ProviderInvoice)
 admin.site.register(Vessel)
 admin.site.register(PurchaseOrderItem)
 admin.site.register(ProductProviderPresentation)
 admin.site.register(Invoice)
 admin.site.register(InvoicePayment)
 admin.site.register(Booking)
+admin.site.register(ContainerType)
+admin.site.register(Container)

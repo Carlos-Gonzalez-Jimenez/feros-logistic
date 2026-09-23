@@ -486,7 +486,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                    validated_data.get("unit_price") - instance.unit_price
+                validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1146,9 +1146,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def _pending_by_range(self, obj, from_day, until_day):
         days_diff = (date.today() - obj.expiration_date or date.today()).days
         if (
-                days_diff < 0
-                or days_diff < from_day
-                or (until_day is not None and days_diff > until_day)
+            days_diff < 0
+            or days_diff < from_day
+            or (until_day is not None and days_diff > until_day)
         ):
             return 0
         return obj.pending_amount
@@ -1217,10 +1217,26 @@ class BookingSerializer(BookingMinimalSerializer):
     pass
 
 
+class ContainerSerializer(serializers.ModelSerializer):
+    booking = BookingMinimalSerializer(read_only=True)
+    booking_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Booking.objects.all(), source="booking"
+    )
+    container_type = ContainerTypeSerializer(read_only=True)
+    container_type_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.ContainerType.objects.all(), source="container_type"
+    )
+
+    class Meta:
+        model = models.Container
+        fields = serializers.ALL_FIELDS
+
+
 class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
     booking = BookingMinimalSerializer(read_only=True)
     booking_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Booking.objects.filter(cancelled_at__isnull=True), source="booking"
+        queryset=models.Booking.objects.filter(cancelled_at__isnull=True),
+        source="booking",
     )
 
     class Meta(InvoiceSerializer.Meta):
