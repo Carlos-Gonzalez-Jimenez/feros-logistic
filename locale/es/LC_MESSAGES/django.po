@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-17 18:02-0400\n"
+"POT-Creation-Date: 2026-09-25 15:57-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,19 +18,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\blog\models.py:27
+#: .\blog\models.py:32
 msgid "Can manage blog categories"
 msgstr "Gestionar categorías del blog"
 
-#: .\blog\models.py:49
+#: .\blog\models.py:56
 msgid "Can manage blog tags"
 msgstr "Gestionar etiquetas del blog"
 
-#: .\blog\models.py:96
+#: .\blog\models.py:106
 msgid "Can manage blog"
 msgstr "Gestionar blog"
 
-#: .\blog\models.py:133
+#: .\blog\models.py:143
 msgid "Can manage blog comments"
 msgstr "Gestionar comentarios del blog"
 
@@ -54,19 +54,19 @@ msgstr "Modelo no soportado"
 msgid "Item required for model"
 msgstr "El elemento es requerido para el modelo"
 
-#: .\cms\models.py:453
+#: .\cms\models.py:456
 msgid "Can manage nav bar"
 msgstr "Gestionar barra de navegación"
 
-#: .\cms\models.py:560
+#: .\cms\models.py:568
 msgid "Can manage footer"
 msgstr "Gestionar pie de página"
 
-#: .\cms\models.py:587
+#: .\cms\models.py:595
 msgid "Can manage header"
 msgstr "Gestionar encabezado de página"
 
-#: .\cms\serializers.py:51
+#: .\cms\serializers.py:53
 msgid "A file with that name already exists."
 msgstr "Ya existe un archivo con ese mismo nombre"
 
@@ -110,51 +110,103 @@ msgstr "Existen elementos del lote sin un producto relacionado"
 msgid "Required column not found in the Excel file"
 msgstr "Columna requerida no se encuentra en el archivo Excel"
 
-#: .\core\models.py:26
+#: .\core\models.py:23
+msgid "Can manage shipping companies"
+msgstr "Gestionar navieras"
+
+#: .\core\models.py:43
+msgid "Can manage vessels"
+msgstr "Gestionar buques"
+
+#: .\core\models.py:58
+msgid "Can manage container types"
+msgstr "Gestionar tipos de contenedor"
+
+#: .\core\models.py:79
 msgid "Can manage currencies"
 msgstr "Gestionar monedas"
 
-#: .\core\models.py:78
+#: .\core\models.py:131
 msgid "Can manage notification"
 msgstr "Gestionar notificaciones"
 
-#: .\core\models.py:132
+#: .\core\models.py:185
 msgid "Can manage measurement unit"
 msgstr "Gestionar unidades de medida"
 
-#: .\core\models.py:155
+#: .\core\models.py:208
 msgid "Can manage provider"
 msgstr "Gestionar proveedores"
 
-#: .\core\models.py:185
+#: .\core\models.py:238
 msgid "Can manage country"
 msgstr "Gestionar países"
 
-#: .\core\models.py:222
+#: .\core\models.py:275
 msgid "Can manage brand"
 msgstr "Gestionar marcas"
 
-#: .\core\models.py:258
+#: .\core\models.py:311
 msgid "Can manage category"
 msgstr "Gestionar categorías"
 
-#: .\core\models.py:273
+#: .\core\models.py:326
 msgid "Can manage specifications"
 msgstr "Gestionar especificaciones"
 
-#: .\core\models.py:369
+#: .\core\models.py:417
 msgid "Can manage product"
 msgstr "Gestionar productos"
 
-#: .\core\models.py:512
+#: .\core\models.py:433
+msgid "Can manage presentation"
+msgstr "Gestionar presentaciones de productos"
+
+#: .\core\models.py:599
 msgid "Can manage configuration"
 msgstr "Gestionar configuración"
 
-#: .\logistic_backend\settings.py:221
+#: .\core\models.py:619
+msgid "Can manage ports"
+msgstr "Gestionar puertos"
+
+#: .\core\models.py:639
+msgid "Can manage incoterms"
+msgstr "Gestionar incoterms"
+
+#: .\core\models.py:657
+msgid "Can manage payment agreements"
+msgstr "Gestionar convenios de pago"
+
+#: .\core\models.py:676
+msgid "Can manage processing plant"
+msgstr "Gestionar plantas de procesamiento"
+
+#: .\core\models.py:703
+msgid "Can manage purchase orders"
+msgstr "Gestionar ordenes de compra"
+
+#: .\core\models.py:771
+msgid "Can manage sale orders"
+msgstr "Gestionar ordenes de venta"
+
+#: .\core\models.py:885
+msgid "Can manage bookings"
+msgstr "Gestionar reservas en navieras"
+
+#: .\dashboard\serializers.py:16
+msgid "The start date cannot be later than the end date."
+msgstr "La fecha de inicio no puede ser posterior a la fecha de fin"
+
+#: .\dashboard\serializers.py:23
+msgid "The date range cannot exceed 90 days."
+msgstr "El rango de fechas no puede ser superior a 90 días"
+
+#: .\logistic_backend\settings.py:220
 msgid "Spanish"
 msgstr "Español"
 
-#: .\logistic_backend\settings.py:222
+#: .\logistic_backend\settings.py:221
 msgid "English"
 msgstr "Inglés"
 
@@ -202,241 +254,46 @@ msgstr "Token expirado"
 msgid "User already verified"
 msgstr "El usuario ya está verificado"
 
-#: .\user\models.py:93
+#: .\user\models.py:24
+msgid "The user needs an email"
+msgstr ""
+
+#: .\user\models.py:91
 msgid "A user with this email already exists."
 msgstr "Ya existe un usuario con ese mismo correo electrónico"
 
-#: .\user\models.py:114
+#: .\user\models.py:112
 msgid "Can manage user"
 msgstr "Gestionar empleados"
 
-#: .\user\models.py:115
-msgid "Can manage customer"
-msgstr "Gestionar clientes"
-
-#: .\user\models.py:116
+#: .\user\models.py:113
 msgid "Can manage page"
 msgstr "Gestionar página"
 
-#: .\user\models.py:117
+#: .\user\models.py:114
 msgid "Can manage role"
 msgstr "Gestionar roles"
 
-#: .\user\models.py:118
+#: .\user\models.py:115
 msgid "Can show all boards"
 msgstr "Mostrar tableros completos"
 
-#: .\user\models.py:119
+#: .\user\models.py:116
 msgid "Can show own board"
 msgstr "Mostrar su propio tablero"
 
-#: .\user\models.py:120
+#: .\user\models.py:117
 msgid "Can show all clients"
 msgstr "Mostrar todos los clientes"
 
-#: .\user\models.py:121
+#: .\user\models.py:118
 msgid "Can show conversion rates report"
 msgstr "Mostrar reporte de tasas de conversión"
 
-#: .\user\serializers.py:281
+#: .\user\serializers.py:263
 msgid "The password must be at least 6 characters long."
 msgstr "La contraseña debe tener al menos 6 caracteres de longitud"
 
-#: .\user\views.py:192
+#: .\user\views.py:191
 msgid "A recovery link has been sent to your email."
 msgstr "Un enlace de recuperación ha sido enviado a su buzón de correo electrónico"
-
-#~ msgid "Can manage credit types"
-#~ msgstr "Gestionar tipos de crédito"
-
-#~ msgid "Can manage order"
-#~ msgstr "Gestionar solicitudes de compra"
-
-#~ msgid "Can change order status"
-#~ msgstr "Cambiar estado a las solicitudes de compra"
-
-#~ msgid "Can manage order product"
-#~ msgstr "Gestionar productos de la solicitud de compra"
-
-#~ msgid "Can manage batch entry"
-#~ msgstr "Gestionar entradas de productos por lotes"
-
-#~ msgid "Can show province"
-#~ msgstr "Mostrar provincias"
-
-#~ msgid "Can show municipality"
-#~ msgstr "Mostrar municipios"
-
-#~ msgid "Can manage contact address"
-#~ msgstr "Gestionar direcciones de contacto"
-
-#~ msgid "Can manage vehicles"
-#~ msgstr "Gestionar vehículos"
-
-#~ msgid "The file must be an Excel file (.xlsx)"
-#~ msgstr "El archivo debe ser un archivo Excel (.xlsx)"
-
-#~ msgid "There must be a wholesale price."
-#~ msgstr "Debe existir un precio mayorista"
-
-#~ msgid "There must be a minimum wholesale quantity."
-#~ msgstr "Debe existir una cantidad mínima mayorista"
-
-#~ msgid "There can be no shipping fee without a delivery address."
-#~ msgstr "No puede existir una tarifa de envío sin dirección de entrega."
-
-#~ msgid ""
-#~ "The shipping address does not belong to the shipping zone of the rate "
-#~ "used."
-#~ msgstr ""
-#~ "La dirección de envío no pertenece a la zona de envío de la tarifa "
-#~ "utilizada."
-
-#~ msgid "A shipping rate must be provided for the selected delivery address."
-#~ msgstr ""
-#~ "Se debe proporcionar una tarifa de envío para la dirección de entrega "
-#~ "seleccionada."
-
-#~ msgid "The list contains no valid coupons"
-#~ msgstr "La lista contiene cupones no válidos"
-
-#~ msgid "Both dates (start_date and end_date) are required"
-#~ msgstr "Las fechas de inicio y fin son requeridas"
-
-#~ msgid "Start date is required"
-#~ msgstr "La fecha de inicio es requerida"
-
-#~ msgid "Invalid date format"
-#~ msgstr "Formato de fecha no válido"
-
-#~ msgid "Start date can't be after end date"
-#~ msgstr "La fecha de inicio no puede ser posterior a la fecha de fin"
-
-#~ msgid "Date range too long"
-#~ msgstr "El rango de fechas es demasiado grande"
-
-#~ msgid "Order shipping does not exist"
-#~ msgstr "No existe un envío para la solicitud actual"
-
-#~ msgid "Order has not deliverer assigned"
-#~ msgstr "La solicutd de compra no tiene ningún repartidor asignado"
-
-#~ msgid "Order has not shipping rate"
-#~ msgstr "La solicitud de compra no tiene tarifa de envío asignada"
-
-#~ msgid "Can manage shipping zones"
-#~ msgstr "Gestionar zonas de envío"
-
-#~ msgid "Can manage shipping methods"
-#~ msgstr "Gestionar métodos de envío"
-
-#~ msgid "Can manage shipping rates"
-#~ msgstr "Gestionar tarifas de envío"
-
-#~ msgid "Can manage delivery"
-#~ msgstr "Gestionar entregas"
-
-#~ msgid "Payment method not soported"
-#~ msgstr "Método de pago no soportado"
-
-#~ msgid "Insufficient wallet balance"
-#~ msgstr "Saldo insuficiente en la billetera electrónica"
-
-#~ msgid "Wallet does not exist"
-#~ msgstr "La billetera electrónica no existe para ese usuario"
-
-#~ msgid "Order payment does not exist"
-#~ msgstr "No existe pago para la solicitud actual"
-
-#~ msgid "Payment not completed"
-#~ msgstr "Pago no ha sido completado"
-
-#~ msgid "Can manage payment methods"
-#~ msgstr "Gestionar métodos de pago"
-
-#~ msgid "Can manage payments"
-#~ msgstr "Gestionar pagos"
-
-#~ msgid "Error during coupon assignment"
-#~ msgstr "Error durante la asignación del cupón"
-
-#~ msgid "Can manage promotions"
-#~ msgstr "Gestionar promociones"
-
-#~ msgid "Inactive coupon"
-#~ msgstr "Cupón inactivo"
-
-#~ msgid "Expired coupon"
-#~ msgstr "Cupón expirado"
-
-#~ msgid "Coupon not valid"
-#~ msgstr "Cupón no válido"
-
-#~ msgid "Usage limit reached"
-#~ msgstr "Se alcanzó el límite de usos"
-
-#~ msgid "Single-use coupon"
-#~ msgstr "Cupón de un solo uso"
-
-#~ msgid "Insufficient minimum purchase"
-#~ msgstr "Insuficiente importe mínimo de compra"
-
-#~ msgid "The coupon does not apply to products in the cart"
-#~ msgstr "El cupón no aplica a los productos en el carrito"
-
-#~ msgid "Valid"
-#~ msgstr "Válido"
-
-#~ msgid "User not deliverer"
-#~ msgstr "El usuario no es un repartidor"
-
-#~ msgid "User not client"
-#~ msgstr "El usuario no es un cliente"
-
-#~ msgid "Can manage organization"
-#~ msgstr "Gestionar organizaciones"
-
-#~ msgid "Can manage fee"
-#~ msgstr "Gestionar tarifas"
-
-#~ msgid "Can show customer orders"
-#~ msgstr "Mostrar solicitudes de compra del cliente"
-
-#~ msgid "Can show customer wallet"
-#~ msgstr "Mostrar billetera electrónica del cliente"
-
-#~ msgid "Can show customer coupons"
-#~ msgstr "Mostrar cupones del cliente"
-
-#~ msgid "Can show customer unpaid orders"
-#~ msgstr "Mostrar las solicitudes de compra no pagadas del cliente"
-
-#~ msgid "Can manage point of sale"
-#~ msgstr "Gestionar punto de venta"
-
-#~ msgid "Can show all orders"
-#~ msgstr "Mostrar todos las solicitudes de compra"
-
-#~ msgid "Can show availables products"
-#~ msgstr "Mostrar productos disponibles"
-
-#~ msgid "Can show unpaid orders report"
-#~ msgstr "Mostrar reporte de solicitudes de compra no pagadas"
-
-#~ msgid "Can deliver orders"
-#~ msgstr "Puede entregar solicitudes de compra"
-
-#~ msgid "You must accept the terms and conditions"
-#~ msgstr "Debe aceptar los términos y condiciones"
-
-#~ msgid "You must accept the privacy policy"
-#~ msgstr "Debe aceptar la política de privacidad"
-
-#~ msgid "The product´s code cannot be empty."
-#~ msgstr "El código del producto no puede estar vacio"
-
-#~ msgid "The shipping address does not exist."
-#~ msgstr "La dirección de envío no existe."
-
-#~ msgid "Invalid coupon"
-#~ msgstr "Cupón no válido"
