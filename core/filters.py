@@ -11,7 +11,7 @@ from core.models import (
     Brand,
     Country,
     NotificationUser, Provider, ProductProviderPresentation, Invoice, InvoicePayment, Booking, Container,
-)
+    SaleOrderItems, )
 from user.models import User
 
 
@@ -90,4 +90,17 @@ class ContainerFilter(filters.FilterSet):
 
     class Meta:
         model = Container
+        fields = ['booking']
+
+
+class SaleOrderItemsFilter(filters.FilterSet):
+    booking = ModelChoiceFilter(queryset=Booking.objects.all(), method='filter_by_booking')
+
+    def filter_by_booking(self, queryset, name, value):
+        if not value:
+            return queryset
+        return queryset.filter(sale_order__bookings=value).distinct()
+
+    class Meta:
+        model = SaleOrderItems
         fields = ['booking']

@@ -91,4 +91,5 @@ urlpatterns = [
         name="countries-with-products",
     ),
     path("configs/", views.ConfigAPIView.as_view(), name="configs"),
+    path(r"sale-order-items", views.SaleOrderItemsListView.as_view(), name="sale-orders-items"),
 ]

@@ -855,18 +855,10 @@ class InvoicePayment(models.Model):
 
 class Booking(models.Model):
     booking_number = models.CharField(max_length=30)
-    port_loading = models.ForeignKey(
-        Port, on_delete=models.PROTECT, related_name="port_loading"
-    )
-    port_discharge = models.ForeignKey(
-        Port, on_delete=models.PROTECT, related_name="port_discharge"
-    )
-    shipping_company = models.ForeignKey(
-        ShippingCompany, related_name="bookings", on_delete=models.PROTECT
-    )
-    vessel = models.ForeignKey(
-        Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True
-    )
+    port_loading = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_loading")
+    port_discharge = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_discharge")
+    shipping_company = models.ForeignKey(ShippingCompany, related_name="bookings", on_delete=models.PROTECT)
+    vessel = models.ForeignKey(Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True)
     voyage_number = models.CharField(max_length=20, blank=True)
     cut_off = models.DateField(null=True, blank=True)
     ets = models.DateField(null=True, blank=True)
@@ -874,6 +866,8 @@ class Booking(models.Model):
     observations = models.TextField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name='bookings')
 
     def __str__(self):
         return self.booking_number
@@ -898,8 +892,6 @@ class Container(models.Model):
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
 
-    sale_orders = models.ManyToManyField(SaleOrder, related_name="container_items", blank=True)
-
     def __str__(self):
         return f"{self.booking.booking_number} - {self.container_type.name}"
 
@@ -912,7 +904,10 @@ class Container(models.Model):
 class ContainerItem(models.Model):
     container = models.ForeignKey(Container, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT, related_name="container_items")
+    sale_order_item = models.ForeignKey(SaleOrderItems, on_delete=models.PROTECT, related_name="container_items")
     quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 
 class ShippingCompanyInvoice(Invoice):
