@@ -455,9 +455,7 @@ class ProductProvider(models.Model):
 
 class ProductProviderPresentation(models.Model):
     product_provider = models.ForeignKey(ProductProvider, on_delete=models.CASCADE)
-    presentation = models.ForeignKey(
-        Presentation, related_name="product_providers", on_delete=models.PROTECT
-    )
+    presentation = models.ForeignKey(Presentation, related_name="product_providers", on_delete=models.PROTECT)
     active = models.BooleanField(default=True)
 
     class Meta(PermissionsMeta.Meta):
@@ -824,10 +822,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-            self.total_amount
-            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                "pending_amount"
-            ]
+                self.total_amount
+                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                    "pending_amount"
+                ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -891,14 +889,16 @@ class Booking(models.Model):
 
 
 class Container(models.Model):
-    booking = models.ForeignKey(
-        Booking, on_delete=models.CASCADE, related_name="containers"
-    )
-    container_type = models.ForeignKey(
-        ContainerType, on_delete=models.PROTECT, related_name="containers"
-    )
+    booking = models.ForeignKey(Booking, on_delete=models.SET_NULL, null=True, related_name="containers")
+    container_type = models.ForeignKey(ContainerType, on_delete=models.PROTECT, related_name="containers")
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
+    net_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    discharge_date = models.DateField(null=True, blank=True)
+    extraction_date = models.DateField(null=True, blank=True)
+    return_date = models.DateField(null=True, blank=True)
+
+    sale_orders = models.ManyToManyField(SaleOrder, related_name="container_items", blank=True)
 
     def __str__(self):
         return f"{self.booking.booking_number} - {self.container_type.name}"
@@ -909,10 +909,14 @@ class Container(models.Model):
         ordering = ["-id"]
 
 
+class ContainerItem(models.Model):
+    container = models.ForeignKey(Container, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT, related_name="container_items")
+    quantity = models.PositiveIntegerField(default=1)
+
+
 class ShippingCompanyInvoice(Invoice):
-    booking = models.ForeignKey(
-        Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
-    )
+    booking = models.ForeignKey(Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT)
 
     def __str__(self):
         return self.bill_number

@@ -10,7 +10,7 @@ from core.models import (
     Category,
     Brand,
     Country,
-    NotificationUser, Provider, ProductProviderPresentation, Invoice, InvoicePayment,
+    NotificationUser, Provider, ProductProviderPresentation, Invoice, InvoicePayment, Booking, Container,
 )
 from user.models import User
 
@@ -83,3 +83,11 @@ class InvoicePaymentFilter(filters.FilterSet):
     class Meta:
         model = InvoicePayment
         fields = ['invoice']
+
+
+class ContainerFilter(filters.FilterSet):
+    booking = ModelChoiceFilter(queryset=Booking.objects.all(), field_name="booking")
+
+    class Meta:
+        model = Container
+        fields = ['booking']

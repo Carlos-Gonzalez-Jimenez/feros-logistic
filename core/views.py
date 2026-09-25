@@ -743,7 +743,30 @@ class BookingViewSet(ProtectedResourceViewSet):
     def get_serializer_class(self):
         if self.action in ["list"]:
             return serializers.BookingMinimalSerializer
+        if self.action == "containers":
+            return serializers.ContainerSerializer
+        if self.action == 'add_or_remove_containers':
+            return serializers.BookingContainerRelaterSerializer
         return serializers.BookingSerializer
+
+    @action(methods=['get'], detail=True, url_path=r'containers')
+    def containers(self, request, pk):
+        booking = self.get_object()
+        serializer = self.get_serializer(booking.containers.all(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['post'],
+        detail=True,
+        url_path=r'add-or-remove-containers')
+    def add_or_remove_containers(self, request, pk):
+        booking = self.get_object()
+        serializer = self.get_serializer(booking, data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        data = serializers.ContainerSerializer(booking.containers.all(), many=True).data
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class ContainerViewSet(ProtectedResourceViewSet):
@@ -758,10 +781,14 @@ class ContainerViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.Container.objects.all()
-    permission_classes = [
-        ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
-    ]
+    permission_classes = [ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])]
     serializer_class = serializers.ContainerSerializer
+    filterset_class = filters.ContainerFilter
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return serializers.ContainerMinimalSerializer
+        return serializers.ContainerSerializer
 
 
 class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):

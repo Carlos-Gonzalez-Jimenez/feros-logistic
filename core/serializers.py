@@ -486,7 +486,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                validated_data.get("unit_price") - instance.unit_price
+                    validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1146,9 +1146,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def _pending_by_range(self, obj, from_day, until_day):
         days_diff = (date.today() - obj.expiration_date or date.today()).days
         if (
-            days_diff < 0
-            or days_diff < from_day
-            or (until_day is not None and days_diff > until_day)
+                days_diff < 0
+                or days_diff < from_day
+                or (until_day is not None and days_diff > until_day)
         ):
             return 0
         return obj.pending_amount
@@ -1217,19 +1217,24 @@ class BookingSerializer(BookingMinimalSerializer):
     pass
 
 
-class ContainerSerializer(serializers.ModelSerializer):
+class ContainerMinimalSerializer(serializers.ModelSerializer):
     booking = BookingMinimalSerializer(read_only=True)
     booking_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Booking.objects.all(), source="booking"
+        queryset=models.Booking.objects.all(), source="booking", allow_null=True, required=False
     )
     container_type = ContainerTypeSerializer(read_only=True)
     container_type_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ContainerType.objects.all(), source="container_type"
     )
+    sale_orders_ids = serializers.PrimaryKeyRelatedField(queryset=models.SaleOrder.objects.all(), source="sale_orders")
 
     class Meta:
         model = models.Container
         fields = serializers.ALL_FIELDS
+
+
+class ContainerSerializer(ContainerMinimalSerializer):
+    sale_orders = SaleOrderMinimalSerializer(read_only=True)
 
 
 class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
@@ -1274,3 +1279,15 @@ class InvoicePaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.InvoicePayment
         exclude = ["invoice"]
+
+
+class BookingContainerRelaterSerializer(serializers.Serializer):
+    containers_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
+    remove = serializers.BooleanField(default=False)
+
+    def update(self, instance, validated_data):
+        booking = instance if not validated_data['remove'] else None
+        for container in validated_data['containers_ids']:
+            container.booking = booking
+        models.Container.objects.bulk_update(validated_data['containers_ids'], fields=["booking"])
+        return instance
