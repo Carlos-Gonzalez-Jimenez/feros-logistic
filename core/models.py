@@ -1,17 +1,24 @@
 from decimal import Decimal
-
 from django.conf import settings
 from django.db import models
 from django.db.models import Sum
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
-
 from cms.models import BlockMEDIA
 from user.models import User
 from .generics import PermissionsMeta
 
 
 class ShippingCompany(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=255)
     active = models.BooleanField(default=True)
 
@@ -28,6 +35,15 @@ class ShippingCompany(models.Model):
 
 
 class Vessel(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=255)
     shipping_company = models.ForeignKey(
         ShippingCompany,
@@ -47,6 +63,15 @@ class Vessel(models.Model):
 
 
 class ContainerType(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=255)
     free_days = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
@@ -62,6 +87,15 @@ class ContainerType(models.Model):
 
 
 class Currency(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=255)
     initials = models.CharField(max_length=5)
     symbol = models.CharField(max_length=1)
@@ -315,6 +349,15 @@ class Category(models.Model):
 
 
 class Specifications(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=255, unique=True)
     icon = models.CharField(max_length=255, blank=True, null=True)
     active = models.BooleanField(default=True)
@@ -427,6 +470,15 @@ class Product(models.Model):
 
 
 class Presentation(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=200)
 
     class Meta(PermissionsMeta.Meta):
@@ -440,6 +492,15 @@ class Presentation(models.Model):
 
 
 class ProductProvider(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
     provider = models.ForeignKey(Provider, on_delete=models.PROTECT)
 
@@ -454,8 +515,16 @@ class ProductProvider(models.Model):
 
 
 class ProductProviderPresentation(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+    """
+
     product_provider = models.ForeignKey(ProductProvider, on_delete=models.CASCADE)
-    presentation = models.ForeignKey(Presentation, related_name="product_providers", on_delete=models.PROTECT)
+    presentation = models.ForeignKey(
+        Presentation, related_name="product_providers", on_delete=models.PROTECT
+    )
     active = models.BooleanField(default=True)
 
     class Meta(PermissionsMeta.Meta):
@@ -463,6 +532,15 @@ class ProductProviderPresentation(models.Model):
 
 
 class ProductImageOrder(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     blockmedia = models.ForeignKey(BlockMEDIA, on_delete=models.CASCADE)
 
@@ -478,6 +556,15 @@ class ProductImageOrder(models.Model):
 
 
 class SpecificationDetails(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     value = models.TextField(blank=True, null=True)
     product = models.ForeignKey(
         Product,
@@ -604,6 +691,15 @@ class Config(models.Model):
 
 
 class Port(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=100)
     abbreviation = models.CharField(max_length=20)
     description = models.TextField(blank=True, null=True)
@@ -625,6 +721,15 @@ class Port(models.Model):
 
 
 class Incoterms(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=100)
     abbreviation = models.CharField(max_length=20)
     description = models.TextField(blank=True, null=True)
@@ -645,6 +750,15 @@ class Incoterms(models.Model):
 
 
 class PaymentAgreement(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -660,6 +774,15 @@ class PaymentAgreement(models.Model):
 
 
 class ProcessingPlant(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     name = models.CharField(max_length=100)
     phytosanitary_permit = models.BooleanField(default=False)
     phytosanitary_permit_expires = models.DateField(blank=True, null=True)
@@ -682,6 +805,15 @@ class ProcessingPlant(models.Model):
 
 
 class PurchaseOrder(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     provider = models.ForeignKey(
         Provider, related_name="purchase_orders", on_delete=models.PROTECT
     )
@@ -706,6 +838,15 @@ class PurchaseOrder(models.Model):
 
 
 class PurchaseOrderItem(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     purchase_order = models.ForeignKey(
         PurchaseOrder, related_name="purchase_order_items", on_delete=models.CASCADE
     )
@@ -727,6 +868,15 @@ class PurchaseOrderItem(models.Model):
 
 
 class SaleOrder(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     so_number = models.CharField(max_length=100)
     so_date = models.DateField()
     observations = models.TextField(blank=True, null=True)
@@ -777,6 +927,15 @@ class SaleOrder(models.Model):
 
 
 class SaleOrderItems(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     sale_order = models.ForeignKey(
         SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE
     )
@@ -803,6 +962,15 @@ class SaleOrderItems(models.Model):
 
 
 class Invoice(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     bill_number = models.CharField(max_length=100)
     emission_date = models.DateField()
     expiration_date = models.DateField()
@@ -822,10 +990,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-                self.total_amount
-                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                    "pending_amount"
-                ]
+            self.total_amount
+            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                "pending_amount"
+            ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -835,6 +1003,15 @@ class Invoice(models.Model):
 
 
 class InvoicePayment(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     invoice = models.ForeignKey(
         Invoice, related_name="payments", on_delete=models.CASCADE
     )
@@ -854,6 +1031,15 @@ class InvoicePayment(models.Model):
 
 
 class Booking(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     booking_number = models.CharField(max_length=30)
     port_loading = models.ForeignKey(
         Port, on_delete=models.PROTECT, related_name="port_loading"
@@ -889,8 +1075,21 @@ class Booking(models.Model):
 
 
 class Container(models.Model):
-    booking = models.ForeignKey(Booking, on_delete=models.SET_NULL, null=True, related_name="containers")
-    container_type = models.ForeignKey(ContainerType, on_delete=models.PROTECT, related_name="containers")
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    booking = models.ForeignKey(
+        Booking, on_delete=models.SET_NULL, null=True, related_name="containers"
+    )
+    container_type = models.ForeignKey(
+        ContainerType, on_delete=models.PROTECT, related_name="containers"
+    )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
     net_weight = models.DecimalField(max_digits=10, decimal_places=2)
@@ -898,7 +1097,9 @@ class Container(models.Model):
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
 
-    sale_orders = models.ManyToManyField(SaleOrder, related_name="container_items", blank=True)
+    sale_orders = models.ManyToManyField(
+        SaleOrder, related_name="container_items", blank=True
+    )
 
     def __str__(self):
         return f"{self.booking.booking_number} - {self.container_type.name}"
@@ -910,13 +1111,36 @@ class Container(models.Model):
 
 
 class ContainerItem(models.Model):
-    container = models.ForeignKey(Container, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT, related_name="container_items")
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+    """
+
+    container = models.ForeignKey(
+        Container, on_delete=models.CASCADE, related_name="items"
+    )
+    product = models.ForeignKey(
+        ProductProviderPresentation,
+        on_delete=models.PROTECT,
+        related_name="container_items",
+    )
     quantity = models.PositiveIntegerField(default=1)
 
 
 class ShippingCompanyInvoice(Invoice):
-    booking = models.ForeignKey(Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT)
+    """_summary_
+
+    Args:
+        Invoice (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    booking = models.ForeignKey(
+        Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
+    )
 
     def __str__(self):
         return self.bill_number
@@ -928,6 +1152,15 @@ class ShippingCompanyInvoice(Invoice):
 
 
 class ProviderInvoice(Invoice):
+    """_summary_
+
+    Args:
+        Invoice (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     sale_order = models.ForeignKey(
         SaleOrder, related_name="invoices", on_delete=models.PROTECT
     )
