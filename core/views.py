@@ -705,6 +705,13 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
         return serializers.SaleOrderSerializer
 
 
+class SaleOrderItemsListView(ListAPIView):
+    queryset = models.SaleOrderItems.objects.all()
+    filterset_class = filters.SaleOrderItemsFilter
+    serializer_class = serializers.SaleOrderItemsSerializer
+    pagination_class = None
+
+
 class PaymentAgreementViewSet(ProtectedResourceViewSet):
     """
     Payment Agreement model\n

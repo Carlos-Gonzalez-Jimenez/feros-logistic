@@ -1052,6 +1052,12 @@ class SaleOrderItemsSerializer(serializers.ModelSerializer):
         queryset=models.Measurement_Unit.objects.all(), source="measurement_unit"
     )
     amount = serializers.SerializerMethodField()
+    sale_order_id = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    format = serializers.SerializerMethodField()
+
+    def get_format(self, obj):
+        return f"{obj.sale_order} - {obj.sale_order.provider} | {obj.product.product_provider.product.name} - {obj.product.presentation.name}"
 
     def get_amount(self, obj):
         return obj.quantity * obj.unit_price
@@ -1202,6 +1208,9 @@ class BookingMinimalSerializer(serializers.ModelSerializer):
     vessel_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Vessel.objects.all(), source="vessel"
     )
+    sale_orders_ids = serializers.PrimaryKeyRelatedField(
+        queryset=models.SaleOrder.objects.all(), source='sale_orders', many=True
+    )
 
     format = serializers.SerializerMethodField()
 
@@ -1214,7 +1223,21 @@ class BookingMinimalSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(BookingMinimalSerializer):
-    pass
+    sale_orders = SaleOrderMinimalSerializer(many=True, read_only=True)
+
+
+class ContainerItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.ProductProviderPresentation.objects.all(), source="product"
+    )
+    product = ProductProviderPresentationSerializer(read_only=True)
+    sale_order_item_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.SaleOrderItems.objects.all(), source="sale_order_item",
+    )
+
+    class Meta:
+        model = models.ContainerItem
+        exclude = ['sale_order_item', 'container']
 
 
 class ContainerMinimalSerializer(serializers.ModelSerializer):
@@ -1226,7 +1249,6 @@ class ContainerMinimalSerializer(serializers.ModelSerializer):
     container_type_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ContainerType.objects.all(), source="container_type"
     )
-    sale_orders_ids = serializers.PrimaryKeyRelatedField(queryset=models.SaleOrder.objects.all(), source="sale_orders")
 
     class Meta:
         model = models.Container
@@ -1234,7 +1256,23 @@ class ContainerMinimalSerializer(serializers.ModelSerializer):
 
 
 class ContainerSerializer(ContainerMinimalSerializer):
-    sale_orders = SaleOrderMinimalSerializer(read_only=True)
+    items = ContainerItemSerializer(many=True)
+
+    def update(self, instance, validated_data):
+        items = validated_data.pop('items')
+        instance = super().update(instance, validated_data)
+        self.create_container_items(instance, items)
+        return instance
+
+    def create_container_items(self, instance, items):
+        instance.items.all().delete()
+        models.ContainerItem.objects.bulk_create([models.ContainerItem(**item, container=instance) for item in items])
+
+    def create(self, validated_data):
+        items = validated_data.pop('items')
+        instance = super().create(validated_data)
+        self.create_container_items(instance, items)
+        return instance
 
 
 class ShippingCompanyInvoiceSerializer(InvoiceSerializer):

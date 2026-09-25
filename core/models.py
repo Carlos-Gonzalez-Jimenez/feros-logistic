@@ -1041,18 +1041,10 @@ class Booking(models.Model):
     """
 
     booking_number = models.CharField(max_length=30)
-    port_loading = models.ForeignKey(
-        Port, on_delete=models.PROTECT, related_name="port_loading"
-    )
-    port_discharge = models.ForeignKey(
-        Port, on_delete=models.PROTECT, related_name="port_discharge"
-    )
-    shipping_company = models.ForeignKey(
-        ShippingCompany, related_name="bookings", on_delete=models.PROTECT
-    )
-    vessel = models.ForeignKey(
-        Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True
-    )
+    port_loading = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_loading")
+    port_discharge = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_discharge")
+    shipping_company = models.ForeignKey(ShippingCompany, related_name="bookings", on_delete=models.PROTECT)
+    vessel = models.ForeignKey(Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True)
     voyage_number = models.CharField(max_length=20, blank=True)
     cut_off = models.DateField(null=True, blank=True)
     ets = models.DateField(null=True, blank=True)
@@ -1060,6 +1052,8 @@ class Booking(models.Model):
     observations = models.TextField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name='bookings')
 
     def __str__(self):
         return self.booking_number
@@ -1126,6 +1120,8 @@ class ContainerItem(models.Model):
         related_name="container_items",
     )
     quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 
 class ShippingCompanyInvoice(Invoice):
