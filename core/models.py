@@ -12,7 +12,7 @@ from .generics import PermissionsMeta
 
 
 class Customer(models.Model):
-    bussines_name = models.CharField(max_length=100)
+    business_name = models.CharField(max_length=100)
     business_phone = models.CharField(max_length=50, null=True, blank=True)
     business_email = models.EmailField(null=True, blank=True)
     nit_code = models.CharField(max_length=100, null=True, blank=True)
@@ -20,12 +20,10 @@ class Customer(models.Model):
     contacts = models.JSONField(default=list, blank=True)
 
     class Meta(PermissionsMeta.Meta):
-        permissions = [
-            ("manage_customers", _("Can manage customers"))
-        ]
+        permissions = [("manage_customers", _("Can manage customers"))]
         verbose_name = "Customer"
         verbose_name_plural = "Customers"
-        ordering = ["bussines_name"]
+        ordering = ["business_name"]
 
 
 class ShippingCompany(models.Model):
@@ -1225,7 +1223,9 @@ class ProviderInvoice(Invoice):
         _type_: _description_
     """
 
-    sale_order = models.ForeignKey(SaleOrder, related_name="invoices", on_delete=models.PROTECT)
+    sale_order = models.ForeignKey(
+        SaleOrder, related_name="invoices", on_delete=models.PROTECT
+    )
 
     def __str__(self):
         return self.bill_number

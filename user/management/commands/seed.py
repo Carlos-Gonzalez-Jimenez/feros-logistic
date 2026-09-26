@@ -40,6 +40,7 @@ from core.models import (
     NotificationType,
     Specifications,
     Config,
+    Customer,
 )
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
@@ -363,6 +364,26 @@ class Command(BaseCommand):
                 default=currency[4],
             )
 
+    def create_customers(self) -> None:
+        """Creates all customer objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating customers"))
+
+        customers = [
+            ("Feros Grupo S.U.R.L.", "51234567", "feros@gmail.com", "12345", "Avenida del Puerto, muelle Osvaldo Sanchez"),
+            ("Transportes Hidalgo S.U.R.L.", "56543781", "hidalgo@gmail.com", "65789", "Avenida del Puerto, muelle Osvaldo Sanchez"),
+            ("TL 38", "58905432", "tl38@gmail.com", "25146", None),
+        ]
+
+        for customer in customers:
+            _ = Customer.objects.get_or_create(
+                business_name=customer[0],
+                business_phone=customer[1],
+                business_email=customer[2],
+                nit_code=customer[3],
+                address=customer[4],
+            )
+            
     def create_post(self) -> None:
         """Creates example post objects"""
 
@@ -984,6 +1005,7 @@ class Command(BaseCommand):
 
         self.create_configuration()
         self.create_categories()
+        self.create_customers()
         self.create_roles()
         self.create_users()
         self.create_brands()
