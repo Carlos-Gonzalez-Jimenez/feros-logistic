@@ -1,9 +1,11 @@
 from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
 from django.db.models import Sum
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
+
 from cms.models import BlockMEDIA
 from user.models import User
 from .generics import PermissionsMeta
@@ -975,13 +977,17 @@ class Invoice(models.Model):
     emission_date = models.DateField()
     expiration_date = models.DateField()
     payment_date = models.DateField(default=None, blank=True, null=True)
-    total_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    pending_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    other_charges_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
+
+    """
+    total_amount = amount + other_charges_amount
+    amount = Monto relacionado con los servicios
+    other_charges_amount = Monto relacionado con otros cargos.
+    """
 
     def __str__(self):
         return self.bill_number
@@ -994,10 +1000,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-            self.total_amount
-            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                "pending_amount"
-            ]
+                self.total_amount
+                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                    "pending_amount"
+                ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -1109,16 +1115,11 @@ class Container(models.Model):
     )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
-    net_weight = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
+    net_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    gross_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
-
-    sale_orders = models.ManyToManyField(
-        SaleOrder, related_name="container_items", blank=True
-    )
 
     def __str__(self):
         return f"{self.booking.booking_number} - {self.container_type.name}"
@@ -1148,6 +1149,7 @@ class ContainerItem(models.Model):
         on_delete=models.PROTECT,
         related_name="container_items",
     )
+    sale_order_item = models.ForeignKey(SaleOrderItems, related_name='container_items', on_delete=models.PROTECT)
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
@@ -1170,7 +1172,7 @@ class ShippingCompanyInvoice(Invoice):
     booking = models.ForeignKey(
         Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
     )
-    bl_number = models.CharField(max_length=50)
+    bl_number = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return self.bill_number
