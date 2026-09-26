@@ -12,9 +12,9 @@ from .generics import PermissionsMeta
 
 
 class Customer(models.Model):
-    bussines_name = models.CharField()
+    bussines_name = models.CharField(max_length=100)
     business_phone = models.CharField(max_length=50, null=True, blank=True)
-    business_email = models.CharField(max_length=100, null=True, blank=True)
+    business_email = models.EmailField(null=True, blank=True)
     nit_code = models.CharField(max_length=100, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     contacts = models.JSONField(default=list, blank=True)
