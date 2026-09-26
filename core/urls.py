@@ -5,21 +5,16 @@ from core import views
 
 router = routers.DefaultRouter()
 
+router.register(r"customers", views.CustomerViewSet, basename="customers")
 router.register(r"currencies", views.CurrencyViewSet, basename="currencies")
 router.register(r"countries", views.CountryViewSet, basename="countries")
 router.register(r"brands", views.BrandViewSet, basename="brands")
 router.register(r"providers", views.ProviderViewSet, basename="providers")
 router.register(r"categories", views.CategoryViewSet, basename="categories")
 router.register(r"notifications", views.NotificationViewSet, basename="notifications")
-router.register(
-    r"notification-types", views.NotificationTypeViewSet, basename="notification-types"
-)
-router.register(
-    r"notification-users", views.NotificationUserViewSet, basename="notification-users"
-)
-router.register(
-    r"measurement-units", views.MeasurementUnitViewSet, basename="measurement-units"
-)
+router.register(r"notification-types", views.NotificationTypeViewSet, basename="notification-types")
+router.register(r"notification-users", views.NotificationUserViewSet, basename="notification-users")
+router.register(r"measurement-units", views.MeasurementUnitViewSet, basename="measurement-units")
 router.register(r"products", views.ProductViewSet, basename="products")
 router.register(
     r"specifications", views.SpecificationsViewSet, basename="specifications"

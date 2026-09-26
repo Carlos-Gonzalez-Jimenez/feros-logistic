@@ -38,6 +38,16 @@ class ProtectedResourceViewSet(viewsets.ModelViewSet):
                 raise ProtectedInstanceException() from exception
 
 
+class CustomerViewSet(ProtectedResourceViewSet):
+    permission_classes = [
+        ReadOnlyPermission
+        | CustomPermissionFactory(["core.manage_customers"]),
+    ]
+    queryset = models.Customer.objects.all()
+    serializer_class = serializers.CustomerSerializer
+    search_fields = ["name"]
+
+
 class ShippingCompanyViewSet(ProtectedResourceViewSet):
     """
     Shipping Company model\n

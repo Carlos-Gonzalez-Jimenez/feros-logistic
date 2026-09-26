@@ -17,6 +17,12 @@ from user.models import User
 from user.serializers import UserMinimalSerializer
 
 
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Customer
+        fields = serializers.ALL_FIELDS
+
+
 class ShippingCompanySerializer(serializers.ModelSerializer):
     """_summary_
 
