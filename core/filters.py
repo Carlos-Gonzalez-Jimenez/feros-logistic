@@ -2,6 +2,9 @@ from django.db.models import Q
 from django_filters import (
     ModelChoiceFilter,
     ModelMultipleChoiceFilter,
+    NumberFilter,
+    CharFilter,
+    BooleanFilter,
 )
 from django_filters import rest_framework as filters
 
@@ -10,8 +13,15 @@ from core.models import (
     Category,
     Brand,
     Country,
-    NotificationUser, Provider, ProductProviderPresentation, Invoice, InvoicePayment, Booking, Container,
-    SaleOrderItems, )
+    NotificationUser,
+    Provider,
+    ProductProviderPresentation,
+    Invoice,
+    InvoicePayment,
+    Booking,
+    Container,
+    SaleOrderItems,
+)
 from user.models import User
 
 
@@ -70,11 +80,13 @@ class NotificationUserFilter(filters.FilterSet):
 
 
 class ProductProviderPresentationFilter(filters.FilterSet):
-    provider = ModelChoiceFilter(queryset=Provider.objects.all(), field_name="product_provider__provider")
+    provider = ModelChoiceFilter(
+        queryset=Provider.objects.all(), field_name="product_provider__provider"
+    )
 
     class Meta:
         model = ProductProviderPresentation
-        fields = ['provider']
+        fields = ["provider"]
 
 
 class InvoicePaymentFilter(filters.FilterSet):
@@ -82,19 +94,33 @@ class InvoicePaymentFilter(filters.FilterSet):
 
     class Meta:
         model = InvoicePayment
-        fields = ['invoice']
+        fields = ["invoice"]
 
 
 class ContainerFilter(filters.FilterSet):
-    booking = ModelChoiceFilter(queryset=Booking.objects.all(), field_name="booking")
+    booking = NumberFilter(field_name="booking_id")
+    container_type = NumberFilter(field_name="container_type_id")
+    container_number = CharFilter(lookup_expr="icontains")
+    in_transit = BooleanFilter(method="filter_in_transit")
 
     class Meta:
         model = Container
-        fields = ['booking']
+        fields = ["booking", "container_type", "container_number"]
+
+    def filter_in_transit(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                booking__confirmed_at__isnull=False,
+                booking__cancelled_at__isnull=True,
+                discharge_date__isnull=True,
+            )
+        return queryset
 
 
 class SaleOrderItemsFilter(filters.FilterSet):
-    booking = ModelChoiceFilter(queryset=Booking.objects.all(), method='filter_by_booking')
+    booking = ModelChoiceFilter(
+        queryset=Booking.objects.all(), method="filter_by_booking"
+    )
 
     def filter_by_booking(self, queryset, name, value):
         if not value:
@@ -103,4 +129,4 @@ class SaleOrderItemsFilter(filters.FilterSet):
 
     class Meta:
         model = SaleOrderItems
-        fields = ['booking']
+        fields = ["booking"]

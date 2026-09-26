@@ -975,8 +975,12 @@ class Invoice(models.Model):
     emission_date = models.DateField()
     expiration_date = models.DateField()
     payment_date = models.DateField(default=None, blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    pending_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    pending_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
 
     def __str__(self):
@@ -1015,7 +1019,9 @@ class InvoicePayment(models.Model):
     invoice = models.ForeignKey(
         Invoice, related_name="payments", on_delete=models.CASCADE
     )
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_paid = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     observations = models.TextField(blank=True, null=True)
     payment_date = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1041,11 +1047,22 @@ class Booking(models.Model):
     """
 
     booking_number = models.CharField(max_length=30)
-    port_loading = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_loading")
-    port_discharge = models.ForeignKey(Port, on_delete=models.PROTECT, related_name="port_discharge")
-    shipping_company = models.ForeignKey(ShippingCompany, related_name="bookings", on_delete=models.PROTECT)
-    vessel = models.ForeignKey(Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True)
+    port_loading = models.ForeignKey(
+        Port, on_delete=models.PROTECT, related_name="port_loading"
+    )
+    port_discharge = models.ForeignKey(
+        Port, on_delete=models.PROTECT, related_name="port_discharge"
+    )
+    shipping_company = models.ForeignKey(
+        ShippingCompany, related_name="bookings", on_delete=models.PROTECT
+    )
+    vessel = models.ForeignKey(
+        Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True
+    )
     voyage_number = models.CharField(max_length=20, blank=True)
+    quoted_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     cut_off = models.DateField(null=True, blank=True)
     ets = models.DateField(null=True, blank=True)
     eta = models.DateField(null=True, blank=True)
@@ -1053,7 +1070,7 @@ class Booking(models.Model):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
-    sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name='bookings')
+    sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name="bookings")
 
     def __str__(self):
         return self.booking_number
@@ -1065,7 +1082,13 @@ class Booking(models.Model):
             ("manage_bookings", _("Can manage bookings")),
         ]
         ordering = ["-id"]
-        indexes = [models.Index(fields=["booking_number"])]
+        indexes = [
+            models.Index(fields=["booking_number"]),
+            models.Index(fields=["ets"]),
+            models.Index(fields=["eta"]),
+            models.Index(fields=["shipping_company", "ets"]),
+            models.Index(fields=["shipping_company", "eta"]),
+        ]
 
 
 class Container(models.Model):
@@ -1086,7 +1109,9 @@ class Container(models.Model):
     )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
-    net_weight = models.DecimalField(max_digits=10, decimal_places=2)
+    net_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
@@ -1102,6 +1127,10 @@ class Container(models.Model):
         verbose_name = "Container"
         verbose_name_plural = "Containers"
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["discharge_date"]),
+            models.Index(fields=["booking", "discharge_date"]),
+        ]
 
 
 class ContainerItem(models.Model):
@@ -1120,8 +1149,12 @@ class ContainerItem(models.Model):
         related_name="container_items",
     )
     quantity = models.PositiveIntegerField(default=1)
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    unit_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
 
 
 class ShippingCompanyInvoice(Invoice):
@@ -1137,6 +1170,7 @@ class ShippingCompanyInvoice(Invoice):
     booking = models.ForeignKey(
         Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
     )
+    bl_number = models.CharField(max_length=50)
 
     def __str__(self):
         return self.bill_number

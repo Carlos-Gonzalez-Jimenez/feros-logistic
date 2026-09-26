@@ -1,7 +1,6 @@
 import datetime
 from decimal import Decimal
 
-from django.core.cache import cache
 from django.db import models as output_field
 from django.db.models import (
     Sum,
@@ -23,15 +22,12 @@ from rest_framework.response import Response
 
 from core import models, serializers
 from core.permissions import CustomPermissionFactory, ReadOnlyPermission
-from dashboard.serializers import DashboardDatesSerializer
+from dashboard.serializers import DashboardDatesSerializer, DashboardSummarySerializer
 from user.models import User
 from user.serializers import UserMinimalSerializer
 
 # Reporte de estado de bookings vs. ejecución real
 # Compara lo reservado (booking) contra lo efectivamente embarcado, facturado y contenerizado.
-
-# Trazabilidad por contenedor
-# Número de contenedor, tipo (20'/40'/40HC/Reefer), booking asociado, BL, naviera, buque, puerto origen/destino, carga, zarpe y descarga.
 
 # Utilización de contenedores
 # Peso y volumen cargado vs. capacidad nominal. Detecta contenedores subutilizados o sobrecargados.
@@ -51,7 +47,7 @@ from user.serializers import UserMinimalSerializer
 
 class DashboardBookingViewSet(viewsets.GenericViewSet):
     """
-    View to handle all booking-related actions in dashboard.
+    View to handle all booking-containers related actions in dashboard.
 
     All reports are handled via methods with @action decorator in which Users can be filtered
     by start_date, end_date.
@@ -64,99 +60,96 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
     queryset = models.Booking.objects.all()
     serializer_class = serializers.BookingSerializer
 
+    def __get_request_dates(self, request):
+        _serializer = DashboardDatesSerializer(data=self.request.GET)
+        _serializer.is_valid(raise_exception=True)
+        validated_data = _serializer.validated_data
+        return validated_data["start_date"], validated_data["end_date"]
+
     @action(methods=["get"], detail=False, url_path="booking-metrics")
     def get_booking_metrics(self, request):
         """
         Dashboard operativo : bookings activos, contenedores en tránsito, próximas salidas, próximos arribos
         """
 
-        month_ago = timezone.now() - datetime.timedelta(days=30)
-        booking_metrics = models.User.objects.filter(is_active=True).aggregate(
-            total_users=Count("id"),
-            new_users_month=Count("id", filter=Q(date_joined__gte=month_ago)),
-            deliverers=Count("id", filter=Q(is_deliverer=True)),
-            newsletter_subscribers=Count("id", filter=Q(newsletter=True)),
-            unverified_users=Count("id", filter=Q(verified=False)),
+        start_date, end_date = self.__get_request_dates(request)
+
+        shipping_company_id = request.query_params.get("shipping_company_id")
+
+        bookings = (
+            models.Booking.objects.select_related(
+                "port_loading", "port_discharge", "shipping_company", "vessel"
+            )
+            .prefetch_related("sale_orders")
+            .annotate(containers_count=Count("containers", distinct=True))
         )
-        return Response(booking_metrics, status=status.HTTP_200_OK)
+        if shipping_company_id is not None:
+            bookings = bookings.filter(shipping_company_id=shipping_company_id)
 
-    def _calculate_percentage(self, part, total):
-        """Calcular porcentaje de forma segura"""
-        if total == 0:
-            return 0
-        return round((part / total) * 100, 2)
+        containers = models.Container.objects.select_related(
+            "booking", "booking__shipping_company", "container_type"
+        ).prefetch_related("sale_orders", "items__product")
+        if shipping_company_id is not None:
+            containers = containers.filter(shipping_company_id=shipping_company_id)
 
-    # @action(detail=False, methods=["get"], url_path="customers-metrics")
-    # def customers_metrics(self, request):
-    #     cache_key = f"customers_metrics_{timezone.now().strftime('%Y-%m-%d')}"
-    #     cached_data = cache.get(cache_key)
+        active_bookings = bookings.filter(
+            confirmed_at__date__gte=start_date,
+            confirmed_at__date__lte=end_date,
+            cancelled_at__isnull=True,
+        ).order_by("-confirmed_at")
 
-    #     if cached_data is not None:
-    #         return Response(cached_data, status=status.HTTP_200_OK)
+        containers_in_transit = containers.filter(
+            booking__confirmed_at__isnull=False,
+            booking__cancelled_at__isnull=True,
+            discharge_date__isnull=True,
+            booking__eta__gte=start_date,
+            booking__eta__lte=end_date,
+        ).order_by("booking__eta")
 
-    #     today = timezone.now().date()
-    #     last_30_days = today - datetime.timedelta(days=30)
-    #     last_90_days = today - datetime.timedelta(days=90)
+        upcoming_departures = bookings.filter(
+            cancelled_at__isnull=True,
+            ets__gte=start_date,
+            ets__lte=end_date,
+        ).order_by("ets")
 
-    #     customer_metrics = models.User.objects.filter(is_staff=False).aggregate(
-    #         total_customers=Count("id"),
-    #         new_customers_30d=Count("id", filter=Q(date_joined__gte=last_30_days)),
-    #         active_customers_30d=Count(
-    #             "id", filter=Q(orders__creation_date__gte=last_30_days), distinct=True
-    #         ),
-    #         verified_customers=Count("id", filter=Q(verified=True)),
-    #         newsletter_subscribers=Count("id", filter=Q(newsletter=True)),
-    #     )
+        upcoming_arrivals = bookings.filter(
+            cancelled_at__isnull=True,
+            eta__gte=start_date,
+            eta__lte=end_date,
+        ).order_by("eta")
 
-    #     top_customers = (
-    #         models.User.objects.filter(
-    #             is_staff=False, orders__creation_date__gte=last_90_days
-    #         )
-    #         .annotate(
-    #             total_orders=Count("orders"),
-    #             total_spent=Coalesce(
-    #                 Sum(
-    #                     F("orders__order_products__price")
-    #                     * F("orders__order_products__quantity")
-    #                 ),
-    #                 Value(0, output_field=output_field.DecimalField()),
-    #             ),
-    #             last_order_date=Max("orders__creation_date"),
-    #         )
-    #         .filter(total_spent__isnull=False)
-    #         .order_by("-total_spent")[:10]
-    #     )
-    #     response_data = {
-    #         "acquisition": {
-    #             "total_customers": customer_metrics["total_customers"],
-    #             "new_customers_30d": customer_metrics["new_customers_30d"],
-    #             "growth_rate": self._calculate_percentage(
-    #                 customer_metrics["new_customers_30d"],
-    #                 customer_metrics["total_customers"],
-    #             ),
-    #         },
-    #         "engagement": {
-    #             "active_customers_30d": customer_metrics["active_customers_30d"],
-    #             "newsletter_subscribers": customer_metrics["newsletter_subscribers"],
-    #             "verified_customers": customer_metrics["verified_customers"],
-    #             "activation_rate": self._calculate_percentage(
-    #                 customer_metrics["verified_customers"],
-    #                 customer_metrics["total_customers"],
-    #             ),
-    #         },
-    #         "value": {
-    #             "top_customers": [
-    #                 {
-    #                     "id": customer.id,
-    #                     "name": f"{customer.first_name} {customer.last_name}",
-    #                     "email": customer.email,
-    #                     "total_orders": customer.total_orders,
-    #                     "total_spent": float(customer.total_spent),
-    #                     "last_order": customer.last_order_date,
-    #                 }
-    #                 for customer in top_customers
-    #             ],
-    #         },
-    #     }
-    #     cache.set(cache_key, response_data, 60 * 60 * 2)
-    #     return Response(response_data, status=status.HTTP_200_OK)
+        totals = {
+            "active_bookings": bookings.filter(
+                confirmed_at__date__gte=start_date,
+                confirmed_at__date__lte=end_date,
+                cancelled_at__isnull=True,
+            ).count(),
+            "containers_in_transit": containers.filter(
+                booking__confirmed_at__isnull=False,
+                booking__cancelled_at__isnull=True,
+                discharge_date__isnull=True,
+                booking__eta__gte=start_date,
+                booking__eta__lte=end_date,
+            ).count(),
+            "upcoming_departures": bookings.filter(
+                cancelled_at__isnull=True,
+                ets__gte=start_date,
+                ets__lte=end_date,
+            ).count(),
+            "upcoming_arrivals": bookings.filter(
+                cancelled_at__isnull=True,
+                eta__gte=start_date,
+                eta__lte=end_date,
+            ).count(),
+        }
+
+        response = {
+            "range": {"start_date": start_date, "end_date": end_date},
+            "shipping_company_id": shipping_company_id,
+            "active_bookings": active_bookings,
+            "containers_in_transit": containers_in_transit,
+            "upcoming_departures": upcoming_departures,
+            "upcoming_arrivals": upcoming_arrivals,
+            "totals": totals,
+        }
+        return Response(DashboardSummarySerializer(response).data)

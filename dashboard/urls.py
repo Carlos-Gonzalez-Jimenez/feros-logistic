@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from dashboard import views
 
 router = DefaultRouter()
-# router.register(r"products", views.DashboardProductsViewSet, basename="products")
+router.register(r"bookings", views.DashboardBookingViewSet, basename="bookings")
 # router.register(r"orders", views.DashboardOrdersViewSet, basename="orders")
 # router.register(r"users", views.DashboardUsersViewSet, basename="users")
 
