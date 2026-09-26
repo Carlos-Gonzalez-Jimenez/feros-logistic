@@ -751,7 +751,7 @@ class BookingViewSet(ProtectedResourceViewSet):
         if self.action in ["list"]:
             return serializers.BookingMinimalSerializer
         if self.action == "containers":
-            return serializers.ContainerSerializer
+            return serializers.ContainerMinimalSerializer
         if self.action == "add_or_remove_containers":
             return serializers.BookingContainerRelaterSerializer
         return serializers.BookingSerializer

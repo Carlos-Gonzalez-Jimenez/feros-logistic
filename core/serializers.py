@@ -1182,10 +1182,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
     def create(self, validated_data):
+        validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
         validated_data["pending_amount"] = validated_data["total_amount"]
         return super().create(validated_data)
 
     def update(self, instance, validated_data):
+        validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
         instance = super().update(instance, validated_data)
         instance.sync_pending_amount()
         return instance
@@ -1237,7 +1239,7 @@ class ContainerItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.ContainerItem
-        exclude = ['sale_order_item', 'container']
+        exclude = ['container', 'sale_order_item']
 
 
 class ContainerMinimalSerializer(serializers.ModelSerializer):
