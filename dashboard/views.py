@@ -89,6 +89,7 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         containers = models.Container.objects.select_related(
             "booking", "booking__shipping_company", "container_type"
         ).prefetch_related("sale_orders", "items__product")
+
         if shipping_company_id is not None:
             containers = containers.filter(shipping_company_id=shipping_company_id)
 
@@ -153,3 +154,69 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
             "totals": totals,
         }
         return Response(DashboardSummarySerializer(response).data)
+
+
+# @action(
+#         detail=False,
+#         methods=["get"],
+#         url_path="container-cost",
+#         url_name="container-cost",
+#     )
+#     def container_cost(self, request):
+#         """
+#         Reporte de costo por contenedor.
+
+#         Toma el total facturado por la naviera y lo divide entre los  contenedores del booking.
+#         """
+
+#         start_date, end_date = self.__get_request_dates(request)
+
+#         invoices = models.ShippingCompanyInvoice.objects.select_related(
+#             "payment_agreement"
+#         ).order_by("-emission_date")
+
+#         bookings = (
+#             models.Booking.objects
+#             .select_related(
+#                 "shipping_company",
+#                 "vessel",
+#                 "port_loading",
+#                 "port_discharge",
+#             )
+#             .prefetch_related(
+#                 Prefetch(
+#                     "shipping_company_invoice",
+#                     queryset=invoices,
+#                     to_attr="_prefetched_invoices",
+#                 ),
+#                 "containers__container_type",
+#             )
+#             .filter(
+#                 shipping_company_invoice__emission_date__gte=start_date,
+#                 shipping_company_invoice__emission_date__lte=end_date,
+#             )
+#             .distinct()
+#         )
+#         if shipping_company_id is not None:
+#             bookings = bookings.filter(shipping_company_id=shipping_company_id)
+
+#         summary, by_company, by_type_global = build_container_cost(queryset)
+
+#         payload = {
+#             "range": {"start_date": start_date, "end_date": end_date},
+#             "filters": {
+#                 "shipping_company": request.query_params.get("shipping_company"),
+#                 "shipping_companies": request.query_params.get("shipping_companies"),
+#                 "container_type": request.query_params.get("container_type"),
+#                 "only_invoiced": request.query_params.get("only_invoiced"),
+#                 "active": request.query_params.get("active"),
+#                 "status": pending_status,
+#                 "min_cost_per_container": min_cpc,
+#             },
+#             **summary,
+#             "by_type_global": by_type_global,
+#             "by_shipping_company": by_company,
+#         }
+
+#         serializer = ContainerCostSummarySerializer(payload)
+#         return Response(serializer.data)
