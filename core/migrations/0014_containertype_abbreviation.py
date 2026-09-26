@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("core", "0013_container_gross_weight"),
     ]
@@ -13,7 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="containertype",
             name="abbreviation",
-            field=models.CharField(default=None, max_length=10),
+            field=models.CharField(default=None, max_length=10, null=True),
             preserve_default=False,
         ),
     ]

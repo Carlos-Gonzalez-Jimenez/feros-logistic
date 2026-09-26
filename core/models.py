@@ -90,7 +90,7 @@ class ContainerType(models.Model):
     """
 
     name = models.CharField(max_length=255)
-    abbreviation = models.CharField(max_length=10)
+    abbreviation = models.CharField(max_length=10, null=True)
     free_days = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
 
@@ -832,6 +832,7 @@ class PurchaseOrder(models.Model):
         _type_: _description_
     """
 
+    customer = models.ForeignKey(Customer, related_name='purchase_orders', on_delete=models.PROTECT)
     provider = models.ForeignKey(
         Provider, related_name="purchase_orders", on_delete=models.PROTECT
     )
@@ -895,6 +896,7 @@ class SaleOrder(models.Model):
         _type_: _description_
     """
 
+    customer = models.ForeignKey(Customer, related_name='sale_orders', on_delete=models.PROTECT)
     so_number = models.CharField(max_length=100)
     so_date = models.DateField()
     observations = models.TextField(blank=True, null=True)
@@ -954,21 +956,16 @@ class SaleOrderItems(models.Model):
         _type_: _description_
     """
 
-    sale_order = models.ForeignKey(
-        SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE
-    )
+    sale_order = models.ForeignKey(SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE)
     product = models.ForeignKey(
         ProductProviderPresentation,
         related_name="sale_order_items",
         on_delete=models.PROTECT,
     )
-    quantity = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    unit_price = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    unit_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
 
     def __str__(self):
         return f"{self.sale_order.so_number} - {self.product.product_provider.product.name}"
@@ -1024,10 +1021,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-            self.total_amount
-            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                "pending_amount"
-            ]
+                self.total_amount
+                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                    "pending_amount"
+                ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()

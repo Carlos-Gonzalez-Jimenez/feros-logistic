@@ -1010,6 +1010,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         serializers (_type_): _description_
     """
 
+    customer = CustomerSerializer(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
     provider = ProviderSerializer(read_only=True)
     provider_id = serializers.PrimaryKeyRelatedField(
         required=True,
@@ -1074,7 +1076,11 @@ class SaleOrderItemsSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderMinimalSerializer(serializers.ModelSerializer):
-    purchase_order_id = serializers.PrimaryKeyRelatedField(read_only=True)
+    purchase_order_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.PurchaseOrder.objects.all(), required=False,
+        allow_null=True, allow_empty=True)
+    customer = CustomerSerializer(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
 
     processing_plant = ProcessingPlantSerializer(read_only=True)
     processing_plant_id = serializers.PrimaryKeyRelatedField(
