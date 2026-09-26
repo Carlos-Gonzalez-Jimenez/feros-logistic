@@ -75,6 +75,7 @@ class ContainerType(models.Model):
     """
 
     name = models.CharField(max_length=255)
+    abbreviation = models.CharField(max_length=10)
     free_days = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
 
@@ -977,10 +978,18 @@ class Invoice(models.Model):
     emission_date = models.DateField()
     expiration_date = models.DateField()
     payment_date = models.DateField(default=None, blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
-    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    other_charges_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
+    )
+    pending_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
+    )
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    other_charges_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
 
     """
@@ -1000,10 +1009,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-                self.total_amount
-                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                    "pending_amount"
-                ]
+            self.total_amount
+            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                "pending_amount"
+            ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -1115,8 +1124,12 @@ class Container(models.Model):
     )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
-    net_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    gross_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    net_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    gross_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
@@ -1149,7 +1162,9 @@ class ContainerItem(models.Model):
         on_delete=models.PROTECT,
         related_name="container_items",
     )
-    sale_order_item = models.ForeignKey(SaleOrderItems, related_name='container_items', on_delete=models.PROTECT)
+    sale_order_item = models.ForeignKey(
+        SaleOrderItems, related_name="container_items", on_delete=models.PROTECT
+    )
     quantity = models.PositiveIntegerField(default=1)
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")

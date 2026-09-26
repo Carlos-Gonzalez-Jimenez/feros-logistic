@@ -44,7 +44,6 @@ from core.models import (
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
 
-
 # python manage.py seed
 
 
@@ -746,17 +745,19 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating container types"))
 
         container_types = [
-            ("40' Contenedor Frigorífico (reefer container)", 7),
-            ("40' Contenedor Carga General (dry container)", 15),
-            ("Contenedor Tanque (ISO tank)", 0),
-            ("Contenedor sin techo (open top container)", 0),
-            ("Contenedor Plataforma (flat rack container)", 0),
-            ("Contenedor de Costado Abierto (open side container)", 0),
+            ("40' Contenedor Frigorífico (reefer container)", "RF", 7),
+            ("40' Contenedor Carga General (dry container)", "GP", 15),
+            ("Contenedor Tanque (ISO tank)", "TK", 0),
+            ("Contenedor sin techo (open top container)", "OT", 0),
+            ("Contenedor Plataforma (flat rack container)", "FR", 0),
+            ("Contenedor de Costado Abierto (open side container)", "OS", 0),
         ]
 
         for container_type in container_types:
             _ = ContainerType.objects.get_or_create(
-                name=container_type[0], free_days=container_type[1]
+                name=container_type[0],
+                abbreviation=container_type[1],
+                free_days=container_type[2],
             )
 
     def create_products(self) -> None:
