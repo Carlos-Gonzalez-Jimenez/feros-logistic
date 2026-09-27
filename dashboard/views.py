@@ -1,30 +1,14 @@
-import datetime
-from decimal import Decimal
-
-from django.db import models as output_field
 from django.db.models import (
-    Sum,
     Count,
-    Max,
-    Subquery,
-    OuterRef,
-    F,
-    Value,
-    Q,
-    Prefetch,
 )
-from django.db.models.functions import Coalesce
-from django.utils import timezone
-from django.utils.translation import get_language_from_request
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core import models, serializers
 from core.permissions import CustomPermissionFactory, ReadOnlyPermission
 from dashboard.serializers import DashboardDatesSerializer, DashboardSummarySerializer
-from user.models import User
-from user.serializers import UserMinimalSerializer
+
 
 # Reporte de estado de bookings vs. ejecución real
 # Compara lo reservado (booking) contra lo efectivamente embarcado, facturado y contenerizado.
@@ -220,3 +204,24 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 
 #         serializer = ContainerCostSummarySerializer(payload)
 #         return Response(serializer.data)
+
+
+class DashboardInvoiceViewSet(viewsets.GenericViewSet):
+    types_queryset = {
+        'provider': models.ProviderInvoice.objects.all(),
+        'shipping-company': models.ShippingCompanyInvoice.objects.all()
+    }
+    types_serializers = {
+        'provider': serializers.ProviderInvoiceSerializer,
+        'shipping-company': serializers.ShippingCompanyInvoiceSerializer
+    }
+
+    @action(methods=["GET"], detail=False, url_path="<str:type>/expired", )
+    def expired_invoices(self, request, type):
+        queryset = self.types_queryset[type].filter(status=models.Invoice.InvoiceStatus.Expired).all()
+        return self.types_serializers[type](queryset, many=True, **self.get_serializer_context()).data
+
+    @action(methods=["GET"], detail=False, url_path="<str:type>/expired", )
+    def unpaid_invoices(self, request, type):
+        queryset = self.types_queryset[type].exclude(status=models.Invoice.InvoiceStatus.Canceled).all()
+        return self.types_serializers[type](queryset, many=True, **self.get_serializer_context()).data
