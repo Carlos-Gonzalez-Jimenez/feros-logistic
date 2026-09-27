@@ -5,11 +5,12 @@ from django.db.models import (
     Q,
 )
 from django.shortcuts import get_object_or_404
+from django.utils.timezone import now
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import (
     RetrieveUpdateAPIView,
-    ListAPIView,
+    ListAPIView, CreateAPIView,
 )
 from rest_framework.permissions import (
     AllowAny,
@@ -761,7 +762,7 @@ class BookingViewSet(ProtectedResourceViewSet):
         if self.action in ["list"]:
             return serializers.BookingMinimalSerializer
         if self.action == "containers":
-            return serializers.ContainerMinimalSerializer
+            return serializers.ContainerSerializer
         if self.action == "add_or_remove_containers":
             return serializers.BookingContainerRelaterSerializer
         return serializers.BookingSerializer
@@ -825,6 +826,17 @@ class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
 class ProviderInvoiceViewSet(ProtectedResourceViewSet):
     queryset = models.ProviderInvoice.objects.all()
     serializer_class = serializers.ProviderInvoiceSerializer
+
+
+class CancelInvoiceView(CreateAPIView):
+    queryset = models.Invoice.objects.all()
+
+    def create(self, request, *args, **kwargs):
+        invoice = self.get_object()
+        invoice.status = invoice.InvoiceStatus.Canceled
+        invoice.cancelation_date = now()
+        invoice.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class InvoicePaymentViewSet(ProtectedResourceViewSet):

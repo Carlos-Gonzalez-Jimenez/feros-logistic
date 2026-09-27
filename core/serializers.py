@@ -1162,7 +1162,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     pending_amount_75_over = serializers.SerializerMethodField()
 
     def _pending_by_range(self, obj, from_day, until_day):
-        days_diff = (date.today() - obj.expiration_date or date.today()).days
+        _today = date.today()
+        days_diff = (_today - (obj.expiration_date or _today)).days
         if (
                 days_diff < 0
                 or days_diff < from_day
@@ -1196,7 +1197,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
         validated_data["pending_amount"] = validated_data["total_amount"]
-        return super().create(validated_data)
+        instance = super().create(validated_data)
+        instance.sync_pending_amount()
+        return instance
 
     def update(self, instance, validated_data):
         validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
@@ -1255,7 +1258,6 @@ class ContainerItemSerializer(serializers.ModelSerializer):
 
 
 class ContainerMinimalSerializer(serializers.ModelSerializer):
-    booking = BookingMinimalSerializer(read_only=True)
     booking_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Booking.objects.all(), source="booking", allow_null=True, required=False
     )
@@ -1270,6 +1272,7 @@ class ContainerMinimalSerializer(serializers.ModelSerializer):
 
 
 class ContainerSerializer(ContainerMinimalSerializer):
+    # booking = BookingMinimalSerializer(read_only=True)
     items = ContainerItemSerializer(many=True)
 
     def update(self, instance, validated_data):

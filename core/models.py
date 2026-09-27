@@ -986,23 +986,24 @@ class Invoice(models.Model):
         _type_: _description_
     """
 
+    class InvoiceStatus(models.TextChoices):
+        Pending = 'pending', 'Pending'
+        Paid = 'paid', 'Completed'
+        Canceled = 'canceled', 'Canceled'
+        Expired = 'expired', 'Expired'
+
     bill_number = models.CharField(max_length=100)
     emission_date = models.DateField()
     expiration_date = models.DateField()
     payment_date = models.DateField(default=None, blank=True, null=True)
-    total_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
-    )
-    pending_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
-    )
-    amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    other_charges_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    other_charges_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
+    status = models.CharField(choices=InvoiceStatus.choices, default=InvoiceStatus.Pending)
+
+    cancelation_date = models.DateTimeField(blank=True, null=True)
 
     """
     total_amount = amount + other_charges_amount
@@ -1028,8 +1029,14 @@ class Invoice(models.Model):
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
+            self.status = self.InvoiceStatus.Paid
         else:
             self.payment_date = None
+            self.status = (
+                self.InvoiceStatus.Expired
+                if self.expiration_date < now().date()
+                else self.InvoiceStatus.Pending
+            )
         self.save()
 
 

@@ -52,9 +52,7 @@ router.register(
 router.register(r"bookings", views.BookingViewSet, basename="bookings")
 router.register(r"containers", views.ContainerViewSet, basename="containers")
 router.register(
-    r"shipping-company-invoices",
-    views.ShippingCompanyInvoiceViewSet,
-    basename="shipping-company-invoices",
+    r"shipping-company-invoices", views.ShippingCompanyInvoiceViewSet, basename="shipping-company-invoices",
 )
 router.register(
     r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices"
@@ -87,4 +85,6 @@ urlpatterns = [
     ),
     path("configs/", views.ConfigAPIView.as_view(), name="configs"),
     path(r"sale-order-items", views.SaleOrderItemsListView.as_view(), name="sale-orders-items"),
+
+    path(r'invoices/<int:pk>/cancel', views.CancelInvoiceView.as_view(), name="invoices-pk-cancel"),
 ]
