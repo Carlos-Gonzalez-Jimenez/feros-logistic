@@ -16,7 +16,7 @@ services:
     #    ports:
     #      - "33060:3306"
     networks:
-      - logistic-net
+      - feros-logistic-net
   api:
     container_name: logistic-backend
     restart: always
@@ -47,7 +47,7 @@ services:
       database:
         condition: service_started
     networks:
-      - logistic-net
+      - feros-logistic-net
       - nginx
 
 volumes:
@@ -55,7 +55,7 @@ volumes:
   logistic_media:
 
 networks:
-  logistic-net:
+  feros-logistic-net:
     driver: bridge
   nginx:
     name: nginx-proxy-manager-net
