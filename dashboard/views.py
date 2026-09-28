@@ -1,5 +1,7 @@
+from datetime import timedelta
+
 from django.db.models import (
-    Count,
+    Count, F,
 )
 from django.utils.timezone import now
 from rest_framework import viewsets
@@ -142,7 +144,7 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 
     @action(methods=["GET"], detail=False, url_path="nexts/<str:date>")
     def get_next_booking_dates(self, request, date):
-        filter = {f"{date}__gte": now()}
+        filter = {f"{date}__gte": now() - timedelta(days=3)}
         queryset = models.Booking.objects.filter(**filter).order_by(f"-{date}")
         return self.get_serializer(queryset, many=True)
 
@@ -213,22 +215,28 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 #         return Response(serializer.data)
 
 
+class DashboardContainerViewSet(viewsets.GenericViewSet):
+    pass
+
+
 class DashboardInvoiceViewSet(viewsets.GenericViewSet):
     types_queryset = {
-        'provider': models.ProviderInvoice.objects.all(),
-        'shipping-company': models.ShippingCompanyInvoice.objects.all()
+        'provider': models.ProviderInvoice.objects,
+        'shipping-company': models.ShippingCompanyInvoice.objects
     }
     types_serializers = {
         'provider': serializers.ProviderInvoiceSerializer,
         'shipping-company': serializers.ShippingCompanyInvoiceSerializer
     }
 
-    @action(methods=["GET"], detail=False, url_path="<str:type>/expired", )
+    @action(methods=["GET"], detail=False, url_path="(?P<type>provider|shipping-company)/expired")
     def expired_invoices(self, request, type):
         queryset = self.types_queryset[type].filter(status=models.Invoice.InvoiceStatus.Expired).all()
-        return self.types_serializers[type](queryset, many=True, **self.get_serializer_context()).data
+        return Response(self.types_serializers[type](queryset, many=True, context=self.get_serializer_context()).data)
 
-    @action(methods=["GET"], detail=False, url_path="<str:type>/expired", )
+    @action(methods=["GET"], detail=False, url_path="(?P<type>provider|shipping-company)/unpaid")
     def unpaid_invoices(self, request, type):
-        queryset = self.types_queryset[type].exclude(status=models.Invoice.InvoiceStatus.Canceled).all()
-        return self.types_serializers[type](queryset, many=True, **self.get_serializer_context()).data
+        queryset = self.types_queryset[type].exclude(status=models.Invoice.InvoiceStatus.Canceled).filter(
+            pending_amount=F('total_amount')
+        ).all()
+        return Response(self.types_serializers[type](queryset, many=True, context=self.get_serializer_context()).data)
