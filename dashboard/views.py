@@ -1,6 +1,7 @@
 from django.db.models import (
     Count,
 )
+from django.utils.timezone import now
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -138,6 +139,12 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
             "totals": totals,
         }
         return Response(DashboardSummarySerializer(response).data)
+
+    @action(methods=["GET"], detail=False, url_path="nexts/<str:date>")
+    def get_next_booking_dates(self, request, date):
+        filter = {f"{date}__gte": now()}
+        queryset = models.Booking.objects.filter(**filter).order_by(f"-{date}")
+        return self.get_serializer(queryset, many=True)
 
 
 # @action(
