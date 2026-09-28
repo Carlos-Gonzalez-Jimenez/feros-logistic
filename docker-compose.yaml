@@ -10,7 +10,7 @@ services:
     environment:
       MYSQL_DATABASE: logistic_db
       MYSQL_USER: logistic
-      MYSQL_PASSWORD: L0g1st1c
+      MYSQL_PASSWORD: L0g1st1c*
       MYSQL_ROOT_PASSWORD: L0g1st1c*
     command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
     #    ports:
