@@ -1,23 +1,22 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
+from django.db import transaction
+from django.template.loader import get_template
 from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+from rest_framework.authtoken.models import Token
 from rest_framework.validators import UniqueValidator
 
 from core.models import Config
-from rest_framework import serializers
-from rest_framework.authtoken.models import Token
-
 from logistic_backend.settings import MEDIA_URL
-from user.models import User, EventLog
 from user.exceptions import (
     NotMatchException,
     UserNotActiveException,
     UserNotVerifiedException,
 )
-from django.db import transaction
-from django.template.loader import get_template
+from user.models import User, EventLog
 from .tasks import send_mail, password_generator
-from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -155,6 +154,7 @@ class UserSerializer(UserMinimalSerializer):
             password = password_generator.generate()
             user.set_password(password)
             user.next_login_change_password = True
+            user.verified = True
             user.check_terms_conditions = True
             user.check_privacy_policy = True
             user.save()
