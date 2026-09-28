@@ -40,10 +40,11 @@ from core.models import (
     NotificationType,
     Specifications,
     Config,
-    Customer,
+    Customer, ProductProviderPresentation,
 )
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
+
 
 # python manage.py seed
 
@@ -370,8 +371,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating customers"))
 
         customers = [
-            ("Feros Grupo S.U.R.L.", "51234567", "feros@gmail.com", "12345", "Avenida del Puerto, muelle Osvaldo Sanchez"),
-            ("Transportes Hidalgo S.U.R.L.", "56543781", "hidalgo@gmail.com", "65789", "Avenida del Puerto, muelle Osvaldo Sanchez"),
+            ("Feros Grupo S.U.R.L.", "51234567", "feros@gmail.com", "12345",
+             "Avenida del Puerto, muelle Osvaldo Sanchez"),
+            ("Transportes Hidalgo S.U.R.L.", "56543781", "hidalgo@gmail.com", "65789",
+             "Avenida del Puerto, muelle Osvaldo Sanchez"),
             ("TL 38", "58905432", "tl38@gmail.com", "25146", None),
         ]
 
@@ -383,7 +386,7 @@ class Command(BaseCommand):
                 nit_code=customer[3],
                 address=customer[4],
             )
-            
+
     def create_post(self) -> None:
         """Creates example post objects"""
 
@@ -874,12 +877,20 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE("start populating product's presentation"))
 
-        product = Product.objects.get(name="Pollo")
-        provider = Provider.objects.get(name="GROVE")
+        product_provider_presentations = [
+            ("Pollo", "GROVE", ["3 x 5 Kg", "A granel", "4 x 10 Lbs"]),
+        ]
 
-        _ = ProductProvider.objects.create(
-            product_id=product.id, provider_id=provider.id
-        )
+        for _product_provider_presentation in product_provider_presentations:
+            print(_product_provider_presentation)
+            product = Product.objects.get(name=_product_provider_presentation[0])
+            provider = Provider.objects.get(name=_product_provider_presentation[1])
+            product_provider = ProductProvider.objects.create(product=product, provider=provider)
+            for presentation in _product_provider_presentation[2]:
+                ProductProviderPresentation.objects.create(
+                    product_provider=product_provider,
+                    presentation=Presentation.objects.get(name=presentation),
+                )
 
     def create_purchase_order(self):
         """Create purchase orders"""
