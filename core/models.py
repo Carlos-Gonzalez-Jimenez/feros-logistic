@@ -1002,7 +1002,7 @@ class Invoice(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     other_charges_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
-    status = models.CharField(choices=InvoiceStatus.choices, default=InvoiceStatus.Pending)
+    status = models.CharField(max_length=50, choices=InvoiceStatus.choices, default=InvoiceStatus.Pending)
 
     cancelation_date = models.DateTimeField(blank=True, null=True)
 
