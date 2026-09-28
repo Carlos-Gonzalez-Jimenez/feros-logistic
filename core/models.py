@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -1152,9 +1153,18 @@ class Container(models.Model):
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
+    last_free_day = models.DateField(null=True, blank=True, editable=False)
 
     def __str__(self):
-        return f"{self.booking.booking_number} - {self.container_type.name}"
+        prefix = '?' if not self.booking else self.booking.booking_number
+        return f"{prefix} - {self.container_type.name}"
+
+    def save(self, *args, **kwargs):
+        if self.discharge_date:
+            self.last_free_day = self.discharge_date + timedelta(days=self.container_type.free_days)
+        else:
+            self.last_free_day = None
+        super().save(*args, **kwargs)
 
     class Meta(PermissionsMeta.Meta):
         verbose_name = "Container"

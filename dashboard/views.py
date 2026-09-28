@@ -142,11 +142,11 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         }
         return Response(DashboardSummarySerializer(response).data)
 
-    @action(methods=["GET"], detail=False, url_path="nexts/<str:date>")
-    def get_next_booking_dates(self, request, date):
-        filter = {f"{date}__gte": now() - timedelta(days=3)}
-        queryset = models.Booking.objects.filter(**filter).order_by(f"-{date}")
-        return self.get_serializer(queryset, many=True)
+    @action(methods=["GET"], detail=False, url_path="nexts/(?P<kind>eta|est|cut_off)")
+    def get_next_booking_dates(self, request, kind):
+        filter = {f"{kind}__gte": now() - timedelta(days=3)}
+        queryset = models.Booking.objects.filter(**filter).order_by(f"-{kind}")
+        return Response(self.get_serializer(queryset, many=True).data)
 
 
 # @action(
@@ -216,7 +216,12 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 
 
 class DashboardContainerViewSet(viewsets.GenericViewSet):
-    pass
+
+    @action(methods=["GET"], detail=False, url_path="without-return")
+    def containers_without_return(self, request):
+        queryset = models.Container.objects.filter(discharge_date__isnull=False, return_date__isnull=True) \
+            .order_by('last_free_day').all()
+        return Response(serializers.ContainerMinimalSerializer(queryset, many=True).data)
 
 
 class DashboardInvoiceViewSet(viewsets.GenericViewSet):
@@ -231,12 +236,13 @@ class DashboardInvoiceViewSet(viewsets.GenericViewSet):
 
     @action(methods=["GET"], detail=False, url_path="(?P<type>provider|shipping-company)/expired")
     def expired_invoices(self, request, type):
-        queryset = self.types_queryset[type].filter(status=models.Invoice.InvoiceStatus.Expired).all()
+        queryset = self.types_queryset[type].filter(status=models.Invoice.InvoiceStatus.Expired).order_by(
+            '-expiration_date')
         return Response(self.types_serializers[type](queryset, many=True, context=self.get_serializer_context()).data)
 
     @action(methods=["GET"], detail=False, url_path="(?P<type>provider|shipping-company)/unpaid")
     def unpaid_invoices(self, request, type):
         queryset = self.types_queryset[type].exclude(status=models.Invoice.InvoiceStatus.Canceled).filter(
             pending_amount=F('total_amount')
-        ).all()
+        ).order_by('-expiration_date').all()
         return Response(self.types_serializers[type](queryset, many=True, context=self.get_serializer_context()).data)

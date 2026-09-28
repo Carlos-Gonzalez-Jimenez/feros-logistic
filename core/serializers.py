@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.utils.text import slugify
+from django.utils.timezone import now
 from rest_framework import serializers
 
 from cms.models import Composer, ContentType, BlockMEDIA
@@ -1230,9 +1231,13 @@ class BookingMinimalSerializer(serializers.ModelSerializer):
     )
 
     format = serializers.SerializerMethodField()
+    voyage_format = serializers.SerializerMethodField()
 
     def get_format(self, obj):
         return f"{obj.booking_number} - {obj.shipping_company.name}"
+
+    def get_voyage_format(self, obj):
+        return f"{obj.voyage_number} - {obj.vessel.name}"
 
     class Meta:
         model = models.Booking
@@ -1265,6 +1270,13 @@ class ContainerMinimalSerializer(serializers.ModelSerializer):
     container_type_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ContainerType.objects.all(), source="container_type"
     )
+
+    stay_days = serializers.SerializerMethodField()
+
+    def get_stay_days(self, obj):
+        if not obj.last_free_day:
+            return 0
+        return (now().date() - obj.last_free_day).days
 
     class Meta:
         model = models.Container

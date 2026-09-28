@@ -51,11 +51,11 @@ services:
       - nginx
 
 volumes:
-  feros_database:
-  feros_media:
+  logistic_database:
+  logistic_media:
 
 networks:
-  feros-net:
+  logistic-net:
     driver: bridge
   nginx:
     name: nginx-proxy-manager-net
