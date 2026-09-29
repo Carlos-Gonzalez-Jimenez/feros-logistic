@@ -756,6 +756,7 @@ class BookingViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
     ]
+    filterset_class = filters.BookingFilter
     serializer_class = serializers.BookingSerializer
 
     def get_serializer_class(self):

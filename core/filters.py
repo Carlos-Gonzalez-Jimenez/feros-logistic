@@ -118,9 +118,8 @@ class ContainerFilter(filters.FilterSet):
 
 
 class SaleOrderItemsFilter(filters.FilterSet):
-    booking = ModelChoiceFilter(
-        queryset=Booking.objects.all(), method="filter_by_booking"
-    )
+    without_bill = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull")
+    booking = ModelChoiceFilter(queryset=Booking.objects.all(), method="filter_by_booking")
 
     def filter_by_booking(self, queryset, name, value):
         if not value:
@@ -129,4 +128,12 @@ class SaleOrderItemsFilter(filters.FilterSet):
 
     class Meta:
         model = SaleOrderItems
-        fields = ["booking"]
+        fields = ["booking","without_bill"]
+
+
+class BookingFilter(filters.FilterSet):
+    without_bill = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull")
+
+    class Meta:
+        model = Booking
+        fields = ['without_bill']

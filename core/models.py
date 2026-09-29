@@ -1213,9 +1213,7 @@ class ShippingCompanyInvoice(Invoice):
         _type_: _description_
     """
 
-    booking = models.ForeignKey(
-        Booking, related_name="shipping_company_invoice", on_delete=models.PROTECT
-    )
+    booking = models.ForeignKey(Booking, related_name="invoices", on_delete=models.PROTECT)
     bl_number = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -1237,9 +1235,7 @@ class ProviderInvoice(Invoice):
         _type_: _description_
     """
 
-    sale_order = models.ForeignKey(
-        SaleOrder, related_name="invoices", on_delete=models.PROTECT
-    )
+    sale_order = models.ForeignKey(SaleOrder, related_name="invoices", on_delete=models.PROTECT)
 
     def __str__(self):
         return self.bill_number
