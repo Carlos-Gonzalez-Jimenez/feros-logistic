@@ -1,5 +1,6 @@
 from datetime import timedelta
 from decimal import Decimal
+
 from django.db.models import (
     Count,
     F,
@@ -11,9 +12,13 @@ from django.utils.timezone import now
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from core import models, serializers
+from core.models import Booking
 from core.permissions import CustomPermissionFactory, ReadOnlyPermission
-from dashboard.serializers import DashboardDatesSerializer, DashboardSummarySerializer
+from dashboard.serializers import DashboardDatesSerializer, DashboardBookingMetricSerializer, \
+    DashboardDaysRangeSerializer, \
+    DashboardBookingDaysSerializer
 
 
 def alert_level(variation_pct: Decimal) -> str:
@@ -26,6 +31,20 @@ def alert_level(variation_pct: Decimal) -> str:
     if variation_pct <= Decimal("-5"):
         return "favorable"
     return "normal"
+
+
+def _get_request_date(request):
+    _serializer = DashboardDaysRangeSerializer(data=request.GET)
+    _serializer.is_valid(raise_exception=True)
+    validated_data = _serializer.validated_data
+    return now().date() - timedelta(days=(validated_data["days"] * -1))
+
+
+def _get_request_dates(request):
+    _serializer = DashboardDatesSerializer(data=request.GET)
+    _serializer.is_valid(raise_exception=True)
+    validated_data = _serializer.validated_data
+    return validated_data["start_date"], validated_data["end_date"]
 
 
 class DashboardBookingViewSet(viewsets.GenericViewSet):
@@ -41,11 +60,11 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         | CustomPermissionFactory(["user.show_all_boards", "user.show_own_board"])
     ]
 
-    def __get_request_dates(self, request):
-        _serializer = DashboardDatesSerializer(data=self.request.GET)
+    def __get_start_date_and_shipping_company(self, request):
+        _serializer = DashboardBookingDaysSerializer(data=request.GET)
         _serializer.is_valid(raise_exception=True)
         validated_data = _serializer.validated_data
-        return validated_data["start_date"], validated_data["end_date"]
+        return (now().date() - timedelta(days=(validated_data["days"] * -1))), validated_data['shipping_company']
 
     @action(methods=["GET"], detail=False, url_path="booking-metrics")
     def get_booking_metrics(self, request):
@@ -53,14 +72,10 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         Dashboard operativo : bookings activos, contenedores en tránsito, próximas salidas, próximos arribos
         """
 
-        start_date, end_date = self.__get_request_dates(request)
-
-        shipping_company_id = request.query_params.get("shipping_company_id")
+        start_date, shipping_company_id = self.__get_start_date_and_shipping_company(request)
 
         bookings = (
-            models.Booking.objects.select_related(
-                "port_loading", "port_discharge", "shipping_company", "vessel"
-            )
+            models.Booking.objects.select_related("port_loading", "port_discharge", "shipping_company", "vessel")
             .prefetch_related("sale_orders")
             .annotate(containers_count=Count("containers", distinct=True))
         )
@@ -72,71 +87,36 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         ).prefetch_related("sale_orders", "items__product")
 
         if shipping_company_id is not None:
-            containers = containers.filter(shipping_company_id=shipping_company_id)
+            containers = containers.filter(booking__shipping_company_id=shipping_company_id)
 
-        active_bookings = bookings.filter(
-            confirmed_at__date__gte=start_date,
-            confirmed_at__date__lte=end_date,
-            cancelled_at__isnull=True,
-        ).order_by("-confirmed_at")
+        active_bookings = bookings.filter(confirmed_at__date__gte=start_date, cancelled_at__isnull=True) \
+            .order_by("-confirmed_at")
 
         containers_in_transit = containers.filter(
             booking__confirmed_at__isnull=False,
             booking__cancelled_at__isnull=True,
             discharge_date__isnull=True,
             booking__eta__gte=start_date,
-            booking__eta__lte=end_date,
         ).order_by("booking__eta")
 
         upcoming_departures = bookings.filter(
             cancelled_at__isnull=True,
             ets__gte=start_date,
-            ets__lte=end_date,
         ).order_by("ets")
 
         upcoming_arrivals = bookings.filter(
             cancelled_at__isnull=True,
             eta__gte=start_date,
-            eta__lte=end_date,
         ).order_by("eta")
 
-        totals = {
-            "active_bookings": bookings.filter(
-                confirmed_at__date__gte=start_date,
-                confirmed_at__date__lte=end_date,
-                cancelled_at__isnull=True,
-            ).count(),
-            "containers_in_transit": containers.filter(
-                booking__confirmed_at__isnull=False,
-                booking__cancelled_at__isnull=True,
-                discharge_date__isnull=True,
-                booking__eta__gte=start_date,
-                booking__eta__lte=end_date,
-            ).count(),
-            "upcoming_departures": bookings.filter(
-                cancelled_at__isnull=True,
-                ets__gte=start_date,
-                ets__lte=end_date,
-            ).count(),
-            "upcoming_arrivals": bookings.filter(
-                cancelled_at__isnull=True,
-                eta__gte=start_date,
-                eta__lte=end_date,
-            ).count(),
-        }
-
-        response = {
-            "range": {"start_date": start_date, "end_date": end_date},
-            "shipping_company_id": shipping_company_id,
+        data = {
             "active_bookings": active_bookings,
             "containers_in_transit": containers_in_transit,
             "upcoming_departures": upcoming_departures,
             "upcoming_arrivals": upcoming_arrivals,
-            "totals": totals,
         }
-        return Response(
-            DashboardSummarySerializer(response).data, status=status.HTTP_200_OK
-        )
+
+        return Response(DashboardBookingMetricSerializer(data).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["GET"], url_path="freight-variation-analysis")
     def freight_variation_analysis(self, request):
@@ -144,14 +124,10 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         Compara el flete cotizado en Booking vs. el flete realmente facturado en Invoice.amount e identifica recargos no previstos
         """
 
-        start_date, end_date = self.__get_request_dates(request)
-
-        shipping_company_id = request.query_params.get("shipping_company_id")
+        start_date, shipping_company_id = self.__get_start_date_and_shipping_company(request)
 
         bookings = (
-            Booking.objects.select_related(
-                "shipping_company", "port_loading", "port_discharge"
-            )
+            models.Booking.objects.select_related("shipping_company", "port_loading", "port_discharge")
             .annotate(
                 invoiced_amount=Sum("invoices__amount"),
                 charges_amount=Sum("invoices__other_charges_amount"),
@@ -162,8 +138,6 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 
         if start_date:
             bookings = bookings.filter(ets__gte=start_date)
-        if end_date:
-            bookings = bookings.filter(ets__lte=end_date)
         if shipping_company_id:
             bookings = bookings.filter(shipping_company_id=shipping_company_id)
 
@@ -187,15 +161,9 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
 
             item = {
                 "booking_number": booking.booking_number,
-                "shipping_company": (
-                    booking.shipping_company.name if booking.shipping_company else None
-                ),
-                "port_loading": (
-                    booking.port_loading.name if booking.port_loading else None
-                ),
-                "port_discharge": (
-                    booking.port_discharge.name if booking.port_discharge else None
-                ),
+                "shipping_company": (booking.shipping_company.name if booking.shipping_company else None),
+                "port_loading": (booking.port_loading.name if booking.port_loading else None),
+                "port_discharge": (booking.port_discharge.name if booking.port_discharge else None),
                 "ets": booking.ets,
                 "eta": booking.eta,
                 "quoted_amount": Decimal(quoted),
@@ -233,13 +201,7 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
             "avg_variation_percentage": Decimal(round(avg_variation_pct, 2)),
         }
 
-        return Response(
-            {
-                "summary": summary,
-                "details": results,
-            },
-            status=status.HTTP_200_OK,
-        )
+        return Response({"summary": summary, "details": results}, status=status.HTTP_200_OK)
 
 
 class DashboardContainerViewSet(viewsets.GenericViewSet):
@@ -400,9 +362,9 @@ class DashboardContainerViewSet(viewsets.GenericViewSet):
         )
         global_variation_pct = (
             (
-                (global_cost_per_container - global_quoted_per_container)
-                / global_quoted_per_container
-                * 100
+                    (global_cost_per_container - global_quoted_per_container)
+                    / global_quoted_per_container
+                    * 100
             )
             if global_quoted_per_container > 0
             else Decimal("0.00")

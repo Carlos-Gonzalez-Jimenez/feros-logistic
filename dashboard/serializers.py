@@ -1,7 +1,9 @@
 from django.utils import timezone
-from rest_framework import serializers
-from core.serializers import BookingMinimalSerializer, ContainerMinimalSerializer
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
+from core import models
+from core.serializers import BookingMinimalSerializer, ContainerMinimalSerializer
 
 
 class DashboardDatesSerializer(serializers.Serializer):
@@ -27,9 +29,25 @@ class DashboardDatesSerializer(serializers.Serializer):
         return data
 
 
-class DashboardSummarySerializer(serializers.Serializer):
+class DashboardDaysRangeSerializer(serializers.Serializer):
+    days = serializers.IntegerField(min_value=1, default=365, max_value=365)
+
+
+class DashboardBookingDaysSerializer(DashboardDaysRangeSerializer):
+    shipping_company = serializers.PrimaryKeyRelatedField(
+        queryset=models.ShippingCompany.objects.all(),
+        allow_null=True)
+
+
+class DashboardBookingMetricSerializer(serializers.Serializer):
     active_bookings = BookingMinimalSerializer(many=True)
     containers_in_transit = ContainerMinimalSerializer(many=True)
     upcoming_departures = BookingMinimalSerializer(many=True)
     upcoming_arrivals = BookingMinimalSerializer(many=True)
-    totals = serializers.DictField()
+    totals = serializers.SerializerMethodField()
+
+    def get_totals(self, obj):
+        totals = dict()
+        for key, val in obj.items():
+            totals[key] = val.count()
+        return totals
