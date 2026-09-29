@@ -1,8 +1,9 @@
 from datetime import timedelta
 
 from django.db.models import (
-    Count, F,
+    Count, F, Sum, Value,
 )
+from django.db.models.functions import Concat
 from django.utils.timezone import now
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -142,12 +143,6 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         }
         return Response(DashboardSummarySerializer(response).data)
 
-    @action(methods=["GET"], detail=False, url_path="nexts/(?P<kind>eta|est|cut_off)")
-    def get_next_booking_dates(self, request, kind):
-        filter = {f"{kind}__gte": now() - timedelta(days=3)}
-        queryset = models.Booking.objects.filter(**filter).order_by(f"-{kind}")
-        return Response(self.get_serializer(queryset, many=True).data)
-
 
 # @action(
 #         detail=False,
@@ -222,6 +217,23 @@ class DashboardContainerViewSet(viewsets.GenericViewSet):
         queryset = models.Container.objects.filter(discharge_date__isnull=False, return_date__isnull=True) \
             .order_by('last_free_day').all()
         return Response(serializers.ContainerMinimalSerializer(queryset, many=True).data)
+
+    @action(methods=["GET"], detail=False, url_path="next-containers-by/(?P<kind>eta|est|cut_off)")
+    def next_containers_by_date(self, request, kind):
+        filter = {f"container__booking__{kind}__gte": now() - timedelta(days=3)}
+        queryset = models.ContainerItem.objects.filter(**filter) \
+            .values(
+            product_name=Concat("product__product_provider__product__name", Value(" - "),
+                                "product__presentation__name"),
+            date=F(f"container__booking__{kind}")
+        ).annotate(
+            products_quantity=Sum("quantity"),
+            containers_quantity=Count("container", distinct=True),
+        ).order_by("date")
+
+        result = list(queryset)
+
+        return Response(result)
 
 
 class DashboardInvoiceViewSet(viewsets.GenericViewSet):
