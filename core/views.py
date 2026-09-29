@@ -10,7 +10,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import (
     RetrieveUpdateAPIView,
-    ListAPIView, CreateAPIView,
+    ListAPIView,
+    CreateAPIView,
 )
 from rest_framework.permissions import (
     AllowAny,
@@ -41,8 +42,7 @@ class ProtectedResourceViewSet(viewsets.ModelViewSet):
 
 class CustomerViewSet(ProtectedResourceViewSet):
     permission_classes = [
-        ReadOnlyPermission
-        | CustomPermissionFactory(["core.manage_customers"]),
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_customers"]),
     ]
     queryset = models.Customer.objects.all()
     serializer_class = serializers.CustomerSerializer
