@@ -1300,7 +1300,17 @@ class CustomerInvoice(Invoice):
     booking = models.ForeignKey(
         Booking, related_name="customer_invoices", on_delete=models.PROTECT
     )
-    commercial_margin = models.DecimalField(decimal_places=2, max_digits=10, default=0)
+    commercial_margin = models.DecimalField(
+        decimal_places=2, max_digits=10, default=Decimal("0.00")
+    )
+
+    def __str__(self):
+        return self.bill_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Customer Invoice"
+        verbose_name_plural = "Customer Invoices"
+        ordering = ["-id"]
 
 
 class CustomerInvoiceItem(models.Model):
@@ -1308,5 +1318,15 @@ class CustomerInvoiceItem(models.Model):
         CustomerInvoice, related_name="invoice_items", on_delete=models.CASCADE
     )
     product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT)
-    unit_price = models.DecimalField(decimal_places=2, max_digits=10)
+    unit_price = models.DecimalField(
+        decimal_places=2, max_digits=10, default=Decimal("0.00")
+    )
     quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.customer_invoice.bill_number} - {self.product.product_provider.product.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Customer Invoice Item"
+        verbose_name_plural = "Customer Invoice Items"
+        ordering = ["-id"]
