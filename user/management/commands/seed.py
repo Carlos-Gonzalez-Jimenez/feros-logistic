@@ -40,11 +40,11 @@ from core.models import (
     NotificationType,
     Specifications,
     Config,
-    Customer, ProductProviderPresentation,
+    Customer,
+    ProductProviderPresentation,
 )
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
-
 
 # python manage.py seed
 
@@ -371,10 +371,20 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating customers"))
 
         customers = [
-            ("Feros Grupo S.U.R.L.", "51234567", "feros@gmail.com", "12345",
-             "Avenida del Puerto, muelle Osvaldo Sanchez"),
-            ("Transportes Hidalgo S.U.R.L.", "56543781", "hidalgo@gmail.com", "65789",
-             "Avenida del Puerto, muelle Osvaldo Sanchez"),
+            (
+                "Feros Grupo S.U.R.L.",
+                "51234567",
+                "feros@gmail.com",
+                "12345",
+                "Avenida del Puerto, muelle Osvaldo Sanchez",
+            ),
+            (
+                "Transportes Hidalgo S.U.R.L.",
+                "56543781",
+                "hidalgo@gmail.com",
+                "65789",
+                "Avenida del Puerto, muelle Osvaldo Sanchez",
+            ),
             ("TL 38", "58905432", "tl38@gmail.com", "25146", None),
         ]
 
@@ -538,10 +548,16 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.NOTICE("start populating providers"))
 
-        providers = ["GROVE", "AJC", "CHOCOMILK CANARIAS SI", "ROQUE ENTERPRISES INC."]
+        providers = [
+            ("GROVE", "USA"),
+            ("AJC", "USA"),
+            ("CHOCOMILK CANARIAS SI", "ESP"),
+            ("ROQUE ENTERPRISES INC.", "ESP"),
+        ]
 
         for provider in providers:
-            _ = Provider.objects.get_or_create(name=provider)
+            country = Country.objects.get(code_alpha3=provider[1])
+            _ = Provider.objects.get_or_create(name=provider[0], country=country)
 
     def create_notification_types(self) -> None:
         """Creates all notification types objects"""
@@ -885,7 +901,9 @@ class Command(BaseCommand):
             print(_product_provider_presentation)
             product = Product.objects.get(name=_product_provider_presentation[0])
             provider = Provider.objects.get(name=_product_provider_presentation[1])
-            product_provider = ProductProvider.objects.create(product=product, provider=provider)
+            product_provider = ProductProvider.objects.create(
+                product=product, provider=provider
+            )
             for presentation in _product_provider_presentation[2]:
                 ProductProviderPresentation.objects.create(
                     product_provider=product_provider,
@@ -1016,6 +1034,7 @@ class Command(BaseCommand):
 
         self.create_configuration()
         self.create_categories()
+        self.create_countries()
         self.create_customers()
         self.create_roles()
         self.create_users()
@@ -1030,7 +1049,6 @@ class Command(BaseCommand):
         self.create_incoterms()
         # self.create_order_statuses()
         self.create_currencies()
-        self.create_countries()
         self.create_measurement_units()
         self.create_notification_types()
         self.create_specifications()
