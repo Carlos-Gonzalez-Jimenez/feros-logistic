@@ -32,34 +32,19 @@ router.register(
 )
 router.register(r"ports", views.PortViewSet, basename="ports")
 router.register(r"incoterms", views.IncotermsViewSet, basename="incoterms")
-router.register(
-    r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants"
-)
-router.register(
-    r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders"
-)
+router.register(r"processing-plants", views.ProcessingPlantViewSet, basename="processing-plants")
+router.register(r"purchase-orders", views.PurchaseOrderViewSet, basename="purchase-orders")
 router.register(r"sale-orders", views.SaleOrderViewSet, basename="sale-orders")
 router.register(r"vessels", views.VesselViewSet, basename="vessels")
-router.register(
-    r"container-types", views.ContainerTypeViewSet, basename="container-types"
-)
-router.register(
-    r"shipping-companies", views.ShippingCompanyViewSet, basename="shipping-companies"
-)
-router.register(
-    r"payment-agreements", views.PaymentAgreementViewSet, basename="payment-agreements"
-)
+router.register(r"container-types", views.ContainerTypeViewSet, basename="container-types")
+router.register(r"shipping-companies", views.ShippingCompanyViewSet, basename="shipping-companies")
+router.register(r"payment-agreements", views.PaymentAgreementViewSet, basename="payment-agreements")
 router.register(r"bookings", views.BookingViewSet, basename="bookings")
 router.register(r"containers", views.ContainerViewSet, basename="containers")
-router.register(
-    r"shipping-company-invoices", views.ShippingCompanyInvoiceViewSet, basename="shipping-company-invoices",
-)
-router.register(
-    r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices"
-)
-router.register(
-    r"invoice-payments", views.InvoicePaymentViewSet, basename="invoice-payments"
-)
+router.register(r"shipping-company-invoices", views.ShippingCompanyInvoiceViewSet, basename="shipping-company-invoices")
+router.register(r"provider-invoices", views.ProviderInvoiceViewSet, basename="provider-invoices")
+router.register(r"invoice-payments", views.InvoicePaymentViewSet, basename="invoice-payments")
+router.register('customer-invoices', views.CustomerInvoiceViewSet, basename='customer-invoces')
 
 urlpatterns = [
     path("", include(router.urls)),

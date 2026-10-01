@@ -849,3 +849,8 @@ class InvoicePaymentViewSet(ProtectedResourceViewSet):
         invoice = instance.invoice
         instance.delete()
         invoice.sync_pending_amount()
+
+
+class CustomerInvoiceViewSet(ProtectedResourceViewSet):
+    queryset = models.CustomerInvoice.objects.all()
+    serializer_class = serializers.CustomerInvoiceSerializer

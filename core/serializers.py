@@ -1358,3 +1358,27 @@ class BookingContainerRelaterSerializer(serializers.Serializer):
             container.booking = booking
         models.Container.objects.bulk_update(validated_data['containers_ids'], fields=["booking"])
         return instance
+
+
+class CustomerInvoiceItem(serializers.ModelSerializer):
+    product = ProductProviderPresentationSerializer(read_only=True)
+
+    class Meta:
+        model = models.CustomerInvoiceItem
+        exclude = ['customer_invoice']
+
+
+class CustomerInvoiceSerializer(serializers.ModelSerializer):
+    # TODO CREAR LAS IMPORTADORAS
+    customer = CustomerSerializer(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
+    incoterms = IncotermsSerializer(read_only=True)
+    incoterms_id = serializers.PrimaryKeyRelatedField(queryset=models.Incoterms.objects.all(), source="incoterms")
+    invoice_items = CustomerInvoiceItem(many=True, read_only=True)
+
+    conteiners_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
+    containers = ContainerMinimalSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.CustomerInvoice
+        exclude = ['booking']

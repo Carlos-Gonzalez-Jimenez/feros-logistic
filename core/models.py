@@ -401,6 +401,7 @@ class Product(models.Model):
         _type_: _description_
     """
 
+    tariff_item = models.CharField(max_length=255, blank=True, null=True)
     code_sku = models.CharField(max_length=255, blank=True, unique=True)
     part_code = models.CharField(max_length=255, blank=True)
     name = models.CharField(max_length=1024)
@@ -1135,7 +1136,9 @@ class Container(models.Model):
     Returns:
         _type_: _description_
     """
-
+    customer_invoice = models.ForeignKey(
+        'CustomerInvoice', related_name='containers', on_delete=models.PROTECT, null=True, blank=True
+    )
     booking = models.ForeignKey(
         Booking, on_delete=models.SET_NULL, null=True, related_name="containers"
     )
@@ -1244,3 +1247,18 @@ class ProviderInvoice(Invoice):
         verbose_name = "Provider Invoice"
         verbose_name_plural = "Provider Invoices"
         ordering = ["-id"]
+
+
+class CustomerInvoice(Invoice):
+    customer = models.ForeignKey(Customer, related_name='customer_invoices', on_delete=models.PROTECT)
+    contract = models.CharField(max_length=50)
+    incoterms = models.ForeignKey(Incoterms, related_name="customer_invoices", on_delete=models.PROTECT)
+    booking = models.ForeignKey(Booking, related_name="customer_invoices", on_delete=models.PROTECT)
+    commercial_margin = models.DecimalField(decimal_places=2, max_digits=10, default=0)
+
+
+class CustomerInvoiceItem(models.Model):
+    customer_invoice = models.ForeignKey(CustomerInvoice, related_name="invoice_items", on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT)
+    unit_price = models.DecimalField(decimal_places=2, max_digits=10)
+    quantity = models.PositiveIntegerField()
