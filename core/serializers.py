@@ -1386,19 +1386,22 @@ class CRUDCustomerInvoiceSerializer(InvoiceSerializer):
         exclude = ['booking']
 
     def create(self, validated_data):
-        container_items=models.ContainerItem.objects.filter(container__in=validated_data['containers_ids']).all()
+        booking = validated_data.pop('booking')
+        containers = validated_data.pop('containers_ids')
+        container_items = models.ContainerItem.objects.filter(container__in=containers).all()
         shipping_invoices = models.ShippingCompanyInvoice.objects \
-            .filter(booking=validated_data['booking']).values_list('pk', flat=True)
-        provider_invoices = models.ProviderInvoice.objects\
-            .filter(sale_order__sale_order_items__container_items=container_items).values_list('pk', flat=True)
+            .filter(booking=booking).values_list('pk', flat=True)
+        provider_invoices = models.ProviderInvoice.objects \
+            .filter(sale_order__sale_order_items__container_items__in=container_items).values_list('pk', flat=True)
 
         value = models.Invoice.objects.filter(
             cancelation_date__isnull=True,
-            pk__in=[*shipping_invoices, *provider_invoices]).annotate(total=Sum('total_amount'))
+            pk__in=[*shipping_invoices, *provider_invoices]).aggregate(total=Sum('total_amount'))
 
-        validated_data['other_charges_amount'] = value['total_amount']
+        validated_data['other_charges_amount'] = value['total']
         validated_data['amount'] = validated_data['other_charges_amount'] * validated_data['commercial_margin']
-        return super().create(validated_data)
+        invoice = super().create(validated_data)
+        return invoice
 
     def update(self, instance, validated_data):
         super(serializers.ModelSerializer).update(instance, validated_data)
