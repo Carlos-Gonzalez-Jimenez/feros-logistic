@@ -1133,6 +1133,17 @@ class InvoicePayment(models.Model):
         verbose_name = "Invoice Payment"
         verbose_name_plural = "Invoice Payments"
         ordering = ["-id"]
+        permissions = [
+            ("manage_invoice_payments", _("Can manage invoice payments")),
+        ]
+        indexes = [
+            models.Index(
+                fields=["invoice", "payment_date"],
+            ),
+            models.Index(
+                fields=["user", "payment_date"],
+            ),
+        ]
 
 
 class Booking(models.Model):
@@ -1239,6 +1250,9 @@ class Container(models.Model):
         verbose_name = "Container"
         verbose_name_plural = "Containers"
         ordering = ["-id"]
+        permissions = [
+            ("manage_containers", _("Can manage containers")),
+        ]
         indexes = [
             models.Index(fields=["discharge_date"]),
             models.Index(fields=["booking", "discharge_date"]),
@@ -1274,6 +1288,18 @@ class ContainerItem(models.Model):
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
+    def __str__(self):
+        return f"{self.container.container_number} - {self.product.product_provider.product.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Container Item"
+        verbose_name_plural = "Container Items"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["container", "product"]),
+            models.Index(fields=["container", "product", "sale_order_item"]),
+        ]
+
 
 class ShippingCompanyInvoice(Invoice):
     """_summary_
@@ -1297,6 +1323,16 @@ class ShippingCompanyInvoice(Invoice):
         verbose_name = "Shipping Company Invoice"
         verbose_name_plural = "Shipping Company Invoices"
         ordering = ["-id"]
+        permissions = [
+            (
+                "manage_shipping_company_invoices",
+                _("Can manage shipping company invoices"),
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["booking"]),
+            models.Index(fields=["bl_number"]),
+        ]
 
 
 class ProviderInvoice(Invoice):
@@ -1320,6 +1356,9 @@ class ProviderInvoice(Invoice):
         verbose_name = "Provider Invoice"
         verbose_name_plural = "Provider Invoices"
         ordering = ["-id"]
+        permissions = [
+            ("manage_provider_invoices", _("Can manage provider invoices")),
+        ]
 
 
 class CustomerInvoice(Invoice):
@@ -1345,6 +1384,12 @@ class CustomerInvoice(Invoice):
         verbose_name = "Customer Invoice"
         verbose_name_plural = "Customer Invoices"
         ordering = ["-id"]
+        permissions = [
+            ("manage_customer_invoices", _("Can manage customer invoices")),
+        ]
+        indexes = [
+            models.Index(fields=["customer"]),
+        ]
 
 
 class CustomerInvoiceItem(models.Model):
@@ -1368,3 +1413,6 @@ class CustomerInvoiceItem(models.Model):
         verbose_name = "Customer Invoice Item"
         verbose_name_plural = "Customer Invoice Items"
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["customer_invoice", "product"]),
+        ]
