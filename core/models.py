@@ -241,29 +241,6 @@ class Measurement_Unit(models.Model):
         ordering = ["name"]
 
 
-class Provider(models.Model):
-    """_summary_
-
-    Args:
-        models (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    name = models.CharField(max_length=255, unique=True)
-    active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta(PermissionsMeta.Meta):
-        permissions = [("manage_provider", _("Can manage provider"))]
-        verbose_name = "Provider"
-        verbose_name_plural = "Providers"
-        ordering = ["name"]
-
-
 class Country(models.Model):
     """_summary_
 
@@ -291,6 +268,36 @@ class Country(models.Model):
         permissions = [("manage_country", _("Can manage country"))]
         verbose_name = "Country"
         verbose_name_plural = "Countries"
+        ordering = ["name"]
+
+
+class Provider(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    name = models.CharField(max_length=255, unique=True)
+    country = models.ForeignKey(
+        Country,
+        related_name="providers",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+    )
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta(PermissionsMeta.Meta):
+        permissions = [("manage_provider", _("Can manage provider"))]
+        verbose_name = "Provider"
+        verbose_name_plural = "Providers"
         ordering = ["name"]
 
 
@@ -834,7 +841,9 @@ class PurchaseOrder(models.Model):
         _type_: _description_
     """
 
-    customer = models.ForeignKey(Customer, related_name='purchase_orders', on_delete=models.PROTECT)
+    customer = models.ForeignKey(
+        Customer, related_name="purchase_orders", on_delete=models.PROTECT
+    )
     provider = models.ForeignKey(
         Provider, related_name="purchase_orders", on_delete=models.PROTECT
     )
@@ -898,7 +907,9 @@ class SaleOrder(models.Model):
         _type_: _description_
     """
 
-    customer = models.ForeignKey(Customer, related_name='sale_orders', on_delete=models.PROTECT)
+    customer = models.ForeignKey(
+        Customer, related_name="sale_orders", on_delete=models.PROTECT
+    )
     so_number = models.CharField(max_length=100)
     so_date = models.DateField()
     observations = models.TextField(blank=True, null=True)
@@ -958,16 +969,24 @@ class SaleOrderItems(models.Model):
         _type_: _description_
     """
 
-    sale_order = models.ForeignKey(SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE)
+    sale_order = models.ForeignKey(
+        SaleOrder, related_name="sale_order_items", on_delete=models.CASCADE
+    )
     product = models.ForeignKey(
         ProductProviderPresentation,
         related_name="sale_order_items",
         on_delete=models.PROTECT,
     )
     measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
-    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    unit_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    quantity = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_price = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
 
     def __str__(self):
         return f"{self.sale_order.so_number} - {self.product.product_provider.product.name}"
@@ -989,21 +1008,31 @@ class Invoice(models.Model):
     """
 
     class InvoiceStatus(models.TextChoices):
-        Pending = 'pending', 'Pending'
-        Paid = 'paid', 'Completed'
-        Canceled = 'canceled', 'Canceled'
-        Expired = 'expired', 'Expired'
+        Pending = "pending", "Pending"
+        Paid = "paid", "Completed"
+        Canceled = "canceled", "Canceled"
+        Expired = "expired", "Expired"
 
     bill_number = models.CharField(max_length=100)
     emission_date = models.DateField()
     expiration_date = models.DateField()
     payment_date = models.DateField(default=None, blank=True, null=True)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
-    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
-    other_charges_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    total_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
+    )
+    pending_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00"), editable=False
+    )
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    other_charges_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
     payment_agreement = models.ForeignKey(PaymentAgreement, on_delete=models.PROTECT)
-    status = models.CharField(max_length=50, choices=InvoiceStatus.choices, default=InvoiceStatus.Pending)
+    status = models.CharField(
+        max_length=50, choices=InvoiceStatus.choices, default=InvoiceStatus.Pending
+    )
 
     cancelation_date = models.DateTimeField(blank=True, null=True)
 
@@ -1024,10 +1053,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-                self.total_amount
-                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                    "pending_amount"
-                ]
+            self.total_amount
+            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                "pending_amount"
+            ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -1137,8 +1166,13 @@ class Container(models.Model):
     Returns:
         _type_: _description_
     """
+
     customer_invoice = models.ForeignKey(
-        'CustomerInvoice', related_name='containers', on_delete=models.PROTECT, null=True, blank=True
+        "CustomerInvoice",
+        related_name="containers",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
     )
     booking = models.ForeignKey(
         Booking, on_delete=models.SET_NULL, null=True, related_name="containers"
@@ -1156,12 +1190,14 @@ class Container(models.Model):
     last_free_day = models.DateField(null=True, blank=True, editable=False)
 
     def __str__(self):
-        prefix = '?' if not self.booking else self.booking.booking_number
+        prefix = "?" if not self.booking else self.booking.booking_number
         return f"{prefix} - {self.container_type.name}"
 
     def save(self, *args, **kwargs):
         if self.discharge_date:
-            self.last_free_day = self.discharge_date + timedelta(days=self.container_type.free_days)
+            self.last_free_day = self.discharge_date + timedelta(
+                days=self.container_type.free_days
+            )
         else:
             self.last_free_day = None
         super().save(*args, **kwargs)
@@ -1213,7 +1249,9 @@ class ShippingCompanyInvoice(Invoice):
         _type_: _description_
     """
 
-    booking = models.ForeignKey(Booking, related_name="invoices", on_delete=models.PROTECT)
+    booking = models.ForeignKey(
+        Booking, related_name="invoices", on_delete=models.PROTECT
+    )
     bl_number = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
@@ -1235,7 +1273,9 @@ class ProviderInvoice(Invoice):
         _type_: _description_
     """
 
-    sale_order = models.ForeignKey(SaleOrder, related_name="invoices", on_delete=models.PROTECT)
+    sale_order = models.ForeignKey(
+        SaleOrder, related_name="invoices", on_delete=models.PROTECT
+    )
 
     def __str__(self):
         return self.bill_number
@@ -1247,15 +1287,43 @@ class ProviderInvoice(Invoice):
 
 
 class CustomerInvoice(Invoice):
-    customer = models.ForeignKey(Customer, related_name='customer_invoices', on_delete=models.PROTECT)
+    customer = models.ForeignKey(
+        Customer, related_name="customer_invoices", on_delete=models.PROTECT
+    )
     contract = models.CharField(max_length=50)
-    incoterms = models.ForeignKey(Incoterms, related_name="customer_invoices", on_delete=models.PROTECT)
-    booking = models.ForeignKey(Booking, related_name="customer_invoices", on_delete=models.PROTECT)
-    commercial_margin = models.DecimalField(decimal_places=2, max_digits=10, default=0)
+    incoterms = models.ForeignKey(
+        Incoterms, related_name="customer_invoices", on_delete=models.PROTECT
+    )
+    booking = models.ForeignKey(
+        Booking, related_name="customer_invoices", on_delete=models.PROTECT
+    )
+    commercial_margin = models.DecimalField(
+        decimal_places=2, max_digits=10, default=Decimal("0.00")
+    )
+
+    def __str__(self):
+        return self.bill_number
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Customer Invoice"
+        verbose_name_plural = "Customer Invoices"
+        ordering = ["-id"]
 
 
 class CustomerInvoiceItem(models.Model):
-    customer_invoice = models.ForeignKey(CustomerInvoice, related_name="invoice_items", on_delete=models.CASCADE)
+    customer_invoice = models.ForeignKey(
+        CustomerInvoice, related_name="invoice_items", on_delete=models.CASCADE
+    )
     product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT)
-    unit_price = models.DecimalField(decimal_places=2, max_digits=10)
+    unit_price = models.DecimalField(
+        decimal_places=2, max_digits=10, default=Decimal("0.00")
+    )
     quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.customer_invoice.bill_number} - {self.product.product_provider.product.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Customer Invoice Item"
+        verbose_name_plural = "Customer Invoice Items"
+        ordering = ["-id"]
