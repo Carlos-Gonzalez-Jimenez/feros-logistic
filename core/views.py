@@ -798,7 +798,7 @@ class ContainerViewSet(ProtectedResourceViewSet):
 
     queryset = models.Container.objects.all()
     permission_classes = [
-        ReadOnlyPermission | CustomPermissionFactory(["core.manage_bookings"])
+        ReadOnlyPermission | CustomPermissionFactory(["core.manage_containers"])
     ]
     serializer_class = serializers.ContainerSerializer
     filterset_class = filters.ContainerFilter
@@ -821,6 +821,10 @@ class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.ShippingCompanyInvoice.objects.all()
+    permission_classes = [
+        ReadOnlyPermission
+        | CustomPermissionFactory(["core.manage_shipping_company_invoices"])
+    ]
     serializer_class = serializers.ShippingCompanyInvoiceSerializer
 
 
@@ -836,15 +840,34 @@ class ImportingCompanyViewSet(ProtectedResourceViewSet):
     """
 
     queryset = models.ImportingCompany.objects.all()
+    permission_classes = [
+        ReadOnlyPermission
+        | CustomPermissionFactory(["core.manage_importing_companies"])
+    ]
     serializer_class = serializers.ImportingCompanySerializer
 
 
 class ProviderInvoiceViewSet(ProtectedResourceViewSet):
+    """_summary_
+
+    Args:
+        ProtectedResourceViewSet (_type_): _description_
+    """
+
     queryset = models.ProviderInvoice.objects.all()
     serializer_class = serializers.ProviderInvoiceSerializer
 
 
 class CancelInvoiceView(CreateAPIView):
+    """_summary_
+
+    Args:
+        CreateAPIView (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     queryset = models.Invoice.objects.all()
 
     def create(self, request, *args, **kwargs):
@@ -856,6 +879,12 @@ class CancelInvoiceView(CreateAPIView):
 
 
 class InvoicePaymentViewSet(ProtectedResourceViewSet):
+    """_summary_
+
+    Args:
+        ProtectedResourceViewSet (_type_): _description_
+    """
+
     queryset = models.InvoicePayment.objects.all()
     serializer_class = serializers.InvoicePaymentSerializer
     filterset_class = filters.InvoicePaymentFilter
@@ -867,6 +896,15 @@ class InvoicePaymentViewSet(ProtectedResourceViewSet):
 
 
 class CustomerInvoiceViewSet(ProtectedResourceViewSet):
+    """_summary_
+
+    Args:
+        ProtectedResourceViewSet (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
     queryset = models.CustomerInvoice.objects.all()
 
     def get_serializer_class(self):

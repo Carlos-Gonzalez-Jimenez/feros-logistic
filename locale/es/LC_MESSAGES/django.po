@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-25 15:57-0400\n"
+"POT-Creation-Date: 2026-10-02 15:28-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -110,95 +110,125 @@ msgstr "Existen elementos del lote sin un producto relacionado"
 msgid "Required column not found in the Excel file"
 msgstr "Columna requerida no se encuentra en el archivo Excel"
 
-#: .\core\models.py:23
+#: .\core\models.py:24
+msgid "Can manage customers"
+msgstr "Gestionar empleados"
+
+#: .\core\models.py:48
 msgid "Can manage shipping companies"
 msgstr "Gestionar navieras"
 
-#: .\core\models.py:43
+#: .\core\models.py:77
 msgid "Can manage vessels"
 msgstr "Gestionar buques"
 
-#: .\core\models.py:58
+#: .\core\models.py:102
 msgid "Can manage container types"
 msgstr "Gestionar tipos de contenedor"
 
-#: .\core\models.py:79
+#: .\core\models.py:132
 msgid "Can manage currencies"
 msgstr "Gestionar monedas"
 
-#: .\core\models.py:131
+#: .\core\models.py:184
 msgid "Can manage notification"
 msgstr "Gestionar notificaciones"
 
-#: .\core\models.py:185
+#: .\core\models.py:238
 msgid "Can manage measurement unit"
 msgstr "Gestionar unidades de medida"
 
-#: .\core\models.py:208
-msgid "Can manage provider"
-msgstr "Gestionar proveedores"
-
-#: .\core\models.py:238
+#: .\core\models.py:268
 msgid "Can manage country"
 msgstr "Gestionar países"
 
-#: .\core\models.py:275
+#: .\core\models.py:298
+msgid "Can manage provider"
+msgstr "Gestionar proveedores"
+
+#: .\core\models.py:335
 msgid "Can manage brand"
 msgstr "Gestionar marcas"
 
-#: .\core\models.py:311
+#: .\core\models.py:371
 msgid "Can manage category"
 msgstr "Gestionar categorías"
 
-#: .\core\models.py:326
+#: .\core\models.py:395
 msgid "Can manage specifications"
 msgstr "Gestionar especificaciones"
 
-#: .\core\models.py:417
+#: .\core\models.py:487
 msgid "Can manage product"
 msgstr "Gestionar productos"
 
-#: .\core\models.py:433
+#: .\core\models.py:512
 msgid "Can manage presentation"
 msgstr "Gestionar presentaciones de productos"
 
-#: .\core\models.py:599
+#: .\core\models.py:713
 msgid "Can manage configuration"
 msgstr "Gestionar configuración"
 
-#: .\core\models.py:619
+#: .\core\models.py:742
 msgid "Can manage ports"
 msgstr "Gestionar puertos"
 
-#: .\core\models.py:639
+#: .\core\models.py:771
 msgid "Can manage incoterms"
 msgstr "Gestionar incoterms"
 
-#: .\core\models.py:657
+#: .\core\models.py:798
 msgid "Can manage payment agreements"
 msgstr "Gestionar convenios de pago"
 
-#: .\core\models.py:676
+#: .\core\models.py:826
 msgid "Can manage processing plant"
 msgstr "Gestionar plantas de procesamiento"
 
-#: .\core\models.py:703
+#: .\core\models.py:865
 msgid "Can manage purchase orders"
 msgstr "Gestionar ordenes de compra"
 
-#: .\core\models.py:771
+#: .\core\models.py:954
 msgid "Can manage sale orders"
 msgstr "Gestionar ordenes de venta"
 
-#: .\core\models.py:885
+#: .\core\models.py:1106
+#, fuzzy
+#| msgid "Can manage incoterms"
+msgid "Can manage invoice payments"
+msgstr "Gestionar incoterms"
+
+#: .\core\models.py:1157
 msgid "Can manage bookings"
 msgstr "Gestionar reservas en navieras"
 
-#: .\dashboard\serializers.py:16
+#: .\core\models.py:1223
+msgid "Can manage containers"
+msgstr "Gestionar contenedores"
+
+#: .\core\models.py:1286
+msgid "Can manage shipping company invoices"
+msgstr "Gestionar facturas de navieras"
+
+#: .\core\models.py:1313
+msgid "Can manage provider invoices"
+msgstr "Gestionar facturas de proveedores"
+
+#: .\core\models.py:1340
+msgid "Can manage customer invoices"
+msgstr "Gestionar facturas a clientes"
+
+#: .\core\models.py:1403
+msgid "Can manage importing companies"
+msgstr "Gestionar empresas importadoras"
+
+#: .\dashboard\serializers.py:19
 msgid "The start date cannot be later than the end date."
 msgstr "La fecha de inicio no puede ser posterior a la fecha de fin"
 
-#: .\dashboard\serializers.py:23
+#: .\dashboard\serializers.py:26
 msgid "The date range cannot exceed 90 days."
 msgstr "El rango de fechas no puede ser superior a 90 días"
 
@@ -256,7 +286,7 @@ msgstr "El usuario ya está verificado"
 
 #: .\user\models.py:24
 msgid "The user needs an email"
-msgstr ""
+msgstr "El usuario necesita tener un correo electrónico"
 
 #: .\user\models.py:91
 msgid "A user with this email already exists."
@@ -296,4 +326,5 @@ msgstr "La contraseña debe tener al menos 6 caracteres de longitud"
 
 #: .\user\views.py:191
 msgid "A recovery link has been sent to your email."
-msgstr "Un enlace de recuperación ha sido enviado a su buzón de correo electrónico"
+msgstr ""
+"Un enlace de recuperación ha sido enviado a su buzón de correo electrónico"
