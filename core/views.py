@@ -853,4 +853,11 @@ class InvoicePaymentViewSet(ProtectedResourceViewSet):
 
 class CustomerInvoiceViewSet(ProtectedResourceViewSet):
     queryset = models.CustomerInvoice.objects.all()
-    serializer_class = serializers.CustomerInvoiceSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return serializers.CRUDCustomerInvoiceSerializer
+        if self.action in ["create", "update"]:
+            return serializers.CRUDCustomerInvoiceSerializer
+        else:
+            return serializers.CRUDCustomerInvoiceSerializer
