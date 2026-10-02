@@ -990,6 +990,18 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
 
+class ImportingCompanySerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.ImportingCompany
+        fields = serializers.ALL_FIELDS
+
+
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     product = ProductProviderPresentationSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
@@ -1402,29 +1414,40 @@ class CRUDCustomerInvoiceSerializer(InvoiceSerializer):
     )
     invoice_items = CustomerInvoiceItem(many=True, read_only=True)
 
-    containers_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
+    containers_ids = serializers.PrimaryKeyRelatedField(
+        queryset=models.Container.objects.all(), many=True
+    )
     containers = ContainerMinimalSerializer(many=True, read_only=True)
-    booking_id = serializers.PrimaryKeyRelatedField(queryset=models.Booking.objects.all(), source="booking")
+    booking_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Booking.objects.all(), source="booking"
+    )
 
     class Meta:
         model = models.CustomerInvoice
-        exclude = ['booking']
+        exclude = ["booking"]
 
     def create(self, validated_data):
-        booking = validated_data.pop('booking')
-        containers = validated_data.pop('containers_ids')
-        container_items = models.ContainerItem.objects.filter(container__in=containers).all()
-        shipping_invoices = models.ShippingCompanyInvoice.objects \
-            .filter(booking=booking).values_list('pk', flat=True)
-        provider_invoices = models.ProviderInvoice.objects \
-            .filter(sale_order__sale_order_items__container_items__in=container_items).values_list('pk', flat=True)
+        booking = validated_data.pop("booking")
+        containers = validated_data.pop("containers_ids")
+        container_items = models.ContainerItem.objects.filter(
+            container__in=containers
+        ).all()
+        shipping_invoices = models.ShippingCompanyInvoice.objects.filter(
+            booking=booking
+        ).values_list("pk", flat=True)
+        provider_invoices = models.ProviderInvoice.objects.filter(
+            sale_order__sale_order_items__container_items__in=container_items
+        ).values_list("pk", flat=True)
 
         value = models.Invoice.objects.filter(
             cancelation_date__isnull=True,
-            pk__in=[*shipping_invoices, *provider_invoices]).aggregate(total=Sum('total_amount'))
+            pk__in=[*shipping_invoices, *provider_invoices],
+        ).aggregate(total=Sum("total_amount"))
 
-        validated_data['other_charges_amount'] = value['total']
-        validated_data['amount'] = validated_data['other_charges_amount'] * validated_data['commercial_margin']
+        validated_data["other_charges_amount"] = value["total"]
+        validated_data["amount"] = (
+            validated_data["other_charges_amount"] * validated_data["commercial_margin"]
+        )
         invoice = super().create(validated_data)
         return invoice
 
