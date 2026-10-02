@@ -1414,16 +1414,14 @@ class CRUDCustomerInvoiceSerializer(CustomerInvoiceSerializer):
 
         container_items = models.ContainerItem.objects.filter(container__in=containers).all()
         shipping_invoices = models.ShippingCompanyInvoice.objects \
-            .filter(booking=booking).values_list('pk', flat=True)
+            .filter(cancelation_date__isnull=True, booking=booking).aggregate(total=Sum('total_amount'))
         provider_invoices = models.ProviderInvoice.objects \
-            .filter(sale_order__sale_order_items__container_items__in=container_items).values_list('pk', flat=True)
+            .filter(cancelation_date__isnull=True,
+                    sale_order__sale_order_items__container_items__in=container_items).aggregate(
+            total=Sum('total_amount'))
 
-        value = models.Invoice.objects.filter(
-            cancelation_date__isnull=True,
-            pk__in=[*shipping_invoices, *provider_invoices]).aggregate(total=Sum('total_amount'))
-
-        validated_data['other_charges_amount'] = value['total']
-        validated_data['amount'] = validated_data['other_charges_amount'] * validated_data['commercial_margin']
+        validated_data['other_charges_amount'] = shipping_invoices['total'] + booking.cargo_insurance
+        validated_data['amount'] = provider_invoices['total'] * (1 + validated_data['commercial_margin'])
         invoice = super().create(validated_data)
 
         models.Container.objects.filter(pk__in=[c.pk for c in containers]).update(customer_invoice=invoice)

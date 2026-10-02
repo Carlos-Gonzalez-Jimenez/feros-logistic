@@ -1128,9 +1128,7 @@ class Booking(models.Model):
         Vessel, related_name="bookings", on_delete=models.PROTECT, null=True, blank=True
     )
     voyage_number = models.CharField(max_length=20, blank=True)
-    quoted_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
+
     cut_off = models.DateField(null=True, blank=True)
     ets = models.DateField(null=True, blank=True)
     eta = models.DateField(null=True, blank=True)
@@ -1138,6 +1136,7 @@ class Booking(models.Model):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
+    quoted_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     cargo_insurance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name="bookings")
 
