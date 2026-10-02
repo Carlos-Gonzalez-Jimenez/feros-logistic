@@ -1392,6 +1392,9 @@ class CustomerInvoiceMinimalSerializer(InvoiceSerializer):
     incoterms = IncotermsSerializer(read_only=True)
     incoterms_id = serializers.PrimaryKeyRelatedField(queryset=models.Incoterms.objects.all(), source="incoterms")
     booking_id = serializers.PrimaryKeyRelatedField(queryset=models.Booking.objects.all(), source="booking")
+    importing_company_id = serializers.PrimaryKeyRelatedField(queryset=models.ImportingCompany.objects.all(),
+                                                              source="importing_company")
+    importing_company = ImportingCompanySerializer(read_only=True)
 
     class Meta:
         model = models.CustomerInvoice
@@ -1408,20 +1411,34 @@ class CRUDCustomerInvoiceSerializer(CustomerInvoiceSerializer):
     )
     containers = ContainerMinimalSerializer(many=True, read_only=True)
 
-    def create(self, validated_data):
-        booking = validated_data.get('booking')
-        containers = validated_data.pop('containers_ids')
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        booking = attrs.get('booking')
+        containers = attrs.get('containers_ids')
 
         container_items = models.ContainerItem.objects.filter(container__in=containers).all()
         shipping_invoices = models.ShippingCompanyInvoice.objects \
-            .filter(cancelation_date__isnull=True, booking=booking).aggregate(total=Sum('total_amount'))
+            .filter(cancelation_date__isnull=True, booking=booking).all()
         provider_invoices = models.ProviderInvoice.objects \
             .filter(cancelation_date__isnull=True,
-                    sale_order__sale_order_items__container_items__in=container_items).aggregate(
-            total=Sum('total_amount'))
+                    sale_order__sale_order_items__container_items__in=container_items).all()
 
-        validated_data['other_charges_amount'] = shipping_invoices['total'] + booking.cargo_insurance
-        validated_data['amount'] = provider_invoices['total'] * (1 + validated_data['commercial_margin'])
+        if shipping_invoices.count() == 0:
+            raise serializers.ValidationError("La reserva seleccionada no se encuentra facturada.")
+        elif provider_invoices.count() == 0:
+            raise serializers.ValidationError("Las ordenes de venta asociadas a la reserva no estan facturadas.")
+
+        shipping_invoices_total = shipping_invoices.aggregate(total=Sum('total_amount'))['total']
+        provider_invoices_total = provider_invoices.aggregate(total=Sum('total_amount'))['total']
+        attrs['container_items'] = container_items
+
+        attrs['other_charges_amount'] = shipping_invoices_total + booking.cargo_insurance
+        attrs['amount'] = provider_invoices_total * (1 + attrs['commercial_margin'])
+        return attrs
+
+    def create(self, validated_data):
+        containers = validated_data.pop('containers_ids')
+        container_items = validated_data.pop('container_items')
         invoice = super().create(validated_data)
 
         models.Container.objects.filter(pk__in=[c.pk for c in containers]).update(customer_invoice=invoice)

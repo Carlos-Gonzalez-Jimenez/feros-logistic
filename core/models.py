@@ -800,6 +800,37 @@ class PaymentAgreement(models.Model):
         ordering = ["name"]
 
 
+class ImportingCompany(models.Model):
+    """_summary_
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        _type_: _description_
+    """
+
+    name = models.CharField(max_length=100)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(max_length=255, blank=True, null=True)
+    phone_numbers = models.CharField(max_length=255, blank=True, null=True)
+    web_site = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Importing Company"
+        verbose_name_plural = "Importing Companies"
+        ordering = ["-id"]
+        permissions = [
+            ("manage_importing_companies", _("Can manage importing companies")),
+        ]
+        indexes = [
+            models.Index(fields=["name"]),
+        ]
+
+
 class ProcessingPlant(models.Model):
     """_summary_
 
@@ -1305,6 +1336,7 @@ class CustomerInvoice(Invoice):
     commercial_margin = models.DecimalField(
         decimal_places=2, max_digits=10, default=Decimal("0.00")
     )
+    importing_company = models.ForeignKey(ImportingCompany, related_name='invoices', on_delete=models.PROTECT)
 
     def __str__(self):
         return self.bill_number
@@ -1336,34 +1368,3 @@ class CustomerInvoiceItem(models.Model):
         verbose_name = "Customer Invoice Item"
         verbose_name_plural = "Customer Invoice Items"
         ordering = ["-id"]
-
-
-class ImportingCompany(models.Model):
-    """_summary_
-
-    Args:
-        models (_type_): _description_
-
-    Returns:
-        _type_: _description_
-    """
-
-    name = models.CharField(max_length=100)
-    address = models.CharField(max_length=255, blank=True, null=True)
-    email = models.EmailField(max_length=255, blank=True, null=True)
-    phone_numbers = models.CharField(max_length=255, blank=True, null=True)
-    web_site = models.CharField(max_length=255, blank=True, null=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta(PermissionsMeta.Meta):
-        verbose_name = "Importing Company"
-        verbose_name_plural = "Importing Companies"
-        ordering = ["-id"]
-        permissions = [
-            ("manage_importing_companies", _("Can manage importing companies")),
-        ]
-        indexes = [
-            models.Index(fields=["name"]),
-        ]
