@@ -19,12 +19,19 @@ class Customer(models.Model):
     nit_code = models.CharField(max_length=100, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     contacts = models.JSONField(default=list, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.business_name
 
     class Meta(PermissionsMeta.Meta):
         permissions = [("manage_customers", _("Can manage customers"))]
         verbose_name = "Customer"
         verbose_name_plural = "Customers"
         ordering = ["business_name"]
+        indexes = [
+            models.Index(fields=["business_name"]),
+        ]
 
 
 class ShippingCompany(models.Model):
@@ -490,7 +497,7 @@ class Product(models.Model):
         ordering = ["code_sku"]
         indexes = [
             models.Index(fields=["category", "active"]),
-            models.Index(fields=["part_code", "active"]),
+            models.Index(fields=["tariff_item", "active"]),
             models.Index(fields=["brand", "active"]),
             models.Index(fields=["provider", "active"]),
         ]
@@ -556,6 +563,9 @@ class ProductProviderPresentation(models.Model):
 
     class Meta(PermissionsMeta.Meta):
         unique_together = ["product_provider", "presentation"]
+        verbose_name = "Product Provider Presentation"
+        verbose_name_plural = "Product Provider Presentations"
+        ordering = ["-id"]
 
 
 class ProductImageOrder(models.Model):
@@ -575,7 +585,7 @@ class ProductImageOrder(models.Model):
         ordering = ["id"]
         unique_together = [["product", "blockmedia"]]
         indexes = [
-            models.Index(fields=["product", "id"]),
+            models.Index(fields=["product"]),
         ]
 
     def __str__(self):
@@ -644,13 +654,6 @@ class Config(models.Model):
     confirm_register_url = models.CharField(max_length=255, default="")
 
     recover_password_token_validation_time = models.IntegerField(default=30)
-    ecommerce_commission_is_percentage = models.BooleanField(default=True)
-    ecommerce_commission_value = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    client_minimum_wallet_amount = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("100.00")
-    )
     billing_email = models.TextField(blank=True, null=True)
     logo_light = models.ImageField(
         upload_to="config/pics", default="config/config_image_default.png"
@@ -743,7 +746,7 @@ class Port(models.Model):
         ]
         ordering = ["-id"]
         indexes = [
-            models.Index(fields=["abbreviation"]),
+            models.Index(fields=["abbreviation", "active"]),
         ]
 
 
@@ -865,6 +868,9 @@ class PurchaseOrder(models.Model):
             ("manage_purchase_orders", _("Can manage purchase orders")),
         ]
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["customer", "provider"]),
+        ]
 
 
 class PurchaseOrderItem(models.Model):
@@ -895,6 +901,9 @@ class PurchaseOrderItem(models.Model):
         verbose_name = "Purchase Order Item"
         verbose_name_plural = "Purchase Order Items"
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["purchase_order", "product"]),
+        ]
 
 
 class SaleOrder(models.Model):
@@ -955,7 +964,7 @@ class SaleOrder(models.Model):
         ]
         ordering = ["-so_date"]
         indexes = [
-            models.Index(fields=["so_number"]),
+            models.Index(fields=["customer", "so_number"]),
         ]
 
 
@@ -998,6 +1007,9 @@ class SaleOrderItems(models.Model):
         verbose_name = "Sale Order Item"
         verbose_name_plural = "Sale Order Items"
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["sale_order", "product"]),
+        ]
 
 
 class Invoice(models.Model):
@@ -1036,14 +1048,7 @@ class Invoice(models.Model):
     status = models.CharField(
         max_length=50, choices=InvoiceStatus.choices, default=InvoiceStatus.Pending
     )
-
     cancelation_date = models.DateTimeField(blank=True, null=True)
-
-    """
-    total_amount = amount + other_charges_amount
-    amount = Monto relacionado con los servicios
-    other_charges_amount = Monto relacionado con otros cargos.
-    """
 
     def __str__(self):
         return self.bill_number
@@ -1336,6 +1341,9 @@ class ProviderInvoice(Invoice):
         permissions = [
             ("manage_provider_invoices", _("Can manage provider invoices")),
         ]
+        indexes = [
+            models.Index(fields=["sale_order"]),
+        ]
 
 
 class CustomerInvoice(Invoice):
@@ -1431,7 +1439,4 @@ class ImportingCompany(models.Model):
         ordering = ["-id"]
         permissions = [
             ("manage_importing_companies", _("Can manage importing companies")),
-        ]
-        indexes = [
-            models.Index(fields=["name"]),
         ]
