@@ -493,7 +493,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             validated_data["slug"] = slugify(validated_data["name"])
             blocks = validated_data.pop("blocks", None)
             instance.daily_variation = (
-                    validated_data.get("unit_price") - instance.unit_price
+                validated_data.get("unit_price") - instance.unit_price
             )
             instance = super().update(instance, validated_data)
             if details:
@@ -1012,7 +1012,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     """
 
     customer = CustomerSerializer(read_only=True)
-    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Customer.objects.all(), source="customer"
+    )
     provider = ProviderSerializer(read_only=True)
     provider_id = serializers.PrimaryKeyRelatedField(
         required=True,
@@ -1078,10 +1080,15 @@ class SaleOrderItemsSerializer(serializers.ModelSerializer):
 
 class SaleOrderMinimalSerializer(serializers.ModelSerializer):
     purchase_order_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.PurchaseOrder.objects.all(), required=False,
-        allow_null=True, allow_empty=True)
+        queryset=models.PurchaseOrder.objects.all(),
+        required=False,
+        allow_null=True,
+        allow_empty=True,
+    )
     customer = CustomerSerializer(read_only=True)
-    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Customer.objects.all(), source="customer"
+    )
 
     processing_plant = ProcessingPlantSerializer(read_only=True)
     processing_plant_id = serializers.PrimaryKeyRelatedField(
@@ -1166,9 +1173,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
         _today = date.today()
         days_diff = (_today - (obj.expiration_date or _today)).days
         if (
-                days_diff < 0
-                or days_diff < from_day
-                or (until_day is not None and days_diff > until_day)
+            days_diff < 0
+            or days_diff < from_day
+            or (until_day is not None and days_diff > until_day)
         ):
             return 0
         return obj.pending_amount
@@ -1196,14 +1203,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
     def create(self, validated_data):
-        validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
+        validated_data["total_amount"] = (
+            validated_data["amount"] + validated_data["other_charges_amount"]
+        )
         validated_data["pending_amount"] = validated_data["total_amount"]
         instance = super().create(validated_data)
         instance.sync_pending_amount()
         return instance
 
     def update(self, instance, validated_data):
-        validated_data["total_amount"] = validated_data["amount"] + validated_data["other_charges_amount"]
+        validated_data["total_amount"] = (
+            validated_data["amount"] + validated_data["other_charges_amount"]
+        )
         instance = super().update(instance, validated_data)
         instance.sync_pending_amount()
         return instance
@@ -1227,7 +1238,7 @@ class BookingMinimalSerializer(serializers.ModelSerializer):
         queryset=models.Vessel.objects.all(), source="vessel"
     )
     sale_orders_ids = serializers.PrimaryKeyRelatedField(
-        queryset=models.SaleOrder.objects.all(), source='sale_orders', many=True
+        queryset=models.SaleOrder.objects.all(), source="sale_orders", many=True
     )
 
     format = serializers.SerializerMethodField()
@@ -1254,17 +1265,21 @@ class ContainerItemSerializer(serializers.ModelSerializer):
     )
     product = ProductProviderPresentationSerializer(read_only=True)
     sale_order_item_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.SaleOrderItems.objects.all(), source="sale_order_item",
+        queryset=models.SaleOrderItems.objects.all(),
+        source="sale_order_item",
     )
 
     class Meta:
         model = models.ContainerItem
-        exclude = ['container', 'sale_order_item']
+        exclude = ["container", "sale_order_item"]
 
 
 class ContainerMinimalSerializer(serializers.ModelSerializer):
     booking_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Booking.objects.all(), source="booking", allow_null=True, required=False
+        queryset=models.Booking.objects.all(),
+        source="booking",
+        allow_null=True,
+        required=False,
     )
     container_type = ContainerTypeSerializer(read_only=True)
     container_type_id = serializers.PrimaryKeyRelatedField(
@@ -1288,17 +1303,19 @@ class ContainerSerializer(ContainerMinimalSerializer):
     items = ContainerItemSerializer(many=True)
 
     def update(self, instance, validated_data):
-        items = validated_data.pop('items')
+        items = validated_data.pop("items")
         instance = super().update(instance, validated_data)
         self.create_container_items(instance, items)
         return instance
 
     def create_container_items(self, instance, items):
         instance.items.all().delete()
-        models.ContainerItem.objects.bulk_create([models.ContainerItem(**item, container=instance) for item in items])
+        models.ContainerItem.objects.bulk_create(
+            [models.ContainerItem(**item, container=instance) for item in items]
+        )
 
     def create(self, validated_data):
-        items = validated_data.pop('items')
+        items = validated_data.pop("items")
         instance = super().create(validated_data)
         self.create_container_items(instance, items)
         return instance
@@ -1349,14 +1366,18 @@ class InvoicePaymentSerializer(serializers.ModelSerializer):
 
 
 class BookingContainerRelaterSerializer(serializers.Serializer):
-    containers_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
+    containers_ids = serializers.PrimaryKeyRelatedField(
+        queryset=models.Container.objects.all(), many=True
+    )
     remove = serializers.BooleanField(default=False)
 
     def update(self, instance, validated_data):
-        booking = instance if not validated_data['remove'] else None
-        for container in validated_data['containers_ids']:
+        booking = instance if not validated_data["remove"] else None
+        for container in validated_data["containers_ids"]:
             container.booking = booking
-        models.Container.objects.bulk_update(validated_data['containers_ids'], fields=["booking"])
+        models.Container.objects.bulk_update(
+            validated_data["containers_ids"], fields=["booking"]
+        )
         return instance
 
 
@@ -1365,20 +1386,38 @@ class CustomerInvoiceItem(serializers.ModelSerializer):
 
     class Meta:
         model = models.CustomerInvoiceItem
-        exclude = ['customer_invoice']
+        exclude = ["customer_invoice"]
 
 
 class CustomerInvoiceSerializer(serializers.ModelSerializer):
     # TODO CREAR LAS IMPORTADORAS
     customer = CustomerSerializer(read_only=True)
-    customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
+    customer_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Customer.objects.all(), source="customer"
+    )
     incoterms = IncotermsSerializer(read_only=True)
-    incoterms_id = serializers.PrimaryKeyRelatedField(queryset=models.Incoterms.objects.all(), source="incoterms")
+    incoterms_id = serializers.PrimaryKeyRelatedField(
+        queryset=models.Incoterms.objects.all(), source="incoterms"
+    )
     invoice_items = CustomerInvoiceItem(many=True, read_only=True)
 
-    conteiners_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
+    conteiners_ids = serializers.PrimaryKeyRelatedField(
+        queryset=models.Container.objects.all(), many=True
+    )
     containers = ContainerMinimalSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.CustomerInvoice
-        exclude = ['booking']
+        exclude = ["booking"]
+
+
+class ImportingCompanySerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.ImportingCompany
+        fields = serializers.ALL_FIELDS

@@ -824,6 +824,21 @@ class ShippingCompanyInvoiceViewSet(ProtectedResourceViewSet):
     serializer_class = serializers.ShippingCompanyInvoiceSerializer
 
 
+class ImportingCompanyViewSet(ProtectedResourceViewSet):
+    """
+    Importing Company model\n
+    GET: Shows all Importing Companies created.\n
+    POST: Adds a new Importing Company.\n
+    GET{id}: Retrieves a specific Importing Company determined by id.\n
+    PUT{id}: Modifies all fields of a specific Importing Company determined by id.\n
+    PATCH{id}: Partially modifies the fields of a specific Importing Company determined by id.\n
+    DELETE{id}: Deletes a specific Importing Company determined by id.\n
+    """
+
+    queryset = models.ImportingCompany.objects.all()
+    serializer_class = serializers.ImportingCompanySerializer
+
+
 class ProviderInvoiceViewSet(ProtectedResourceViewSet):
     queryset = models.ProviderInvoice.objects.all()
     serializer_class = serializers.ProviderInvoiceSerializer
