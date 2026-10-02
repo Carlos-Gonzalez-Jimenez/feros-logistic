@@ -20,7 +20,7 @@ from core.models import (
     InvoicePayment,
     Booking,
     Container,
-    SaleOrderItems,
+    SaleOrderItems, CustomerInvoice, ContainerType,
 )
 from user.models import User
 
@@ -98,8 +98,9 @@ class InvoicePaymentFilter(filters.FilterSet):
 
 
 class ContainerFilter(filters.FilterSet):
-    booking = NumberFilter(field_name="booking_id")
-    container_type = NumberFilter(field_name="container_type_id")
+    booking = ModelChoiceFilter(queryset=Booking.objects.all(), field_name="booking")
+    customer_invoice = ModelChoiceFilter(queryset=CustomerInvoice.objects.all(), field_name="customer_invoice")
+    container_type = ModelChoiceFilter(queryset=ContainerType.objects.all(), field_name="container_type")
     container_number = CharFilter(lookup_expr="icontains")
     in_transit = BooleanFilter(method="filter_in_transit")
 

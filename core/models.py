@@ -984,7 +984,10 @@ class SaleOrderItems(models.Model):
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
-    unit_weight = models.DecimalField(
+    unit_net_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_gross_weight = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
@@ -1053,10 +1056,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-            self.total_amount
-            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                "pending_amount"
-            ]
+                self.total_amount
+                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                    "pending_amount"
+                ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -1182,8 +1185,8 @@ class Container(models.Model):
     )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
-    net_weight = models.DecimalField(        max_digits=10, decimal_places=2, default=Decimal("0.00")    )
-    gross_weight = models.DecimalField(        max_digits=10, decimal_places=2, default=Decimal("0.00")    )
+    net_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    gross_weight = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
@@ -1234,7 +1237,10 @@ class ContainerItem(models.Model):
     unit_price = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
-    unit_weight = models.DecimalField(
+    unit_net_weight = models.DecimalField(
+        max_digits=10, decimal_places=2, default=Decimal("0.00")
+    )
+    unit_gross_weight = models.DecimalField(
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
@@ -1315,10 +1321,14 @@ class CustomerInvoiceItem(models.Model):
         CustomerInvoice, related_name="invoice_items", on_delete=models.CASCADE
     )
     product = models.ForeignKey(ProductProviderPresentation, on_delete=models.PROTECT)
-    unit_price = models.DecimalField(
-        decimal_places=2, max_digits=10, default=Decimal("0.00")
-    )
     quantity = models.PositiveIntegerField()
+    measurement_unit = models.ForeignKey(Measurement_Unit, on_delete=models.PROTECT)
+    unit_price = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
+    unit_net_weight = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
+    unit_gross_weight = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
+    amount = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
+    net_weight = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
+    gross_weight = models.DecimalField(decimal_places=2, max_digits=10, default=Decimal("0.00"))
 
     def __str__(self):
         return f"{self.customer_invoice.bill_number} - {self.product.product_provider.product.name}"

@@ -855,9 +855,9 @@ class CustomerInvoiceViewSet(ProtectedResourceViewSet):
     queryset = models.CustomerInvoice.objects.all()
 
     def get_serializer_class(self):
-        if self.action == "list":
-            return serializers.CRUDCustomerInvoiceSerializer
         if self.action in ["create", "update"]:
             return serializers.CRUDCustomerInvoiceSerializer
+        elif self.action == "retrieve":
+            return serializers.CustomerInvoiceSerializer
         else:
-            return serializers.CRUDCustomerInvoiceSerializer
+            return serializers.CustomerInvoiceMinimalSerializer

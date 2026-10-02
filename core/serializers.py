@@ -1288,8 +1288,12 @@ class ContainerSerializer(ContainerMinimalSerializer):
     # booking = BookingMinimalSerializer(read_only=True)
     items = ContainerItemSerializer(many=True)
 
+    def set_net_weight(self, validated_data, items):
+        validated_data['net_weight'] = sum(i['unit_net_weight'] * i['quantity'] for i in items)
+
     def update(self, instance, validated_data):
         items = validated_data.pop('items')
+        self.set_net_weight(validated_data, items)
         instance = super().update(instance, validated_data)
         self.create_container_items(instance, items)
         return instance
@@ -1300,6 +1304,7 @@ class ContainerSerializer(ContainerMinimalSerializer):
 
     def create(self, validated_data):
         items = validated_data.pop('items')
+        self.set_net_weight(validated_data, items)
         instance = super().create(validated_data)
         self.create_container_items(instance, items)
         return instance
@@ -1369,25 +1374,32 @@ class CustomerInvoiceItem(serializers.ModelSerializer):
         exclude = ['customer_invoice']
 
 
-class CRUDCustomerInvoiceSerializer(InvoiceSerializer):
-    # TODO CREAR LAS IMPORTADORAS
+class CustomerInvoiceMinimalSerializer(InvoiceSerializer):
     customer = CustomerSerializer(read_only=True)
     customer_id = serializers.PrimaryKeyRelatedField(queryset=models.Customer.objects.all(), source="customer")
     incoterms = IncotermsSerializer(read_only=True)
     incoterms_id = serializers.PrimaryKeyRelatedField(queryset=models.Incoterms.objects.all(), source="incoterms")
-    invoice_items = CustomerInvoiceItem(many=True, read_only=True)
-
-    containers_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
-    containers = ContainerMinimalSerializer(many=True, read_only=True)
     booking_id = serializers.PrimaryKeyRelatedField(queryset=models.Booking.objects.all(), source="booking")
 
     class Meta:
         model = models.CustomerInvoice
         exclude = ['booking']
 
+
+class CustomerInvoiceSerializer(CustomerInvoiceMinimalSerializer):
+    invoice_items = CustomerInvoiceItem(many=True, read_only=True)
+
+
+class CRUDCustomerInvoiceSerializer(CustomerInvoiceSerializer):
+    containers_ids = serializers.PrimaryKeyRelatedField(
+        queryset=models.Container.objects.all(), many=True, write_only=True
+    )
+    containers = ContainerMinimalSerializer(many=True, read_only=True)
+
     def create(self, validated_data):
-        booking = validated_data.pop('booking')
+        booking = validated_data.get('booking')
         containers = validated_data.pop('containers_ids')
+
         container_items = models.ContainerItem.objects.filter(container__in=containers).all()
         shipping_invoices = models.ShippingCompanyInvoice.objects \
             .filter(booking=booking).values_list('pk', flat=True)
@@ -1401,6 +1413,32 @@ class CRUDCustomerInvoiceSerializer(InvoiceSerializer):
         validated_data['other_charges_amount'] = value['total']
         validated_data['amount'] = validated_data['other_charges_amount'] * validated_data['commercial_margin']
         invoice = super().create(validated_data)
+
+        models.Container.objects.filter(pk__in=[c.pk for c in containers]).update(customer_invoice=invoice)
+        products = dict()
+        for item in container_items:
+            products.setdefault(item.product_id, {
+                'quantity': 0,
+                'total_amount': 0,
+                'total_net_weight': 0,
+                'total_gross_weight': 0,
+                'measurement_unit_id': item.sale_order_item.measurement_unit_id
+            })
+            products[item.product_id]['quantity'] += item.quantity
+            products[item.product_id]['total_amount'] += item.quantity * item.unit_price
+            products[item.product_id]['total_net_weight'] += item.quantity * item.unit_net_weight
+            products[item.product_id]['total_gross_weight'] += item.quantity * item.unit_gross_weight
+
+        for product, value in products.items():
+            models.CustomerInvoiceItem.objects.create(
+                customer_invoice=invoice, product_id=product, quantity=value['quantity'],
+                unit_price=value['total_amount'] / value['quantity'],
+                unit_net_weight=value['total_net_weight'] / value['quantity'],
+                unit_gross_weight=value['total_gross_weight'] / value['quantity'],
+                amount=value['total_amount'], net_weight=value['total_net_weight'],
+                gross_weight=value['total_gross_weight'],
+                measurement_unit_id=value['measurement_unit_id']
+            )
         return invoice
 
     def update(self, instance, validated_data):
