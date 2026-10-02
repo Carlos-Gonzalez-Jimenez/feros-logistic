@@ -32,6 +32,7 @@ from core.models import (
     Booking,
     ContainerType,
     Container,
+    ContainerItem,
     ProviderInvoice,
     Customer,
     CustomerInvoice,
@@ -72,6 +73,7 @@ admin.site.register(InvoicePayment)
 admin.site.register(Booking)
 admin.site.register(ContainerType)
 admin.site.register(Container)
+admin.site.register(ContainerItem)
 admin.site.register(Customer)
 admin.site.register(CustomerInvoice)
 admin.site.register(CustomerInvoiceItem)

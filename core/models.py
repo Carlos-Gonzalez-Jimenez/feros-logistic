@@ -1105,6 +1105,14 @@ class InvoicePayment(models.Model):
         permissions = [
             ("manage_invoice_payments", _("Can manage invoice payments")),
         ]
+        indexes = [
+            models.Index(
+                fields=["invoice", "payment_date"],
+            ),
+            models.Index(
+                fields=["user", "payment_date"],
+            ),
+        ]
 
 
 class Booking(models.Model):
@@ -1257,6 +1265,18 @@ class ContainerItem(models.Model):
         max_digits=10, decimal_places=2, default=Decimal("0.00")
     )
 
+    def __str__(self):
+        return f"{self.container.container_number} - {self.product.product_provider.product.name}"
+
+    class Meta(PermissionsMeta.Meta):
+        verbose_name = "Container Item"
+        verbose_name_plural = "Container Items"
+        ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["container", "product"]),
+            models.Index(fields=["container", "product", "sale_order_item"]),
+        ]
+
 
 class ShippingCompanyInvoice(Invoice):
     """_summary_
@@ -1285,6 +1305,10 @@ class ShippingCompanyInvoice(Invoice):
                 "manage_shipping_company_invoices",
                 _("Can manage shipping company invoices"),
             ),
+        ]
+        indexes = [
+            models.Index(fields=["booking"]),
+            models.Index(fields=["bl_number"]),
         ]
 
 
@@ -1339,6 +1363,9 @@ class CustomerInvoice(Invoice):
         permissions = [
             ("manage_customer_invoices", _("Can manage customer invoices")),
         ]
+        indexes = [
+            models.Index(fields=["customer"]),
+        ]
 
 
 class CustomerInvoiceItem(models.Model):
@@ -1374,6 +1401,9 @@ class CustomerInvoiceItem(models.Model):
         verbose_name = "Customer Invoice Item"
         verbose_name_plural = "Customer Invoice Items"
         ordering = ["-id"]
+        indexes = [
+            models.Index(fields=["customer_invoice", "product"]),
+        ]
 
 
 class ImportingCompany(models.Model):
