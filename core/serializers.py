@@ -990,6 +990,18 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
 
+class ImportingCompanySerializer(serializers.ModelSerializer):
+    """_summary_
+
+    Args:
+        serializers (_type_): _description_
+    """
+
+    class Meta:
+        model = models.ImportingCompany
+        fields = serializers.ALL_FIELDS
+
+
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
     product = ProductProviderPresentationSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(

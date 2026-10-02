@@ -36,6 +36,7 @@ from core.models import (
     Customer,
     CustomerInvoice,
     CustomerInvoiceItem,
+    ImportingCompany,
 )
 
 admin.site.register(Currency)
@@ -74,3 +75,4 @@ admin.site.register(Container)
 admin.site.register(Customer)
 admin.site.register(CustomerInvoice)
 admin.site.register(CustomerInvoiceItem)
+admin.site.register(ImportingCompany)

@@ -42,6 +42,7 @@ from core.models import (
     Config,
     Customer,
     ProductProviderPresentation,
+    ImportingCompany,
 )
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
@@ -395,6 +396,30 @@ class Command(BaseCommand):
                 business_email=customer[2],
                 nit_code=customer[3],
                 address=customer[4],
+            )
+
+    def create_importing_companies(self) -> None:
+        """Creates all importing companies objects"""
+
+        self.stdout.write(self.style.NOTICE("start populating importing companies"))
+
+        importing_companies = [
+            (
+                "IMPEXPORT",
+                "Calle Quinta B y 6, Edificio Almendares, Oficina 60, Miramar, Playa, La Habana.",
+                "comercial@impexport.cu",
+                "(+53) 72047633, (+53) 50913604",
+                "https://impexport.cu",
+            ),
+        ]
+
+        for importing_company in importing_companies:
+            _ = ImportingCompany.objects.get_or_create(
+                name=importing_company[0],
+                address=importing_company[1],
+                email=importing_company[2],
+                phone_numbers=importing_company[3],
+                web_site=importing_company[4],
             )
 
     def create_post(self) -> None:
@@ -1036,6 +1061,7 @@ class Command(BaseCommand):
         self.create_categories()
         self.create_countries()
         self.create_customers()
+        self.create_importing_companies()
         self.create_roles()
         self.create_users()
         self.create_brands()
