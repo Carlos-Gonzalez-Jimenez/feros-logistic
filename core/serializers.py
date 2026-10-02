@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.text import slugify
 from django.utils.timezone import now
 from rest_framework import serializers
@@ -1389,7 +1390,7 @@ class CustomerInvoiceItem(serializers.ModelSerializer):
         exclude = ["customer_invoice"]
 
 
-class CustomerInvoiceSerializer(serializers.ModelSerializer):
+class CRUDCustomerInvoiceSerializer(InvoiceSerializer):
     # TODO CREAR LAS IMPORTADORAS
     customer = CustomerSerializer(read_only=True)
     customer_id = serializers.PrimaryKeyRelatedField(
@@ -1401,23 +1402,31 @@ class CustomerInvoiceSerializer(serializers.ModelSerializer):
     )
     invoice_items = CustomerInvoiceItem(many=True, read_only=True)
 
-    conteiners_ids = serializers.PrimaryKeyRelatedField(
-        queryset=models.Container.objects.all(), many=True
-    )
+    containers_ids = serializers.PrimaryKeyRelatedField(queryset=models.Container.objects.all(), many=True)
     containers = ContainerMinimalSerializer(many=True, read_only=True)
+    booking_id = serializers.PrimaryKeyRelatedField(queryset=models.Booking.objects.all(), source="booking")
 
     class Meta:
         model = models.CustomerInvoice
-        exclude = ["booking"]
+        exclude = ['booking']
 
+    def create(self, validated_data):
+        booking = validated_data.pop('booking')
+        containers = validated_data.pop('containers_ids')
+        container_items = models.ContainerItem.objects.filter(container__in=containers).all()
+        shipping_invoices = models.ShippingCompanyInvoice.objects \
+            .filter(booking=booking).values_list('pk', flat=True)
+        provider_invoices = models.ProviderInvoice.objects \
+            .filter(sale_order__sale_order_items__container_items__in=container_items).values_list('pk', flat=True)
 
-class ImportingCompanySerializer(serializers.ModelSerializer):
-    """_summary_
+        value = models.Invoice.objects.filter(
+            cancelation_date__isnull=True,
+            pk__in=[*shipping_invoices, *provider_invoices]).aggregate(total=Sum('total_amount'))
 
-    Args:
-        serializers (_type_): _description_
-    """
+        validated_data['other_charges_amount'] = value['total']
+        validated_data['amount'] = validated_data['other_charges_amount'] * validated_data['commercial_margin']
+        invoice = super().create(validated_data)
+        return invoice
 
-    class Meta:
-        model = models.ImportingCompany
-        fields = serializers.ALL_FIELDS
+    def update(self, instance, validated_data):
+        super(serializers.ModelSerializer).update(instance, validated_data)

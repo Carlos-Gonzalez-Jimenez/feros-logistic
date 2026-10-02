@@ -1135,6 +1135,7 @@ class Booking(models.Model):
     confirmed_at = models.DateTimeField(null=True, blank=True)
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
+    cargo_insurance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     sale_orders = models.ManyToManyField(SaleOrder, blank=True, related_name="bookings")
 
     def __str__(self):
@@ -1181,12 +1182,8 @@ class Container(models.Model):
     )
     container_number = models.CharField(max_length=15, null=True, blank=True)
     seal_number = models.CharField(max_length=20, null=True, blank=True)
-    net_weight = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
-    gross_weight = models.DecimalField(
-        max_digits=10, decimal_places=2, default=Decimal("0.00")
-    )
+    net_weight = models.DecimalField(        max_digits=10, decimal_places=2, default=Decimal("0.00")    )
+    gross_weight = models.DecimalField(        max_digits=10, decimal_places=2, default=Decimal("0.00")    )
     discharge_date = models.DateField(null=True, blank=True)
     extraction_date = models.DateField(null=True, blank=True)
     return_date = models.DateField(null=True, blank=True)
