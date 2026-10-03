@@ -832,7 +832,7 @@ class ImportingCompany(models.Model):
         indexes = [
             models.Index(fields=["name"]),
         ]
-    
+
 
 class ProcessingPlant(models.Model):
     """_summary_
@@ -1180,7 +1180,7 @@ class Booking(models.Model):
     ets = models.DateField(null=True, blank=True)
     eta = models.DateField(null=True, blank=True)
     observations = models.TextField(null=True, blank=True)
-    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True) #quitar próximamente
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
     quoted_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
@@ -1424,4 +1424,3 @@ class CustomerInvoiceItem(models.Model):
         indexes = [
             models.Index(fields=["customer_invoice", "product"]),
         ]
-

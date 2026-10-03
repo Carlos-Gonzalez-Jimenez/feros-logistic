@@ -110,7 +110,6 @@ class ContainerFilter(filters.FilterSet):
     def filter_in_transit(self, queryset, name, value):
         if value:
             return queryset.filter(
-                booking__confirmed_at__isnull=False,
                 booking__cancelled_at__isnull=True,
                 discharge_date__isnull=True,
             )
@@ -134,13 +133,9 @@ class SaleOrderItemsFilter(filters.FilterSet):
 class BookingFilter(filters.FilterSet):
     has_invoice = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull", method="filter_has_invoice",
                                         distinct=True)
-    confirmed = filters.BooleanFilter(field_name="confirmed_at", lookup_expr="isnull", method='filter_confirmed')
 
     def filter_has_invoice(self, queryset, name, value):
         return queryset.exclude(invoices__isnull=value).filter(invoices__cancelation_date__isnull=True)
-
-    def filter_confirmed(self, queryset, name, value):
-        return queryset.exclude(confirmed_at__isnull=value).filter(cancelled_at__isnull=True)
 
     class Meta:
         model = Booking

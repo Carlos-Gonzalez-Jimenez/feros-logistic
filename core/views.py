@@ -770,6 +770,11 @@ class BookingViewSet(ProtectedResourceViewSet):
             return serializers.BookingContainerRelaterSerializer
         return serializers.BookingSerializer
 
+    @action(methods=["post"], detail=True, url_path=r"cancel")
+    def cancel(self, request, pk):
+        booking = self.get_object()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(methods=["get"], detail=True, url_path=r"containers")
     def containers(self, request, pk):
         booking = self.get_object()
