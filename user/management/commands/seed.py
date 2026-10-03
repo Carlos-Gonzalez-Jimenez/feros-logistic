@@ -315,7 +315,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start creating configuration object"))
 
         config = Config.objects.create(
-            business_name="FEROS GRUPO S.U.R.L.",
+            business_name="SUMART GRUPO S.U.R.L",
             business_address="Ave. 41 #12208 e/122 y 124, Marianao, La Habana",
             logo_light="config/logo.png",
             logo_horizontal_light="config/logo_horizontal.png",
@@ -327,8 +327,6 @@ class Command(BaseCommand):
             recover_password_url="https://localhost:3000/forgot-password",
             confirm_register_url="https://localhost:3000/confirm-register",
             login_url="https://localhost:3000/login",
-            ecommerce_commission_is_percentage=True,
-            ecommerce_commission_value=4.5,
             waha_api_url="https://whatsapp.pavelcode5426.duckdns.org",
             waha_api_user="pavelcode5426",
             waha_api_password="pavelcode5426",

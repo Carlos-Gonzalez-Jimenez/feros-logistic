@@ -2,7 +2,6 @@ from django.db.models import Q
 from django_filters import (
     ModelChoiceFilter,
     ModelMultipleChoiceFilter,
-    NumberFilter,
     CharFilter,
     BooleanFilter,
 )
@@ -20,7 +19,7 @@ from core.models import (
     InvoicePayment,
     Booking,
     Container,
-    SaleOrderItems, CustomerInvoice, ContainerType,
+    SaleOrderItems, CustomerInvoice, ContainerType, SaleOrder,
 )
 from user.models import User
 
@@ -129,12 +128,32 @@ class SaleOrderItemsFilter(filters.FilterSet):
 
     class Meta:
         model = SaleOrderItems
-        fields = ["booking","without_bill"]
+        fields = ["booking", "without_bill"]
 
 
 class BookingFilter(filters.FilterSet):
-    without_bill = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull")
+    has_invoice = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull", method="filter_has_invoice",
+                                        distinct=True)
+    confirmed = filters.BooleanFilter(field_name="confirmed_at", lookup_expr="isnull", method='filter_confirmed')
+
+    def filter_has_invoice(self, queryset, name, value):
+        return queryset.exclude(invoices__isnull=value).filter(invoices__cancelation_date__isnull=True)
+
+    def filter_confirmed(self, queryset, name, value):
+        return queryset.exclude(confirmed_at__isnull=value).filter(cancelled_at__isnull=True)
 
     class Meta:
         model = Booking
-        fields = ['without_bill']
+        fields = ['has_invoice']
+
+
+class SaleOrderFilter(filters.FilterSet):
+    has_invoice = filters.BooleanFilter(field_name="invoices", lookup_expr="isnull", method="filter_has_invoice",
+                                        distinct=True)
+
+    def filter_has_invoice(self, queryset, name, value):
+        return queryset.filter(invoices__isnull=not value, invoices__cancelation_date__isnull=True)
+
+    class Meta:
+        model = SaleOrder
+        fields = ['has_invoice']

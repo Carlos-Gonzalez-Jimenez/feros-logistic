@@ -709,6 +709,8 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
     permission_classes = [
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_sale_orders"])
     ]
+    filterset_class = filters.SaleOrderFilter
+    search_fields = ['so_number']
 
     def get_serializer_class(self):
         if self.action in ["list"]:
@@ -802,6 +804,7 @@ class ContainerViewSet(ProtectedResourceViewSet):
     ]
     serializer_class = serializers.ContainerSerializer
     filterset_class = filters.ContainerFilter
+    search_fields = ['container_number']
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -856,6 +859,7 @@ class ProviderInvoiceViewSet(ProtectedResourceViewSet):
 
     queryset = models.ProviderInvoice.objects.all()
     serializer_class = serializers.ProviderInvoiceSerializer
+    search_fields = ['bill_number']
 
 
 class CancelInvoiceView(CreateAPIView):
