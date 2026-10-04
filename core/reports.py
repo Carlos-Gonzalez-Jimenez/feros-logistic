@@ -10,6 +10,7 @@ GREY_MED = (130, 130, 130)
 GREY_LIGHT = (240, 242, 245)
 WHITE = (255, 255, 255)
 
+
 class ModernCommercialInvoicePDF(FPDF):
     def __init__(self, invoice):
         super().__init__(orientation="P", unit="mm", format="A4")
@@ -67,8 +68,13 @@ class ModernCommercialInvoicePDF(FPDF):
         self._txt(78, 5, f"No. {getattr(self.invoice, 'bill_number', '')}", align="R")
 
         self.set_xy(120, 21)
-        self._txt(78, 5, f"Fecha emisión: {self._fmt_date(getattr(self.invoice, 'emission_date', ''))}", align="R")
-        
+        self._txt(
+            78,
+            5,
+            f"Fecha emisión: {self._fmt_date(getattr(self.invoice, 'emission_date', ''))}",
+            align="R",
+        )
+
         self.set_text_color(*GREY_DARK)
         self.set_y(32)
 
@@ -89,7 +95,7 @@ class ModernCommercialInvoicePDF(FPDF):
         self.set_font("Helvetica", "I", 7)
         self.set_text_color(*GREY_MED)
         self.cell(
-            0, 5, f"Factura Comercial  |  Pagina {self.page_no()}/{{nb}}", align="C"
+            0, 5, f"Factura Comercial  |  Página {self.page_no()}/{{nb}}", align="C"
         )
 
     def _draw_info_cards(self):
@@ -146,9 +152,7 @@ class ModernCommercialInvoicePDF(FPDF):
         small_h = 22
         small_w = (186 - 2 * gap) / 3
 
-        containers = " / ".join(
-            c.container_number for c in booking.containers.all()
-        )
+        containers = " / ".join(c.container_number for c in booking.containers.all())
 
         cards = [
             (
@@ -187,9 +191,9 @@ class ModernCommercialInvoicePDF(FPDF):
 
     def _draw_items_table(self):
         headers = [
-            ("#", 8),
-            ("REF.", 20),
-            ("DESCRIPCION", 70),
+            ("No.", 8),
+            ("REFERENCIA", 20),
+            ("DESCRIPCIÓN", 70),
             ("CANTIDAD", 14),
             ("P. UNITARIO", 20),
             ("IMPORTE", 22),
