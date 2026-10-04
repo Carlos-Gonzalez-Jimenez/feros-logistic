@@ -731,7 +731,7 @@ class PresentationSerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
-class ProductProviderReadSerializer(serializers.ModelSerializer):
+class ProductProviderSerializer(serializers.ModelSerializer):
     """_summary_
 
     Args:
@@ -752,109 +752,57 @@ class ProductProviderReadSerializer(serializers.ModelSerializer):
         queryset=models.Provider.objects.filter(active=True),
         source="provider",
     )
-    presentations = serializers.SerializerMethodField(read_only=True)
-    presentations_ids = serializers.SerializerMethodField(read_only=True)
-
-    def _get_presentations(self, obj):
-        return models.Presentation.objects.filter(
-            product_providers__product_provider=obj, product_providers__active=True
-        ).all()
-
-    def get_presentations(self, obj):
-        return PresentationSerializer(self._get_presentations(obj), many=True).data
-
-    def get_presentations_ids(self, obj):
-        return self._get_presentations(obj).values_list("id", flat=True)
 
     class Meta:
         model = models.ProductProvider
-        fields = [
-            "id",
-            "product",
-            "product_id",
-            "provider",
-            "provider_id",
-            "presentations",
-            "presentations_ids",
-        ]
+        fields = serializers.ALL_FIELDS
 
 
-class ProductProviderWriteSerializer(ProductProviderReadSerializer):
-    """_summary_
+class ProductProviderPresentationReadSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField(read_only=True)
+    provider = serializers.SerializerMethodField(read_only=True)
 
-    Args:
-        serializers (_type_): _description_
-    """
+    product_id = serializers.SerializerMethodField(read_only=True)
+    provider_id = serializers.SerializerMethodField(read_only=True)
 
+    format = serializers.SerializerMethodField()
+    presentations = PresentationSerializer(many=True, read_only=True)
     presentations_ids = serializers.PrimaryKeyRelatedField(
-        required=True,
-        many=True,
-        write_only=True,
-        queryset=models.Presentation.objects.all(),
+        queryset=models.Presentation.objects.all(), source='presentations', many=True
     )
 
-    class Meta:
-        model = models.ProductProvider
-        fields = [
-            "id",
-            "product",
-            "product_id",
-            "provider",
-            "provider_id",
-            "presentations",
-            "presentations_ids",
-        ]
-
-    def create(self, validated_data):
-        with transaction.atomic():
-            presentations = validated_data.pop("presentations_ids", None)
-            product_provider = models.ProductProvider.objects.create(**validated_data)
-            if presentations:
-                models.ProductProviderPresentation.objects.bulk_create(
-                    [
-                        models.ProductProviderPresentation(
-                            product_provider=product_provider, presentation=presentation
-                        )
-                        for presentation in presentations
-                    ]
-                )
-            return product_provider
-
-    def update(self, instance, validated_data):
-        with transaction.atomic():
-            presentations = validated_data.pop("presentations_ids", None)
-            product_provider = super().update(instance, validated_data)
-            if presentations:
-                models.ProductProviderPresentation.objects.filter(
-                    product_provider=product_provider
-                ).update(active=False)
-                models.ProductProviderPresentation.objects.filter(
-                    product_provider=product_provider, presentation__in=presentations
-                ).update(active=True)
-
-                current_presentations = self.get_presentations_ids(product_provider)
-                for presentation in presentations:
-                    if not presentation.pk in current_presentations:
-                        models.ProductProviderPresentation.objects.create(
-                            product_provider=product_provider, presentation=presentation
-                        )
-            return instance
-
-
-class ProductProviderPresentationSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField(read_only=True)
-    presentation = PresentationSerializer(read_only=True)
-    format = serializers.SerializerMethodField()
-
     def get_format(self, obj):
-        return f"{obj.product_provider.product.name} - {obj.presentation.name}"
+        return str(obj)
 
     def get_product(self, obj):
         return ProductReadMinimalSerializer(obj.product_provider.product).data
 
+    def get_provider(self, obj):
+        return ProviderSerializer(obj.product_provider.provider).data
+
+    def get_product_id(self, obj):
+        return obj.product_provider.product_id
+
+    def get_provider_id(self, obj):
+        return obj.product_provider.provider_id
+
     class Meta:
         model = models.ProductProviderPresentation
-        exclude = ["active", "product_provider"]
+        exclude = ["product_provider"]
+
+
+class ProductProviderPresentationWriteSerializer(ProductProviderPresentationReadSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.all(), write_only=True)
+    provider_id = serializers.PrimaryKeyRelatedField(queryset=models.Provider.objects.all(), write_only=True)
+
+    def _get_or_create_product_provider(self, product, provider):
+        pp, _ = models.ProductProvider.objects.get_or_create(product=product, provider=provider)
+        return pp
+
+    def validate(self, attrs):
+        product, provider = attrs.pop('product_id'), attrs.pop('provider_id')
+        attrs['product_provider'] = self._get_or_create_product_provider(product, provider)
+        return attrs
 
 
 class ConfigSerializer(serializers.ModelSerializer):
@@ -1003,7 +951,7 @@ class ImportingCompanySerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
-    product = ProductProviderPresentationSerializer(read_only=True)
+    product = ProductProviderPresentationReadSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ProductProviderPresentation.objects.all(), source="product"
     )
@@ -1065,7 +1013,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderItemsSerializer(serializers.ModelSerializer):
-    product = ProductProviderPresentationSerializer(read_only=True)
+    product = ProductProviderPresentationReadSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ProductProviderPresentation.objects.all(), source="product"
     )
@@ -1079,7 +1027,7 @@ class SaleOrderItemsSerializer(serializers.ModelSerializer):
     format = serializers.SerializerMethodField()
 
     def get_format(self, obj):
-        return f"{obj.sale_order} - {obj.sale_order.provider} | {obj.product.product_provider.product.name} - {obj.product.presentation.name}"
+        return f"{obj.sale_order} - {str(obj.product)}"
 
     def get_amount(self, obj):
         return obj.quantity * obj.unit_price
@@ -1265,7 +1213,7 @@ class ContainerItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
         queryset=models.ProductProviderPresentation.objects.all(), source="product"
     )
-    product = ProductProviderPresentationSerializer(read_only=True)
+    product = ProductProviderPresentationReadSerializer(read_only=True)
     sale_order_item_id = serializers.PrimaryKeyRelatedField(
         queryset=models.SaleOrderItems.objects.all(), source="sale_order_item",
     )
@@ -1379,7 +1327,7 @@ class BookingContainerRelaterSerializer(serializers.Serializer):
 
 
 class CustomerInvoiceItem(serializers.ModelSerializer):
-    product = ProductProviderPresentationSerializer(read_only=True)
+    product = ProductProviderPresentationReadSerializer(read_only=True)
 
     class Meta:
         model = models.CustomerInvoiceItem

@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "dashboard.apps.DashboardConfig",
     "blog.apps.BlogConfig",
     "user.apps.UserConfig",
+    "file_manager.apps.FileManagerConfig"
 ]
 
 MIDDLEWARE = [

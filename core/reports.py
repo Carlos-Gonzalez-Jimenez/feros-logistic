@@ -162,7 +162,7 @@ class ModernCommercialInvoicePDF(FPDF):
             ("CONTENEDORES", containers or "-"),
             (
                 "INCOTERM / MONEDA",
-                f"{getattr(incoterms, 'abbreviation', "")} {port_discharge.name} |  {currency}\n",
+                f"{getattr(incoterms, 'abbreviation', '')} {port_discharge.name} |  {currency}\n",
             ),
         ]
 

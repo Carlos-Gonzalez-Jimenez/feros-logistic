@@ -85,7 +85,7 @@ class ProductProviderPresentationFilter(filters.FilterSet):
 
     class Meta:
         model = ProductProviderPresentation
-        fields = ["provider"]
+        fields = ["provider", "active"]
 
 
 class InvoicePaymentFilter(filters.FilterSet):

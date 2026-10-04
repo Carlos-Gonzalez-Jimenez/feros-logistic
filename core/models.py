@@ -556,13 +556,14 @@ class ProductProviderPresentation(models.Model):
     """
 
     product_provider = models.ForeignKey(ProductProvider, on_delete=models.CASCADE)
-    presentation = models.ForeignKey(
-        Presentation, related_name="product_providers", on_delete=models.PROTECT
-    )
+    presentations = models.ManyToManyField(Presentation)
+    description = models.TextField(blank=True, null=True)
     active = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f"{self.product_provider.product.name} | {', '.join([p.name for p in self.presentations.all()])}"
+
     class Meta(PermissionsMeta.Meta):
-        unique_together = ["product_provider", "presentation"]
         verbose_name = "Product Provider Presentation"
         verbose_name_plural = "Product Provider Presentations"
         ordering = ["-id"]
@@ -1092,10 +1093,10 @@ class Invoice(models.Model):
 
     def sync_pending_amount(self):
         self.pending_amount = (
-            self.total_amount
-            - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
-                "pending_amount"
-            ]
+                self.total_amount
+                - self.payments.aggregate(pending_amount=Sum("amount_paid", default=0))[
+                    "pending_amount"
+                ]
         )
         if self.pending_amount <= 0:
             self.payment_date = now().date()
@@ -1180,7 +1181,7 @@ class Booking(models.Model):
     ets = models.DateField(null=True, blank=True)
     eta = models.DateField(null=True, blank=True)
     observations = models.TextField(null=True, blank=True)
-    confirmed_at = models.DateTimeField(null=True, blank=True) #quitar próximamente
+    confirmed_at = models.DateTimeField(null=True, blank=True)  # quitar próximamente
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
     quoted_amount = models.DecimalField(

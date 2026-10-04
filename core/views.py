@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import Prefetch
 from django.db.models import ProtectedError
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from rest_framework import viewsets, status
@@ -25,7 +26,6 @@ from .permissions import (
     CustomPermissionFactory,
     ReadOnlyPermission,
 )
-from django.http import HttpResponse
 from .reports import generate_commercial_invoice_pdf
 
 
@@ -474,27 +474,18 @@ class ProductProviderViewSet(ProtectedResourceViewSet):
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
     ]
     queryset = models.ProductProvider.objects.all()
+    serializer_class = serializers.ProductProviderSerializer
+
+
+class ProductProviderPresentationViewSet(ProductProviderViewSet):
+    permission_classes = [ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])]
+    queryset = models.ProductProviderPresentation.objects.all()
+    filterset_class = filters.ProductProviderPresentationFilter
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
-            return serializers.ProductProviderWriteSerializer
-        return serializers.ProductProviderReadSerializer
-
-
-class ProductProviderPresentationsListAPIView(ListAPIView):
-    """_summary_
-
-    Args:
-        ListAPIView (_type_): _description_
-    """
-
-    permission_classes = [
-        ReadOnlyPermission | CustomPermissionFactory(["core.manage_presentation"])
-    ]
-    serializer_class = serializers.ProductProviderPresentationSerializer
-    queryset = models.ProductProviderPresentation.objects.filter(active=True).all()
-    filterset_class = filters.ProductProviderPresentationFilter
-    pagination_class = None
+            return serializers.ProductProviderPresentationWriteSerializer
+        return serializers.ProductProviderPresentationReadSerializer
 
 
 class ProductSlugView(ListAPIView):
@@ -774,6 +765,9 @@ class BookingViewSet(ProtectedResourceViewSet):
     @action(methods=["post"], detail=True, url_path=r"cancel")
     def cancel(self, request, pk):
         booking = self.get_object()
+        if not booking.cancelled_at:
+            booking.cancelled_at = now()
+            booking.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=["get"], detail=True, url_path=r"containers")
@@ -929,9 +923,7 @@ class CustomerInvoiceViewSet(ProtectedResourceViewSet):
         detail=True,
         methods=["get"],
         url_path="generate-invoice",
-        permission_classes=[
-            IsAuthenticatedOrReadOnly,
-        ],
+        permission_classes=[IsAuthenticatedOrReadOnly, ],
     )
     def generate_customer_invoice_pdf(self, request, pk=None):
 

@@ -49,6 +49,7 @@ urlpatterns = (
         path("cms/", include("cms.urls")),
         path("dashboard/", include("dashboard.urls")),
         path("blog/", include("blog.urls")),
+        path("file-manager/", include("file_manager.urls")),
         path(
             "swagger/",
             SpectacularSwaggerView.as_view(url_name="schema"),

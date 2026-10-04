@@ -47,6 +47,7 @@ from core.models import (
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
 
+
 # python manage.py seed
 
 
@@ -949,6 +950,7 @@ class Command(BaseCommand):
                     "33 Lbs",
                     "40 Lbs",
                 ],
+                "Descripcion del producto"
             ),
             (
                 "Leche en polvo",
@@ -957,6 +959,7 @@ class Command(BaseCommand):
                     "15 bolsas de 1 Kg",
                     "Bolsa de 25 Kgs",
                 ],
+                "Descripcion del producto"
             ),
             (
                 "Atún en aceite",
@@ -964,20 +967,23 @@ class Command(BaseCommand):
                 [
                     "48 latas x 170 grs",
                 ],
+                "Descripcion del producto"
             ),
         ]
 
         for _product_provider_presentation in product_provider_presentations:
             product = Product.objects.get(name=_product_provider_presentation[0])
             provider = Provider.objects.get(name=_product_provider_presentation[1])
-            product_provider = ProductProvider.objects.create(
+            product_provider, _ = ProductProvider.objects.get_or_create(defaults=dict(
                 product=product, provider=provider
+            ), product=product, provider=provider)
+            product_provider_presentation = ProductProviderPresentation.objects.create(
+                product_provider=product_provider,
+                description=_product_provider_presentation[3],
             )
-            for presentation in _product_provider_presentation[2]:
-                ProductProviderPresentation.objects.create(
-                    product_provider=product_provider,
-                    presentation=Presentation.objects.get(name=presentation),
-                )
+            product_provider_presentation.presentations.set(
+                Presentation.objects.filter(name__in=_product_provider_presentation[2]).all()
+            )
 
     def create_purchase_order(self):
         """Create purchase orders"""
