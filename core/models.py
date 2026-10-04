@@ -1180,7 +1180,7 @@ class Booking(models.Model):
     ets = models.DateField(null=True, blank=True)
     eta = models.DateField(null=True, blank=True)
     observations = models.TextField(null=True, blank=True)
-    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True) #quitar próximamente
     cancelled_at = models.DateTimeField(null=True, blank=True)
 
     quoted_amount = models.DecimalField(

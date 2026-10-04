@@ -89,11 +89,9 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         if shipping_company_id is not None:
             containers = containers.filter(booking__shipping_company_id=shipping_company_id)
 
-        active_bookings = bookings.filter(confirmed_at__date__gte=start_date, cancelled_at__isnull=True) \
-            .order_by("-confirmed_at")
+        active_bookings = bookings.filter(cancelled_at__isnull=True)
 
         containers_in_transit = containers.filter(
-            booking__confirmed_at__isnull=False,
             booking__cancelled_at__isnull=True,
             discharge_date__isnull=True,
             booking__eta__gte=start_date,
