@@ -8,8 +8,16 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
 from cms.models import BlockMEDIA
+from file_manager.models import File
 from user.models import User
 from .generics import PermissionsMeta
+
+
+class HasFileModel(models.Model):
+    files = models.ManyToManyField(File)
+
+    class Meta:
+        abstract = True
 
 
 class Customer(models.Model):
@@ -866,7 +874,7 @@ class ProcessingPlant(models.Model):
         ]
 
 
-class PurchaseOrder(models.Model):
+class PurchaseOrder(HasFileModel):
     """_summary_
 
     Args:
@@ -938,7 +946,7 @@ class PurchaseOrderItem(models.Model):
         ]
 
 
-class SaleOrder(models.Model):
+class SaleOrder(HasFileModel):
     """_summary_
 
     Args:
@@ -1044,7 +1052,7 @@ class SaleOrderItems(models.Model):
         ]
 
 
-class Invoice(models.Model):
+class Invoice(HasFileModel):
     """_summary_
 
     Args:
@@ -1111,7 +1119,7 @@ class Invoice(models.Model):
         self.save()
 
 
-class InvoicePayment(models.Model):
+class InvoicePayment(HasFileModel):
     """_summary_
 
     Args:
@@ -1152,7 +1160,7 @@ class InvoicePayment(models.Model):
         ]
 
 
-class Booking(models.Model):
+class Booking(HasFileModel):
     """_summary_
 
     Args:
@@ -1162,6 +1170,14 @@ class Booking(models.Model):
         _type_: _description_
     """
 
+    class BookingStatus(models.TextChoices):
+        Active = "active", "Activo"
+        ReadyToShip = "ready_to_ship", "Listo para salir"
+        In_Transit = "in_transit", "En tránsito"
+        Arrived = "arrived", "Arribado"
+        Canceled = "canceled", "Cancelado"
+
+    status = models.CharField(max_length=50, choices=BookingStatus.choices, default=BookingStatus.Active)
     booking_number = models.CharField(max_length=30)
     port_loading = models.ForeignKey(
         Port, on_delete=models.PROTECT, related_name="port_loading"
@@ -1211,7 +1227,7 @@ class Booking(models.Model):
         ]
 
 
-class Container(models.Model):
+class Container(HasFileModel):
     """_summary_
 
     Args:

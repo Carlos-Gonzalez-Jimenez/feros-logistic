@@ -1,7 +1,17 @@
+import os
 import uuid
 
-from django.conf import settings
 from django.db import models
+from django.utils.text import get_valid_filename
+
+
+def file_upload_path(instance: "File", filename: str) -> str:
+    filename = get_valid_filename(os.path.basename(filename))
+    if instance.folder:
+        folder_path = instance.folder.path.lstrip("/")
+    else:
+        folder_path = ""
+    return os.path.join("files", folder_path, filename) if folder_path else filename
 
 
 class Folder(models.Model):
@@ -30,7 +40,7 @@ class Folder(models.Model):
 class File(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    file = models.FileField()
+    file = models.FileField(upload_to=file_upload_path)
     size = models.PositiveBigIntegerField(default=0, editable=False)
     mime_type = models.CharField(max_length=100, blank=True)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name="files", null=True, blank=True)

@@ -15,8 +15,17 @@ from cms.serializers import (
 )
 from core import models
 from core.services import NotificationService
+from file_manager.models import File
+from file_manager.serializers import FileSerializer
 from user.models import User
 from user.serializers import UserMinimalSerializer
+
+
+class HasFileSerializer(serializers.Serializer):
+    files = FileSerializer(many=True, read_only=True)
+    files_ids = serializers.PrimaryKeyRelatedField(
+        queryset=File.objects.all(), many=True, source='files', required=False
+    )
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -983,6 +992,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     user = UserMinimalSerializer(read_only=True)
     purchase_order_items = PurchaseOrderItemSerializer(many=True)
 
+    files = FileSerializer(many=True, read_only=True)
+    files_ids = serializers.PrimaryKeyRelatedField(queryset=File.objects.all(), many=True, source='files')
+
     def create_or_update_order_items(self, purchase_order, purchase_order_items):
         models.PurchaseOrderItem.objects.filter(purchase_order=purchase_order).delete()
         models.PurchaseOrderItem.objects.bulk_create(
@@ -1074,7 +1086,7 @@ class SaleOrderMinimalSerializer(serializers.ModelSerializer):
         exclude = ["purchase_order"]
 
 
-class SaleOrderSerializer(SaleOrderMinimalSerializer):
+class SaleOrderSerializer(HasFileSerializer, SaleOrderMinimalSerializer):
     sale_order_items = SaleOrderItemsSerializer(many=True)
 
     def create_or_update_order_items(self, sale_order, sale_order_items):
@@ -1107,7 +1119,7 @@ class SaleOrderSerializer(SaleOrderMinimalSerializer):
         return sale_order
 
 
-class InvoiceSerializer(serializers.ModelSerializer):
+class InvoiceSerializer(HasFileSerializer, serializers.ModelSerializer):
     payment_agreement = PaymentAgreementSerializer(read_only=True)
     payment_agreement_id = serializers.PrimaryKeyRelatedField(
         queryset=models.PaymentAgreement.objects.all(), source="payment_agreement"
@@ -1205,7 +1217,7 @@ class BookingMinimalSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
 
-class BookingSerializer(BookingMinimalSerializer):
+class BookingSerializer(HasFileSerializer, BookingMinimalSerializer):
     sale_orders = SaleOrderMinimalSerializer(many=True, read_only=True)
 
 
@@ -1244,8 +1256,7 @@ class ContainerMinimalSerializer(serializers.ModelSerializer):
         fields = serializers.ALL_FIELDS
 
 
-class ContainerSerializer(ContainerMinimalSerializer):
-    # booking = BookingMinimalSerializer(read_only=True)
+class ContainerSerializer(HasFileSerializer, ContainerMinimalSerializer):
     items = ContainerItemSerializer(many=True)
 
     def set_net_weight(self, validated_data, items):

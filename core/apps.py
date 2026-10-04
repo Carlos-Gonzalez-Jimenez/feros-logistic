@@ -7,7 +7,9 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         from django.db.models.signals import post_migrate
+        import core.signals
         post_migrate.connect(self.add_schedules, sender=self, dispatch_uid='core.add_schedules')
+
 
     def add_schedules(self, **kwargs):
         from django_q.tasks import schedule
@@ -16,5 +18,10 @@ class CoreConfig(AppConfig):
         schedule(
             'core.task_schedules.update_invoice_status',
             name='update_invoice_status',
+            schedule_type=Schedule.MINUTES, minutes=30
+        )
+        schedule(
+            'core.task_schedules.update_booking_status',
+            name='update_booking_status',
             schedule_type=Schedule.MINUTES, minutes=30
         )

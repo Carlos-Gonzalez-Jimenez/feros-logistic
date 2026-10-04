@@ -767,6 +767,7 @@ class BookingViewSet(ProtectedResourceViewSet):
         booking = self.get_object()
         if not booking.cancelled_at:
             booking.cancelled_at = now()
+            booking.status = models.Booking.BookingStatus.Canceled
             booking.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
