@@ -947,9 +947,6 @@ class CustomerInvoiceViewSet(ProtectedResourceViewSet):
             ),
             pk=pk,
         )
-        for invoice_item in customer_invoice.invoice_items.all():
-            print("entré")
-            print(invoice_item.gross_weight)
         pdf_bytes = generate_commercial_invoice_pdf(customer_invoice)
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = (

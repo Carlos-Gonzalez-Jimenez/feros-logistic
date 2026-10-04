@@ -1,312 +1,338 @@
-from decimal import Decimal
 from fpdf import FPDF
-from fpdf.enums import XPos, YPos
 from .models import Config
 from .serializers import ConfigSerializer
 
+PRIMARY = (13, 71, 161)
+PRIMARY_LIGHT = (227, 236, 250)
+ACCENT = (255, 111, 0)
+GREY_DARK = (55, 55, 55)
+GREY_MED = (130, 130, 130)
+GREY_LIGHT = (240, 242, 245)
+WHITE = (255, 255, 255)
 
-class CommercialInvoicePDF(FPDF):
-    """
-    Factura Comercial SUMART
-    """
-
-    cols = [
-        ("No ITEM", 13, "C"),
-        ("Referencia", 22, "C"),
-        ("Descripción", 45, "L"),
-        ("País Origen", 18, "C"),
-        ("Cant.\nArtículos", 14, "C"),
-        ("Cajas/Art\nículo", 14, "C"),
-        ("Precio\nUnitario\n(USD)", 18, "C"),
-        ("Importe\n(USD)", 20, "C"),
-        ("Peso Neto Total\ndel Ítem (Kgs)", 22, "C"),
-        ("Peso Bruto\nTotal del Ítem (Kgs)", 22, "C"),
-        ("Unidad de\nMedida", 15, "C"),
-        ("Paratida\nArancelaria", 20, "C"),
-        ("Número del\nbulto", 15, "C"),
-        ("Cantidad de\nBulto", 16, "C"),
-    ]
-    line_h = 5.5
-
-    def __init__(self):
-        super().__init__(orientation="L", unit="mm", format="A4")
-        self.set_auto_page_break(auto=True, margin=10)
-        self.set_margins(5, 5, 5)
-        self.set_font("Helvetica", "", 8)
+class ModernCommercialInvoicePDF(FPDF):
+    def __init__(self, invoice):
+        super().__init__(orientation="P", unit="mm", format="A4")
+        self.invoice = invoice
         self.config = Config.objects.first()
         self.config_data = ConfigSerializer(self.config).data
-        self.add_page()
-        self.set_auto_page_break(auto=True, margin=25)
+        self.logo_path = self.config.logo_dark.path
+        self.set_auto_page_break(auto=True, margin=18)
+        self.set_margins(12, 12, 12)
+
+    @staticmethod
+    def _fmt_date(value):
+        if not value:
+            return ""
+        if isinstance(value, str):
+            return value
+        return value.strftime("%d/%m/%Y")
+
+    @staticmethod
+    def _fmt(value, decimals=2):
+        if value in (None, ""):
+            return "0.00"
+        try:
+            return f"{float(value):,.{decimals}f}"
+        except (TypeError, ValueError):
+            return str(value)
+
+    def _txt(self, w, h, text, **kwargs):
+        text = str(text)
+        self.cell(w, h, text, **kwargs)
+
+    def _multi(self, w, h, text, **kwargs):
+        text = str(text)
+        self.multi_cell(w, h, text, **kwargs)
 
     def header(self):
-        logo = self.config.logo_dark
-        logo_path = logo.path
-        logo_w = 20
-        logo_h = 20
-        logo_x = self.w - self.r_margin - logo_w
-        logo_y = self.t_margin
-        self.image(logo_path, x=logo_x, y=logo_y, w=logo_w, h=logo_h)
-        self.ln(logo_y + logo_h - self.get_y() + 2)
+        self.set_fill_color(*PRIMARY)
+        self.rect(0, 0, 210, 26, style="F")
+
+        if self.logo_path:
+            try:
+                self.image(self.logo_path, x=12, y=0, h=40)
+            except Exception:
+                self._draw_brand_text()
+        else:
+            self._draw_brand_text()
+
+        self.set_text_color(*WHITE)
+        self.set_font("Helvetica", "B", 18)
+        self.set_xy(120, 6)
+        self.cell(78, 8, "FACTURA COMERCIAL", align="R")
+
+        self.set_font("Helvetica", "", 10)
+        self.set_xy(120, 15)
+        self._txt(78, 5, f"No. {getattr(self.invoice, 'bill_number', '')}", align="R")
+
+        self.set_xy(120, 21)
+        self._txt(78, 5, f"Fecha emisión: {self._fmt_date(getattr(self.invoice, 'emission_date', ''))}", align="R")
+        
+        self.set_text_color(*GREY_DARK)
+        self.set_y(32)
+
+    def _draw_brand_text(self):
+        self.set_text_color(*WHITE)
+        self.set_font("Helvetica", "B", 20)
+        self.set_xy(14, 6)
+        self.cell(80, 8, "SUMART", align="L")
+        self.set_font("Helvetica", "", 8)
+        self.set_xy(14, 15)
+        self.cell(80, 5, "SUMART GRUPO S.U.R.L.", align="L")
 
     def footer(self):
-        pass
-
-    def _cell(self, w, h, text, align="C", bold=False, border=1, fill=False):
-        self.set_font("Helvetica", "B" if bold else "", 8)
+        self.set_y(-12)
+        self.set_draw_color(*GREY_MED)
+        self.set_line_width(0.2)
+        self.line(12, self.get_y() - 1, 198, self.get_y() - 1)
+        self.set_font("Helvetica", "I", 7)
+        self.set_text_color(*GREY_MED)
         self.cell(
-            w,
-            h,
-            text,
-            border=border,
-            align=align,
-            fill=fill,
-            new_x=XPos.RIGHT,
-            new_y=YPos.TOP,
+            0, 5, f"Factura Comercial  |  Pagina {self.page_no()}/{{nb}}", align="C"
         )
 
-    def _label_value_row(self, label, value, label_w, value_w, h=None):
-        h = h or self.line_h
+    def _draw_info_cards(self):
+        booking = getattr(self.invoice, "booking", None)
+        customer = getattr(self.invoice, "customer", None)
+        importing_company = getattr(self.invoice, "importing_company", None)
+        currency = getattr(getattr(self.invoice, "currency", None), "initials", "USD")
+        incoterms = getattr(self.invoice, "incoterms", None)
+        port_discharge = booking.port_discharge
+        shipping_company_invoices = self.invoice.booking.shipping_company_invoices
+        bl = shipping_company_invoices[0].bl_number
+
+        y0 = self.get_y()
+        card_h = 30
+        card_w = 59
+        gap = 4
+
+        self._draw_card(12, y0, card_w, card_h, "PROVEEDOR / EXPORTADOR")
+        self.set_xy(16, y0 + 8)
+        self.set_font("Helvetica", "B", 10)
+        self.set_text_color(*GREY_DARK)
+        self._multi(card_w - 8, 4.5, getattr(self.config, "business_name", ""))
         self.set_font("Helvetica", "", 8)
-        self.cell(label_w, h, f" {label}", border=1, align="L")
+        self.set_text_color(*GREY_MED)
+        address = getattr(self.config, "business_address", "")
+        self.set_x(16)
+        self._multi(card_w - 8, 4, address)
+
+        x_importer = 12 + card_w + gap
+        self._draw_card(x_importer, y0, card_w, card_h, "IMPORTADOR")
+        self.set_xy(x_importer + 4, y0 + 8)
+        self.set_font("Helvetica", "B", 10)
+        self.set_text_color(*GREY_DARK)
+        self._multi(card_w - 8, 4.5, getattr(importing_company, "name", ""))
         self.set_font("Helvetica", "", 8)
-        self.cell(
-            value_w,
-            h,
-            f"{value if value is not None else ''}",
-            border=1,
-            align="L",
-            new_x=XPos.LMARGIN,
-            new_y=YPos.NEXT,
+        self.set_text_color(*GREY_MED)
+        address = getattr(importing_company, "address", "")
+        self.set_x(x_importer + 4)
+        self._multi(card_w - 8, 4, address)
+
+        x_client = 76 + card_w + gap
+        self._draw_card(x_client, y0, card_w, card_h, "CLIENTE / CONSIGNATARIO")
+        self.set_xy(x_client + 4, y0 + 8)
+        self.set_font("Helvetica", "B", 10)
+        self.set_text_color(*GREY_DARK)
+        self._multi(card_w - 8, 4.5, getattr(customer, "business_name", ""))
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(*GREY_MED)
+        self.set_x(x_client + 4)
+        self._multi(card_w - 8, 4, getattr(customer, "address", ""))
+        self.set_y(y0 + card_h + 4)
+
+        y1 = self.get_y()
+        small_h = 22
+        small_w = (186 - 2 * gap) / 3
+
+        containers = " / ".join(
+            c.container_number for c in booking.containers.all()
         )
 
-
-def generate_commercial_invoice_pdf(commercial_invoice) -> bytes:
-
-    pdf = CommercialInvoicePDF()
-
-    page_w = pdf.w - pdf.l_margin - pdf.r_margin
-    x0 = pdf.l_margin
-    y0 = pdf.get_y()
-
-    pdf.rect(x0, y0, page_w, 18)
-
-    pdf.set_text_color(0, 0, 0)
-    pdf.set_xy(x0, y0 + 18)
-
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.cell(
-        page_w,
-        7,
-        "FACTURA COMERCIAL",
-        border=1,
-        align="C",
-        new_x=XPos.LMARGIN,
-        new_y=YPos.NEXT,
-    )
-
-    y_block = pdf.get_y()
-    label_w = 38
-    value_w = 68
-    block_w = label_w + value_w
-    right_col_w = page_w - block_w
-
-    containers = ""
-    for container in commercial_invoice.containers.all():
-        containers += f" {container.container_number} /"
-
-    total_packages = 0
-    total_fob_amount = 0
-    sale_orders = commercial_invoice.booking.sale_orders.all()
-    for sale_order in sale_orders:
-        packages = sum(item.quantity for item in sale_order.sale_order_items.all())
-        fob_amount = sum(invoice.total_amount for invoice in sale_order.invoices.all())
-        total_packages += packages
-        total_fob_amount += fob_amount
-
-    total_freight = sum(
-        invoice.total_amount for invoice in commercial_invoice.booking.invoices.all()
-    )
-
-    total_gross_weight = sum(
-        invoice_item.gross_weight
-        for invoice_item in commercial_invoice.invoice_items.all()
-    )
-    total_net_weight = sum(
-        invoice_item.net_weight
-        for invoice_item in commercial_invoice.invoice_items.all()
-    )
-
-    rows = [
-        ("Nombre del Proveedor:", pdf.config.business_name),
-        ("Importador:", commercial_invoice.importing_company.name),
-        ("Cliente:", commercial_invoice.customer.business_name),
-        ("Contrato:", commercial_invoice.contract),
-        ("B/L:", commercial_invoice.booking.shipping_company_invoices[0].bl_number),
-        ("Contenedor(es):", containers),
-        ("Condición de Entrega:", commercial_invoice.incoterms.abbreviation),
-        ("Total de Bultos:", total_packages),
-        ("Importe FOB:", total_fob_amount),
-        ("Peso Bruto:", total_gross_weight),
-        ("Peso Neto:", total_net_weight),
-        ("Flete:", total_freight),
-        ("Seguro:", commercial_invoice.booking.cargo_insurance),
-        (
-            "Importe CIF:",
-            total_fob_amount
-            + total_freight
-            + commercial_invoice.booking.cargo_insurance,
-        ),
-        ("Moneda:", getattr(commercial_invoice, "currency", "USD")),
-        ("Núm. de Factura:", commercial_invoice.bill_number),
-    ]
-
-    block_start_y = y_block
-    total_block_h = len(rows) * pdf.line_h
-
-    pdf.set_xy(x0 + block_w, y_block)
-    date_str = f"Fecha: {commercial_invoice.emission_date if commercial_invoice.emission_date else ''}"
-    pdf.set_font("Helvetica", "", 8)
-    pdf.cell(
-        right_col_w,
-        7,
-        date_str,
-        border=1,
-        align="R",
-        new_x=XPos.LMARGIN,
-        new_y=YPos.TOP,
-    )
-
-    pdf.set_xy(x0 + block_w, y_block + 7)
-    pdf.cell(
-        right_col_w, total_block_h - 7, "", border=1, new_x=XPos.LMARGIN, new_y=YPos.TOP
-    )
-
-    for label, value in rows:
-        # pdf.set_xy(x0, pdf.get_y() if False else None)
-
-        y = pdf.get_y()
-        pdf.set_xy(x0, y)
-        pdf._label_value_row(label, value, label_w, value_w)
-
-    pdf.ln(1)
-
-    header_y = pdf.get_y()
-    header_h = 12
-    pdf.set_xy(x0, header_y)
-    pdf.set_font("Helvetica", "B", 7)
-    for title, w, _align in pdf.cols:
-        x_before = pdf.get_x()
-        y_before = pdf.get_y()
-        pdf.multi_cell(
-            w, 4, title, border=1, align="C", new_x=XPos.RIGHT, new_y=YPos.TOP
-        )
-        pdf.set_xy(x_before + w, y_before)
-    pdf.set_xy(x0, header_y + header_h)
-
-    row_h = 14
-    items = list(commercial_invoice.invoice_items.all())
-    for item in items:
-        y = pdf.get_y()
-        if y + row_h > pdf.h - 20:
-            pdf.add_page()
-            y = pdf.get_y()
-
-        product = getattr(item.product, "display_name", None) or str(item.product)
-        row_data = [
-            ("1", "C"),
-            (getattr(item, "reference", ""), "C"),
-            (product, "L"),
+        cards = [
             (
-                getattr(item, "country_of_origin", getattr(item, "origin_country", "")),
-                "C",
+                "CONTRATO / B/L",
+                f"Contrato: {getattr(self.invoice, 'contract', '')}\n" f"B/L: {bl}",
             ),
-            (str(item.quantity), "C"),
-            (str(getattr(item, "boxes", item.quantity)), "C"),
-            (item.unit_price, "C"),
-            (item.amount, "C"),
-            (item.net_weight, "C"),
-            (item.gross_weight, "C"),
-            (str(getattr(item, "measurement_unit", "")), "C"),
-            (getattr(item, "tariff_code", ""), "C"),
-            ("", "C"),
-            (str(getattr(item, "quantity_per_package", item.quantity)), "C"),
+            ("CONTENEDORES", containers or "-"),
+            (
+                "INCOTERM / MONEDA",
+                f"{getattr(incoterms, 'abbreviation', "")} {port_discharge.name} |  {currency}\n",
+            ),
         ]
-        pdf.set_xy(x0, y)
-        for (title, w, _a), (text, align) in zip(pdf.cols, row_data):
-            pdf.set_font("Helvetica", "", 7)
-            pdf.multi_cell(
-                w,
-                row_h,
-                str(text),
-                border=1,
-                align=align,
-                new_x=XPos.RIGHT,
-                new_y=YPos.TOP,
-            )
-        pdf.set_xy(x0, y + row_h)
 
-    y = pdf.get_y()
+        for i, (title, value) in enumerate(cards):
+            x = 12 + i * (small_w + gap)
+            self._draw_card(x, y1, small_w, small_h, title)
+            self.set_xy(x + 4, y1 + 8)
+            self.set_font("Helvetica", "", 8)
+            self.set_text_color(*GREY_DARK)
+            self._multi(small_w - 8, 4, value)
 
-    w_importe = pdf.cols[7][1]
-    w_pneto = pdf.cols[8][1]
-    w_pbruto = pdf.cols[9][1]
-    w_cant = pdf.cols[13][1]
-    w_label = page_w - (w_importe + w_pneto + w_pbruto + w_cant)
+        self.set_y(y1 + small_h + 6)
 
-    totals = [
-        (
-            "Total FOB USD",
-            total_fob_amount,
-            total_net_weight,
-            total_gross_weight,
-            total_packages,
-        ),
-        (
-            "Seguro USD",
-            commercial_invoice.booking.cargo_insurance,
-            "",
-            "",
-            "",
-        ),
-        (
-            "Flete",
-            total_freight,
-            "",
-            "",
-            "",
-        ),
-        (
-            "Importe CIF USD",
-            total_fob_amount
-            + total_freight
-            + commercial_invoice.booking.cargo_insurance,
-            "",
-            "",
-            "",
-        ),
-    ]
+    def _draw_card(self, x, y, w, h, title, fill=GREY_LIGHT):
+        self.set_fill_color(*fill)
+        self.set_draw_color(*GREY_LIGHT)
+        self.rect(x, y, w, h, style="F")
 
-    # for label, imp, pn, pb, cant in totals:
-    #     pdf.set_xy(x0, pdf.get_y())
-    #     pdf.set_font("Helvetica", "B", 8)
-    #     pdf.cell(w_label, pdf.line_h, label, border=1, align="R")
-    #     # pdf.cell(w_importe, pdf.line_h, imp, border=1, align="C")
-    #     pdf.cell(w_pneto, pdf.line_h, pn, border=1, align="C")
-    #     pdf.cell(w_pbruto, pdf.line_h, pb, border=1, align="C")
-    #     pdf.cell(
-    #         pdf.cols[10][1] + pdf.cols[11][1] + pdf.cols[12][1],
-    #         pdf.line_h,
-    #         "",
-    #         border=1,
-    #     )
-    #     pdf.cell(
-    #         w_cant,
-    #         pdf.line_h,
-    #         str(cant),
-    #         border=1,
-    #         align="C",
-    #         new_x=XPos.LMARGIN,
-    #         new_y=YPos.NEXT,
-    #     )
+        self.set_fill_color(*PRIMARY)
+        self.rect(x, y, 1.5, h, style="F")
 
+        self.set_xy(x + 4, y + 2)
+        self.set_font("Helvetica", "B", 7)
+        self.set_text_color(*PRIMARY)
+        self._txt(w - 8, 4, title)
+
+    def _draw_items_table(self):
+        headers = [
+            ("#", 8),
+            ("REF.", 20),
+            ("DESCRIPCION", 70),
+            ("CANTIDAD", 14),
+            ("P. UNITARIO", 20),
+            ("IMPORTE", 22),
+            ("P. NETO", 16),
+            ("P. BRUTO", 16),
+        ]
+
+        self.set_font("Helvetica", "B", 7.5)
+        self.set_fill_color(*PRIMARY)
+        self.set_text_color(*WHITE)
+        for title, w in headers:
+            self._txt(w, 8, title, border=0, align="C", fill=True)
+        self.ln(8)
+
+        items = list(self.invoice.invoice_items.all())
+        totals = {"qty": 0, "net": 0, "gross": 0, "importe": 0, "unit": 0}
+
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(*GREY_DARK)
+
+        for idx, item in enumerate(items, start=1):
+            product = getattr(item, "product", None)
+            qty = getattr(item, "quantity", 0) or 0
+            unit_price = getattr(item, "unit_price", 0) or 0
+            net = getattr(item, "net_weight", 0) or 0
+            gross = getattr(item, "gross_weight", 0) or 0
+            importe = qty * unit_price
+
+            totals["qty"] += qty
+            totals["net"] += net
+            totals["gross"] += gross
+            totals["importe"] += importe
+            totals["unit"] += 1
+
+            if idx % 2 == 0:
+                self.set_fill_color(248, 249, 251)
+            else:
+                self.set_fill_color(*WHITE)
+
+            row = [
+                (str(idx), 8, "C"),
+                (getattr(product, "code_sku", ""), 20, "C"),
+                (getattr(product, "name", "")[:62], 70, "L"),
+                (f"{qty:,.0f}", 14, "R"),
+                (self._fmt(unit_price), 20, "R"),
+                (self._fmt(importe), 22, "R"),
+                (self._fmt(net), 16, "R"),
+                (self._fmt(gross), 16, "R"),
+            ]
+            y_row = self.get_y()
+            x_row = self.l_margin
+            desc = row[2][0]
+            line_h = 5
+            if len(desc) > 42:
+                self.set_xy(x_row + 28, y_row + 1)
+                self.set_font("Helvetica", "", 7)
+                self._multi(58, line_h, desc)
+                h_row = max(self.get_y() - y_row + 1, 7)
+                self.set_font("Helvetica", "", 8)
+            else:
+                h_row = 7
+
+            for value, w, align in row:
+                self.set_xy(x_row, y_row)
+                self._txt(w, h_row, str(value), border=0, align=align, fill=True)
+                x_row += w
+            self.set_xy(self.l_margin, y_row + h_row)
+
+        self._draw_totals(totals)
+
+    def _draw_totals(self, totals):
+        fob = totals["importe"]
+        freight = sum(
+            invoice.total_amount for invoice in self.invoice.booking.invoices.all()
+        )
+        insurance = self.invoice.booking.cargo_insurance
+        cif = fob + freight + insurance
+        currency = getattr(getattr(self.invoice, "currency", None), "initials", "USD")
+
+        y0 = self.get_y() + 4
+        box_w = 90
+        box_h = 26
+        self.set_fill_color(*GREY_LIGHT)
+        self.rect(12, y0, box_w, box_h, style="F")
+        self.set_fill_color(*PRIMARY)
+        self.rect(12, y0, 1.5, box_h, style="F")
+
+        self.set_xy(16, y0 + 2)
+        self.set_font("Helvetica", "B", 7)
+        self.set_text_color(*PRIMARY)
+        self._txt(box_w - 8, 4, "RESUMEN")
+
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(*GREY_DARK)
+        self.set_xy(16, y0 + 8)
+        self._txt(box_w - 8, 4, f"Peso Neto Total:   {self._fmt(totals['net'])} kg")
+        self.set_x(16)
+        self._txt(box_w - 8, 14, f"Peso Bruto Total:  {self._fmt(totals['gross'])} kg")
+        self.set_x(16)
+        self._txt(box_w - 8, 24, f"Total de Bultos:   {totals['qty']:,.0f}")
+
+        x_right = 110
+        y_right = y0
+        w_right = 88
+
+        self.set_fill_color(*PRIMARY)
+        self.rect(x_right, y_right, w_right, 8, style="F")
+        self.set_xy(x_right, y_right)
+        self.set_font("Helvetica", "B", 9)
+        self.set_text_color(*WHITE)
+        self._txt(w_right, 8, "  TOTALES", align="L")
+
+        self.set_text_color(*GREY_DARK)
+        self.set_font("Helvetica", "", 8)
+        rows = [
+            (f"FOB {currency}", self._fmt(fob)),
+            (f"Flete {currency}", self._fmt(freight)),
+            (f"Seguro {currency}", self._fmt(insurance)),
+        ]
+        y_r = y_right + 8
+        for label, value in rows:
+            self.set_fill_color(248, 249, 251)
+            self.rect(x_right, y_r, w_right, 6, style="F")
+            self.set_xy(x_right + 2, y_r)
+            self._txt(w_right - 30, 6, label)
+            self.set_xy(x_right + w_right - 28, y_r)
+            self._txt(26, 6, value, align="R")
+            y_r += 6
+
+        self.set_fill_color(*ACCENT)
+        self.rect(x_right, y_r, w_right, 8, style="F")
+        self.set_xy(x_right + 2, y_r)
+        self.set_font("Helvetica", "B", 9)
+        self.set_text_color(*WHITE)
+        self._txt(w_right - 30, 8, f"CIF {currency}")
+        self.set_xy(x_right + w_right - 32, y_r)
+        self._txt(30, 8, self._fmt(cif), align="R")
+
+
+def generate_commercial_invoice_pdf(invoice):
+    pdf = ModernCommercialInvoicePDF(invoice)
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf._draw_info_cards()
+    pdf._draw_items_table()
     return bytes(pdf.output())
