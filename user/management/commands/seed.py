@@ -47,7 +47,6 @@ from core.models import (
 from logistic_backend.settings import APPLICATION_DATA_PATH
 from user.models import User
 
-
 # python manage.py seed
 
 
@@ -942,24 +941,43 @@ class Command(BaseCommand):
                 "GROVE",
                 [
                     "3 x 5 Kg",
-                    "A granel",
-                    "Muslos (drumstick)",
-                    "4 x 10 Lbs",
                     "Muslos y contramuslos",
-                    "22 Lbs",
-                    "33 Lbs",
-                    "40 Lbs",
                 ],
-                "Descripcion del producto"
+                "Muslos y contramuslos de pollo congelados 3x5kg (3 paquetes de 5 Kg cada uno) 15 kg cada caja",
+            ),
+            (
+                "Pollo",
+                "GROVE",
+                [
+                    "3 x 5 Kg",
+                    "Muslos (drumstick)",
+                ],
+                "Muslos de pollo congelados 3x5kg (3 paquetes de 5 Kg cada uno) 15 kg cada caja",
+            ),
+            (
+                "Pollo",
+                "GROVE",
+                [
+                    "4 x 10 Lbs",
+                    "Muslos (drumstick)",
+                ],
+                "Muslos de pollo congelados 4x10 lbs (4 paquetes de 10 lbs cada uno) 40 lbs cada caja",
             ),
             (
                 "Leche en polvo",
                 "CHOCOMILK CANARIAS S.l",
                 [
                     "15 bolsas de 1 Kg",
+                ],
+                "Caja con 15 bolsas de leche en polvo de 1 kg",
+            ),
+            (
+                "Leche en polvo",
+                "CHOCOMILK CANARIAS S.l",
+                [
                     "Bolsa de 25 Kgs",
                 ],
-                "Descripcion del producto"
+                "Bolsa de leche en polvo de 25 kg",
             ),
             (
                 "Atún en aceite",
@@ -967,22 +985,26 @@ class Command(BaseCommand):
                 [
                     "48 latas x 170 grs",
                 ],
-                "Descripcion del producto"
+                "Caja con 48 latas de atún en aceite de 170 grs cada una",
             ),
         ]
 
         for _product_provider_presentation in product_provider_presentations:
             product = Product.objects.get(name=_product_provider_presentation[0])
             provider = Provider.objects.get(name=_product_provider_presentation[1])
-            product_provider, _ = ProductProvider.objects.get_or_create(defaults=dict(
-                product=product, provider=provider
-            ), product=product, provider=provider)
+            product_provider, _ = ProductProvider.objects.get_or_create(
+                defaults=dict(product=product, provider=provider),
+                product=product,
+                provider=provider,
+            )
             product_provider_presentation = ProductProviderPresentation.objects.create(
                 product_provider=product_provider,
                 description=_product_provider_presentation[3],
             )
             product_provider_presentation.presentations.set(
-                Presentation.objects.filter(name__in=_product_provider_presentation[2]).all()
+                Presentation.objects.filter(
+                    name__in=_product_provider_presentation[2]
+                ).all()
             )
 
     def create_purchase_order(self):
