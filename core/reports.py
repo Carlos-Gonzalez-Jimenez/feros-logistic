@@ -216,6 +216,7 @@ class ModernCommercialInvoicePDF(FPDF):
 
         for idx, item in enumerate(items, start=1):
             product = getattr(item, "product", None)
+            reference = product.product_provider.product.code_sku
             qty = getattr(item, "quantity", 0) or 0
             unit_price = getattr(item, "unit_price", 0) or 0
             net = getattr(item, "net_weight", 0) or 0
@@ -235,8 +236,8 @@ class ModernCommercialInvoicePDF(FPDF):
 
             row = [
                 (str(idx), 8, "C"),
-                (getattr(product, "code_sku", ""), 20, "C"),
-                (getattr(product, "name", "")[:62], 70, "L"),
+                (f"{reference}", 20, "C"),
+                (getattr(product, "description", "")[:62], 70, "L"),
                 (f"{qty:,.0f}", 14, "R"),
                 (self._fmt(unit_price), 20, "R"),
                 (self._fmt(importe), 22, "R"),
