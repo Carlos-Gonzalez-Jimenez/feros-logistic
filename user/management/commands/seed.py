@@ -554,6 +554,7 @@ class Command(BaseCommand):
             ("Huevos", "Alimentos"),
             ("Arroz", "Alimentos"),
             ("Atún", "Alimentos"),
+            ("Leches", "Alimentos"),
         ]
 
         for category in categories:
@@ -574,8 +575,9 @@ class Command(BaseCommand):
         providers = [
             ("GROVE", "USA"),
             ("AJC", "USA"),
-            ("CHOCOMILK CANARIAS SI", "ESP"),
+            ("CHOCOMILK CANARIAS S.l", "ESP"),
             ("ROQUE ENTERPRISES INC.", "ESP"),
+            ("ATLANTIKO S.A.", "CHN"),
         ]
 
         for provider in providers:
@@ -608,13 +610,15 @@ class Command(BaseCommand):
         presentations = [
             "3 x 5 Kg",
             "A granel",
-            "Muslo y contramuslo",
+            "Muslos y contramuslos",
             "4 x 10 Lbs",
             "Muslos (drumstick)",
-            "33 Libras",
-            "22 Libras",
-            "40 Libras",
+            "33 Lbs",
+            "22 Lbs",
+            "40 Lbs",
             "15 bolsas de 1 Kg",
+            "Bolsa de 25 Kgs",
+            "48 latas x 170 grs",
         ]
 
         for presentation in presentations:
@@ -648,6 +652,7 @@ class Command(BaseCommand):
             ("EARLY DAWN PREMIUM", "brands/brand_image_default.png"),
             ("PECO FARMS", "brands/brand_image_default.png"),
             ("CLAXTON", "brands/brand_image_default.png"),
+            ("ATLANTIKO", "brands/brand_image_default.png"),
         ]
 
         for brand in brands:
@@ -852,9 +857,9 @@ class Command(BaseCommand):
                 "USD",  # currency
                 48,  # quantity_per_box
                 "Atún",  # category
-                "GROVE",  # provider
-                "MUMILK",  # brand
-                "USA",  # country
+                "ATLANTIKO S.A.",  # provider
+                "ATLANTIKO",  # brand
+                "CHN",  # country
                 "Caja",  # measurement_unit
             ),
             (
@@ -883,6 +888,20 @@ class Command(BaseCommand):
                 "GROVE",  # provider
                 "HOUSE OF RAEFORD",  # brand
                 "USA",  # country
+                "Caja",  # measurement_unit
+            ),
+            (
+                "FC-0005",  # code_sku
+                "Leche en polvo",  # name
+                "25000",  # quantity
+                30.3,  # unit_price
+                20.55,  # cost_price
+                "USD",  # currency
+                1,  # quantity_per_box
+                "Leches",  # category
+                "CHOCOMILK CANARIAS S.l",  # provider
+                "MUMILK",  # brand
+                "ESP",  # country
                 "Caja",  # measurement_unit
             ),
         ]
@@ -917,11 +936,38 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start populating product's presentation"))
 
         product_provider_presentations = [
-            ("Pollo", "GROVE", ["3 x 5 Kg", "A granel", "4 x 10 Lbs"]),
+            (
+                "Pollo",
+                "GROVE",
+                [
+                    "3 x 5 Kg",
+                    "A granel",
+                    "Muslos (drumstick)",
+                    "4 x 10 Lbs",
+                    "Muslos y contramuslos",
+                    "22 Lbs",
+                    "33 Lbs",
+                    "40 Lbs",
+                ],
+            ),
+            (
+                "Leche en polvo",
+                "CHOCOMILK CANARIAS S.l",
+                [
+                    "15 bolsas de 1 Kg",
+                    "Bolsa de 25 Kgs",
+                ],
+            ),
+            (
+                "Atún en aceite",
+                "ATLANTIKO S.A.",
+                [
+                    "48 latas x 170 grs",
+                ],
+            ),
         ]
 
         for _product_provider_presentation in product_provider_presentations:
-            print(_product_provider_presentation)
             product = Product.objects.get(name=_product_provider_presentation[0])
             provider = Provider.objects.get(name=_product_provider_presentation[1])
             product_provider = ProductProvider.objects.create(

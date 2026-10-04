@@ -1,9 +1,7 @@
 from django.db import transaction
 from django.db.models import Prefetch
 from django.db.models import ProtectedError
-from django.db.models import (
-    Q,
-)
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.timezone import now
 from rest_framework import viewsets, status
@@ -15,6 +13,7 @@ from rest_framework.generics import (
 )
 from rest_framework.permissions import (
     AllowAny,
+    IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
 
@@ -26,6 +25,8 @@ from .permissions import (
     CustomPermissionFactory,
     ReadOnlyPermission,
 )
+from django.http import HttpResponse
+from .reports import generate_commercial_invoice_pdf
 
 
 class ProtectedResourceViewSet(viewsets.ModelViewSet):
@@ -710,7 +711,7 @@ class SaleOrderViewSet(ProtectedResourceViewSet):
         ReadOnlyPermission | CustomPermissionFactory(["core.manage_sale_orders"])
     ]
     filterset_class = filters.SaleOrderFilter
-    search_fields = ['so_number']
+    search_fields = ["so_number"]
 
     def get_serializer_class(self):
         if self.action in ["list"]:
@@ -804,7 +805,7 @@ class ContainerViewSet(ProtectedResourceViewSet):
     ]
     serializer_class = serializers.ContainerSerializer
     filterset_class = filters.ContainerFilter
-    search_fields = ['container_number']
+    search_fields = ["container_number"]
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -859,7 +860,7 @@ class ProviderInvoiceViewSet(ProtectedResourceViewSet):
 
     queryset = models.ProviderInvoice.objects.all()
     serializer_class = serializers.ProviderInvoiceSerializer
-    search_fields = ['bill_number']
+    search_fields = ["bill_number"]
 
 
 class CancelInvoiceView(CreateAPIView):
@@ -918,3 +919,35 @@ class CustomerInvoiceViewSet(ProtectedResourceViewSet):
             return serializers.CustomerInvoiceSerializer
         else:
             return serializers.CustomerInvoiceMinimalSerializer
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="generate-invoice",
+        permission_classes=[
+            IsAuthenticatedOrReadOnly,
+        ],
+    )
+    def generate_customer_invoice_pdf(self, request, pk=None):
+
+        customer_invoice = get_object_or_404(
+            models.CustomerInvoice.objects.select_related(
+                "customer", "booking", "incoterms", "importing_company"
+            ).prefetch_related(
+                "invoice_items__product",
+                Prefetch(
+                    "booking__invoices",
+                    to_attr="shipping_company_invoices",
+                ),
+            ),
+            pk=pk,
+        )
+        for invoice_item in customer_invoice.invoice_items.all():
+            print("entré")
+            print(invoice_item.gross_weight)
+        pdf_bytes = generate_commercial_invoice_pdf(customer_invoice)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'inline; filename="Factura Comercial [{customer_invoice.bill_number}].pdf"'
+        )
+        return response
