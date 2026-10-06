@@ -199,7 +199,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         instance.set_password(password)
         instance.next_login_change_password = True
         instance.is_staff = True
-        instance.is_active = False
+        instance.is_active = True
+        instance.verified = True
         instance.check_terms_conditions = True
         instance.check_privacy_policy = True
         instance.save()
@@ -216,7 +217,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         message = get_template("mailing/staff_welcome.html").render(context)
         send_mail(
             [instance.email],
-            "Bienvenido a la plataforma de control de importaciones FEROS GRUPO S.U.R.L.",
+            f"Bienvenido a la plataforma de control de importaciones {context['business_name']}",
             message,
         )
         return instance

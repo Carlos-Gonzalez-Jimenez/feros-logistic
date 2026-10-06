@@ -1,13 +1,29 @@
-from dateutil.utils import today
 from rest_framework import viewsets, status
+from django.contrib.auth.models import Group, Permission
+from django.db import transaction
+from django.template.loader import get_template
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from rest_framework import viewsets, status
+from rest_framework.authtoken.models import Token
 from rest_framework.generics import (
     RetrieveUpdateAPIView,
     CreateAPIView,
 )
-from django.utils.translation import gettext_lazy as _
-from rest_framework.views import APIView
-from rest_framework.authtoken.models import Token
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+)
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from core.models import Config
+from core.permissions import (
+    CustomPermissionFactory,
+    ReadOnlyPermission,
+)
+from logistic_backend.settings import MEDIA_URL
+from user import models, serializers
 from user.exceptions import (
     NotMatchException,
     WrongPasswordException,
@@ -16,24 +32,8 @@ from user.exceptions import (
     TokenExpiredException,
     UserNotActiveException,
 )
-from django.template.loader import get_template
-from rest_framework.decorators import action
-from django.utils import timezone
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-)
-from django.db import transaction
-from user import models, serializers
-from core.models import Config
-from user.filters import UserFilter, EventLogFilter
-from django.contrib.auth.models import Group, Permission
+from user.filters import EventLogFilter
 from .tasks import send_mail
-from core.permissions import (
-    CustomPermissionFactory,
-    ReadOnlyPermission,
-)
-from logistic_backend.settings import MEDIA_URL
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
@@ -362,6 +362,11 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = models.User.objects.all()
     serializer_class = serializers.UserSerializer
     search_fields = ["first_name", "last_name", "email", "phone_number"]
+
+    def get_serializer_class(self):
+        if self.action in ['create']:
+            return serializers.UserRegisterSerializer
+        return self.serializer_class
 
 
 class EventLogViewSet(viewsets.ReadOnlyModelViewSet):
