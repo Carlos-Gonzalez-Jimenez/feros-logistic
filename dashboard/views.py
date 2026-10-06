@@ -5,9 +5,7 @@ from django.db.models import (
     Count,
     F,
     Sum,
-    Value,
 )
-from django.db.models.functions import Concat
 from django.utils.timezone import now
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -64,7 +62,7 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         _serializer = DashboardBookingDaysSerializer(data=request.GET)
         _serializer.is_valid(raise_exception=True)
         validated_data = _serializer.validated_data
-        return (now().date() - timedelta(days=(validated_data["days"] * -1))), validated_data['shipping_company']
+        return (now().date() - timedelta(days=validated_data["days"])), validated_data['shipping_company']
 
     @action(methods=["GET"], detail=False, url_path="booking-metrics")
     def get_booking_metrics(self, request):
@@ -77,35 +75,29 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
         bookings = (
             models.Booking.objects.select_related("port_loading", "port_discharge", "shipping_company", "vessel")
             .prefetch_related("sale_orders")
+            .exclude(status__in=[models.Booking.BookingStatus.Canceled, models.Booking.BookingStatus.Arrived])
             .annotate(containers_count=Count("containers", distinct=True))
         )
         if shipping_company_id is not None:
             bookings = bookings.filter(shipping_company_id=shipping_company_id)
 
-        containers = models.Container.objects.select_related(
-            "booking", "booking__shipping_company", "container_type"
-        ).prefetch_related("sale_orders", "items__product")
+        containers = models.Container.objects.select_related("booking", "booking__shipping_company", "container_type")
 
         if shipping_company_id is not None:
             containers = containers.filter(booking__shipping_company_id=shipping_company_id)
 
-        active_bookings = bookings.filter(cancelled_at__isnull=True)
+        active_bookings = bookings.all()
 
         containers_in_transit = containers.filter(
-            booking__cancelled_at__isnull=True,
-            discharge_date__isnull=True,
+            booking__status=models.Booking.BookingStatus.In_Transit,
             booking__eta__gte=start_date,
+            # booking__cancelled_at__isnull=True,
+            # discharge_date__isnull=True,
         ).order_by("booking__eta")
 
-        upcoming_departures = bookings.filter(
-            cancelled_at__isnull=True,
-            ets__gte=start_date,
-        ).order_by("ets")
+        upcoming_departures = bookings.filter(ets__gte=start_date).order_by("ets")
 
-        upcoming_arrivals = bookings.filter(
-            cancelled_at__isnull=True,
-            eta__gte=start_date,
-        ).order_by("eta")
+        upcoming_arrivals = bookings.filter(eta__gte=start_date).order_by("eta")
 
         data = {
             "active_bookings": active_bookings,
@@ -131,7 +123,7 @@ class DashboardBookingViewSet(viewsets.GenericViewSet):
                 charges_amount=Sum("invoices__other_charges_amount"),
                 invoices_count=Count("invoices", distinct=True),
             )
-            .filter(invoices_count__gt=0)
+            .filter(invoices_count__gt=0).all()
         )
 
         if start_date:
@@ -233,14 +225,7 @@ class DashboardContainerViewSet(viewsets.GenericViewSet):
         filter = {f"container__booking__{kind}__gte": now() - timedelta(days=3)}
         queryset = (
             models.ContainerItem.objects.filter(**filter)
-            .values(
-                product_name=Concat(
-                    "product__product_provider__product__name",
-                    Value(" - "),
-                    "product__presentation__name",
-                ),
-                date=F(f"container__booking__{kind}"),
-            )
+            .values('product_id', date=F(f"container__booking__{kind}"))
             .annotate(
                 products_quantity=Sum("quantity"),
                 containers_quantity=Count("container", distinct=True),
@@ -248,7 +233,15 @@ class DashboardContainerViewSet(viewsets.GenericViewSet):
             .order_by("date")
         )
 
-        result = list(queryset)
+        products = {}
+        result = []
+        for row in queryset:
+            product = products.get(
+                row['product_id'],
+                models.ProductProviderPresentation.objects.get(pk=row['product_id'])
+            )
+            result.append({'product_name': str(product), **row})
+            products[row['product_id']] = product
 
         return Response(result, status=status.HTTP_200_OK)
 

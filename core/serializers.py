@@ -942,6 +942,12 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
         serializers (_type_): _description_
     """
 
+    def validate(self, attrs):
+        if not attrs['veterinary_permit']:
+            attrs['veterinary_permit_expires'] = None
+        if not attrs['phytosanitary_permit']:
+            attrs['phytosanitary_permit_expires'] = None
+        return attrs
     class Meta:
         model = models.ProcessingPlant
         fields = serializers.ALL_FIELDS
@@ -1284,7 +1290,7 @@ class ContainerSerializer(HasFileSerializer, ContainerMinimalSerializer):
 class ShippingCompanyInvoiceSerializer(InvoiceSerializer):
     booking = BookingMinimalSerializer(read_only=True)
     booking_id = serializers.PrimaryKeyRelatedField(
-        queryset=models.Booking.objects.filter(cancelled_at__isnull=True),
+        queryset=models.Booking.objects.exclude(status=models.Booking.BookingStatus.Canceled),
         source="booking",
     )
 

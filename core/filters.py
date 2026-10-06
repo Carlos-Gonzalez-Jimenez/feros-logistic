@@ -135,7 +135,7 @@ class BookingFilter(filters.FilterSet):
                                         distinct=True)
 
     def filter_has_invoice(self, queryset, name, value):
-        return queryset.exclude(invoices__isnull=value).filter(invoices__cancelation_date__isnull=True)
+        return queryset.exclude(invoices__isnull=value, status=Booking.BookingStatus.Canceled)
 
     class Meta:
         model = Booking

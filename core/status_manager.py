@@ -12,6 +12,11 @@ class BookingStatusManager:
         models.Booking.BookingStatus.Arrived,
     ]
 
+    final_statues = [
+        models.Booking.BookingStatus.Canceled,
+        models.Booking.BookingStatus.Arrived,
+    ]
+
     booking: models.Booking
 
     def __init__(self, booking):
@@ -32,17 +37,20 @@ class BookingStatusManager:
 
     def _in_transit_status(self):
         today = now().date()
-        return self.booking.ets <= today and today <= self.booking.eta
+        if self.booking.ets and self.booking.eta:
+            return self.booking.ets <= today and today <= self.booking.eta
+        return False
 
     def _arrived_status(self):
         return self.booking.containers.filter(discharge_date__isnull=False).exists()
 
     def change_status(self):
         initial_status = self.booking.status
-        for status in self.get_next_statues():
-            call = getattr(self, f'_{status}_status', None)
-            if callable(call) and call():
-                self.booking.status = status
+        if initial_status not in self.final_statues:
+            for status in self.get_next_statues():
+                call = getattr(self, f'_{status}_status', None)
+                if callable(call) and call():
+                    self.booking.status = status
 
-        if self.booking.status != initial_status:
-            self.booking.save()
+            if self.booking.status != initial_status:
+                self.booking.save()
