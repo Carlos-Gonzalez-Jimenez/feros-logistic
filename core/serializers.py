@@ -948,6 +948,7 @@ class ProcessingPlantSerializer(serializers.ModelSerializer):
         if not attrs['phytosanitary_permit']:
             attrs['phytosanitary_permit_expires'] = None
         return attrs
+
     class Meta:
         model = models.ProcessingPlant
         fields = serializers.ALL_FIELDS
@@ -1308,7 +1309,7 @@ class ProviderInvoiceSerializer(InvoiceSerializer):
         model = models.ProviderInvoice
 
 
-class InvoicePaymentSerializer(serializers.ModelSerializer):
+class InvoicePaymentSerializer(HasFileSerializer, serializers.ModelSerializer):
     invoice_id = serializers.PrimaryKeyRelatedField(
         queryset=models.Invoice.objects.all(), source="invoice"
     )

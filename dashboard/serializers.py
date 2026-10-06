@@ -30,7 +30,7 @@ class DashboardDatesSerializer(serializers.Serializer):
 
 
 class DashboardDaysRangeSerializer(serializers.Serializer):
-    days = serializers.IntegerField(min_value=1, default=365, max_value=365)
+    days = serializers.IntegerField(min_value=0, default=365, max_value=365)
 
 
 class DashboardBookingDaysSerializer(DashboardDaysRangeSerializer):
