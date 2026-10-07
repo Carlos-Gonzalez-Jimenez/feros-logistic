@@ -29,12 +29,12 @@ class FolderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def root(self, request):
         root_folder = self.get_queryset().filter(root=True).first()
-        return Response(FolderContentSerializer(root_folder).data)
+        return Response(FolderContentSerializer(root_folder, context=self.get_serializer_context()).data)
 
     @action(detail=True, methods=["get"])
     def content(self, request, pk=None):
         folder = self.get_object()
-        return Response(FolderContentSerializer(folder).data)
+        return Response(FolderContentSerializer(folder, context=self.get_serializer_context()).data)
 
     @action(detail=False, methods=["get"])
     def tree(self, request):
