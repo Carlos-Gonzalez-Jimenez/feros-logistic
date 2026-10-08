@@ -315,7 +315,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.NOTICE("start creating configuration object"))
 
         config = Config.objects.create(
-            business_name="SUMART GRUPO S.U.R.L",
+            business_name="SUMART GROUP LLC",
             business_address="11870 SW 210th Ter, Miami FL 33177",
             logo_light="config/logo.png",
             logo_horizontal_light="config/logo_horizontal.png",
